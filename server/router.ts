@@ -1,6 +1,12 @@
 import type { IncomingMessage, ServerResponse } from "node:http";
 import { createDefaultTwin } from "./defaults.js";
-import { generateRelationshipSimulation, generateTwinSummary, MissingApiKeyError, missingApiKeyJob } from "./deepseek.js";
+import {
+  AiOutputParseError,
+  generateRelationshipSimulation,
+  generateTwinSummary,
+  MissingApiKeyError,
+  missingApiKeyJob,
+} from "./deepseek.js";
 import { readDb, saveTwin, updateProfile } from "./storage.js";
 import type { ApiErrorBody, UserProfile } from "./types.js";
 
@@ -125,6 +131,11 @@ export async function routeRequest(request: IncomingMessage, response: ServerRes
           message: error.message,
         },
       });
+      return;
+    }
+
+    if (error instanceof AiOutputParseError) {
+      sendError(response, 502, "ai_output_parse_error", error.message);
       return;
     }
 

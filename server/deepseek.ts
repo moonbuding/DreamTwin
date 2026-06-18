@@ -11,6 +11,13 @@ export class MissingApiKeyError extends Error {
   }
 }
 
+export class AiOutputParseError extends Error {
+  constructor() {
+    super("AI provider returned output that could not be parsed as JSON.");
+    this.name = "AiOutputParseError";
+  }
+}
+
 function createJob(type: GenerationJob["type"], status: GenerationJob["status"], errorCode?: string): GenerationJob {
   const now = new Date().toISOString();
   return {
@@ -33,7 +40,20 @@ function extractJson(text: string): unknown {
   const trimmed = text.trim();
   const fenced = trimmed.match(/```(?:json)?\s*([\s\S]*?)```/i);
   const jsonText = fenced?.[1]?.trim() ?? trimmed;
-  return JSON.parse(jsonText);
+  try {
+    return JSON.parse(jsonText);
+  } catch {
+    const firstBrace = jsonText.indexOf("{");
+    const lastBrace = jsonText.lastIndexOf("}");
+    if (firstBrace >= 0 && lastBrace > firstBrace) {
+      try {
+        return JSON.parse(jsonText.slice(firstBrace, lastBrace + 1));
+      } catch {
+        throw new AiOutputParseError();
+      }
+    }
+    throw new AiOutputParseError();
+  }
 }
 
 async function requestDeepSeekJson(systemPrompt: string, userPrompt: string): Promise<unknown> {
@@ -128,7 +148,27 @@ export async function generateRelationshipSimulation(input: {
     profile: input.profile,
     counterpartName: input.counterpartName ?? "对方",
     scene: input.scene ?? "梦境广场中的一次低压相遇",
-    requiredJsonShape: defaultRelationshipSimulation,
+    constraints: [
+      "Use the provided counterpartName and scene in the generated content.",
+      "Do not copy placeholder text from the schema.",
+      "Keep the tone warm, specific, C-side, and action-oriented.",
+      "Use Chinese for all user-visible fields.",
+    ],
+    requiredJsonShape: {
+      conclusion: "one concrete sentence about how this relationship may start",
+      attractionScore: "number 0-100",
+      paceScore: "number 0-100",
+      riskScore: "number 0-100",
+      likelyDialogue: ["2-4 possible dialogue beats"],
+      behaviorPreview: ["2-4 possible behavior beats"],
+      relationshipTrajectory: ["3 short phases"],
+      romancePossibility: "one grounded romance possibility, no absolute prediction",
+      conflictRisk: "one concrete conflict risk",
+      badOutcomeScenario: "one plausible bad path if the interaction goes wrong",
+      suggestedMove: "one safe next action the user can take",
+      possibleFirstLine: "one editable first message suggestion",
+      safetyHint: "one boundary reminder that AI does not represent the other person's real promise",
+    },
   });
 
   const raw = (await requestDeepSeekJson(systemPrompt, userPrompt)) as Partial<RelationshipSimulationResult>;
