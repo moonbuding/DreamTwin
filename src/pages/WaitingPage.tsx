@@ -1,4 +1,4 @@
-import { ArrowLeft, Compass, RotateCcw, Sparkles } from "lucide-react";
+import { ArrowLeft, Compass, DoorOpen, RotateCcw, Sparkles } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { StatusPill } from "../components/StatusPill";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
@@ -14,12 +14,14 @@ interface WaitingPageProps {
 }
 
 export function WaitingPage({ node, simulation, onBackToSimulation, onConfirm, onExplore, onWithdraw }: WaitingPageProps) {
+  const isOpened = node.status === "opened";
+
   return (
     <section className="page waiting-page scene-page">
       <ThreeDreamScene variant="ambient" className="page-scene waiting-scene" />
       <div className="page-content waiting-content">
-        <p className="label">等待对方入梦</p>
-        <h1>你已经把关系试探发给对方。</h1>
+        <p className="label">{isOpened ? "梦境门已打开" : "等待对方入梦"}</p>
+        <h1>{isOpened ? "对方已经选择进入。" : "你已经把关系试探发给对方。"}</h1>
         <div className="waiting-orbit">
           <span />
           <span />
@@ -29,21 +31,21 @@ export function WaitingPage({ node, simulation, onBackToSimulation, onConfirm, o
           <StatusPill status={node.status} />
           <h2>{simulation.title}</h2>
           <p>{simulation.twinApproach}</p>
-          <div className="waiting-signal-transfer" aria-label="入梦等待进度">
+          <div className="waiting-signal-transfer" aria-label={isOpened ? "梦境门打开进度" : "入梦等待进度"}>
             <span>试探已送达</span>
-            <span>对方分身解析中</span>
-            <span>梦境门待确认</span>
+            <span>{isOpened ? "对方已回应" : "对方分身解析中"}</span>
+            <span>{isOpened ? "梦境门已打开" : "梦境门待确认"}</span>
           </div>
           <div className="waiting-state-grid">
             <span>你的分身已完成试探</span>
-            <span>等待对方确认是否愿意继续</span>
+            <span>{isOpened ? "对方已经确认愿意继续" : "等待对方确认是否愿意继续"}</span>
             <span>{simulation.frictionSignal}</span>
           </div>
         </section>
       </div>
       <div className="bottom-action">
-        <PrimaryButton icon={<Sparkles size={18} />} onClick={() => onConfirm(node.id)}>
-          模拟对方同意入梦
+        <PrimaryButton icon={isOpened ? <DoorOpen size={18} /> : <Sparkles size={18} />} onClick={() => onConfirm(node.id)}>
+          {isOpened ? "进入已打开的梦境门" : "模拟对方同意入梦"}
         </PrimaryButton>
         <div className="action-row">
           <PrimaryButton variant="secondary" icon={<ArrowLeft size={17} />} onClick={() => onBackToSimulation(node.id)}>
@@ -53,11 +55,13 @@ export function WaitingPage({ node, simulation, onBackToSimulation, onConfirm, o
             回到星图
           </PrimaryButton>
         </div>
-        <div className="single-action-row">
-          <PrimaryButton variant="ghost" icon={<RotateCcw size={17} />} onClick={() => onWithdraw(node.id)}>
-            撤回这次入梦
-          </PrimaryButton>
-        </div>
+        {!isOpened ? (
+          <div className="single-action-row">
+            <PrimaryButton variant="ghost" icon={<RotateCcw size={17} />} onClick={() => onWithdraw(node.id)}>
+              撤回这次入梦
+            </PrimaryButton>
+          </div>
+        ) : null}
       </div>
     </section>
   );

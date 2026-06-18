@@ -1,4 +1,4 @@
-import { useMemo, useReducer } from "react";
+import { useEffect, useMemo, useReducer } from "react";
 import { AppShell } from "./components/AppShell";
 import { demoFlowReducer, initialDemoFlowState } from "./state/demoFlow";
 import { ChatEntryPage } from "./pages/ChatEntryPage";
@@ -9,9 +9,52 @@ import { TwinCreatePage } from "./pages/TwinCreatePage";
 import { TwinGeneratingPage } from "./pages/TwinGeneratingPage";
 import { WaitingPage } from "./pages/WaitingPage";
 import { WelcomePage } from "./pages/WelcomePage";
+import type { DemoFlowState, DemoPage, RelationshipSimulation } from "./types/dreamtwin";
+
+const DEMO_STORAGE_KEY = "dreamtwin.demoFlow.v1";
+
+const pageProgress: Record<DemoPage, { label: string; value: number }> = {
+  welcome: { label: "产品解释", value: 8 },
+  "twin-create": { label: "创建分身", value: 20 },
+  "twin-generating": { label: "生成投影", value: 34 },
+  "dream-log": { label: "梦境星图", value: 48 },
+  "simulation-detail": { label: "关系预演", value: 64 },
+  waiting: { label: "等待回应", value: 78 },
+  "dream-gate": { label: "梦境门", value: 90 },
+  "chat-entry": { label: "真实聊天", value: 100 },
+};
+
+function isDemoState(value: unknown): value is DemoFlowState {
+  if (!value || typeof value !== "object") return false;
+  const state = value as Partial<DemoFlowState>;
+  const simulations = state.simulations as Partial<RelationshipSimulation>[] | undefined;
+  return (
+    typeof state.currentPage === "string" &&
+    Array.isArray(state.pageHistory) &&
+    Array.isArray(state.nodes) &&
+    Array.isArray(simulations) &&
+    simulations.every((simulation) => Array.isArray(simulation.scenarios)) &&
+    Boolean(state.profile) &&
+    Boolean(state.twin)
+  );
+}
+
+function loadPersistedState(): DemoFlowState {
+  if (typeof window === "undefined") return initialDemoFlowState;
+
+  try {
+    const raw = window.localStorage.getItem(DEMO_STORAGE_KEY);
+    if (!raw) return initialDemoFlowState;
+    const parsed = JSON.parse(raw);
+    if (!isDemoState(parsed)) return initialDemoFlowState;
+    return parsed;
+  } catch {
+    return initialDemoFlowState;
+  }
+}
 
 export function App() {
-  const [state, dispatch] = useReducer(demoFlowReducer, initialDemoFlowState);
+  const [state, dispatch] = useReducer(demoFlowReducer, initialDemoFlowState, loadPersistedState);
 
   const selectedNode = useMemo(
     () => state.nodes.find((node) => node.id === state.selectedNodeId) ?? state.nodes[0],
@@ -35,10 +78,20 @@ export function App() {
   };
 
   const canGoBack = (state.pageHistory ?? []).length > 0;
+  const currentProgress = pageProgress[state.currentPage] ?? pageProgress.welcome;
+  const progressLabel = `${Math.round(currentProgress.value)}%`;
+  const stepLabel = currentProgress.label;
+
+  useEffect(() => {
+    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(state));
+  }, [state]);
 
   return (
     <AppShell
       canGoBack={canGoBack}
+      progressLabel={progressLabel}
+      progressValue={currentProgress.value}
+      stepLabel={stepLabel}
       onBack={() => dispatch({ type: "GO_BACK" })}
       onReset={() => dispatch({ type: "RESET_DEMO" })}
     >

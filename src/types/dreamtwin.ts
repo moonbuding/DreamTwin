@@ -1,5 +1,7 @@
 export type DreamNodeStatus = "unviewed" | "viewed" | "waiting" | "opened";
 
+export type SimulationScenarioMode = "first_meet" | "shared_event" | "romance" | "conflict";
+
 export type DemoPage =
   | "welcome"
   | "twin-create"
@@ -38,6 +40,18 @@ export interface DreamNode {
   intensity: number;
 }
 
+export interface RelationshipScenario {
+  mode: SimulationScenarioMode;
+  label: string;
+  premise: string;
+  likelyDialogue: string[];
+  behaviorPreview: string[];
+  relationshipOutcome: string;
+  romanceSignal: string;
+  riskSignal: string;
+  suggestedMove: string;
+}
+
 export interface RelationshipSimulation {
   id: string;
   nodeId: string;
@@ -63,6 +77,7 @@ export interface RelationshipSimulation {
   tension: string;
   possibleFirstLine: string;
   matchReasons: string[];
+  scenarios: RelationshipScenario[];
 }
 
 export interface DemoFlowState {

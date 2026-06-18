@@ -1,9 +1,20 @@
 import { useEffect, useMemo, useRef, useState } from "react";
-import { ArrowRight, Compass, DoorOpen, Eye, RotateCcw, SkipForward } from "lucide-react";
+import {
+  AlertTriangle,
+  ArrowRight,
+  Compass,
+  DoorOpen,
+  Eye,
+  Heart,
+  MessageCircle,
+  RotateCcw,
+  Route,
+  SkipForward,
+} from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { StatusPill } from "../components/StatusPill";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
-import type { DreamNode, RelationshipSimulation } from "../types/dreamtwin";
+import type { DreamNode, RelationshipSimulation, SimulationScenarioMode } from "../types/dreamtwin";
 
 interface SimulationDetailPageProps {
   node: DreamNode;
@@ -27,7 +38,57 @@ export function SimulationDetailPage({
   const [isBeatSkipped, setIsBeatSkipped] = useState(false);
   const [hasViewedOutcome, setHasViewedOutcome] = useState(false);
   const [replayToken, setReplayToken] = useState(0);
+  const [activeScenarioMode, setActiveScenarioMode] = useState<SimulationScenarioMode>("first_meet");
   const reportRef = useRef<HTMLElement | null>(null);
+  const activeScenario = useMemo(
+    () => simulation.scenarios.find((scenario) => scenario.mode === activeScenarioMode) ?? simulation.scenarios[0],
+    [activeScenarioMode, simulation.scenarios],
+  );
+  const scenarioInsight = useMemo(() => {
+    const insightMap = {
+      first_meet: {
+        verdict: "慢热可进入",
+        attraction: 68,
+        risk: 38,
+        pace: 54,
+        paceLabel: "低压试探",
+        riskLabel: "误读慢热",
+      },
+      shared_event: {
+        verdict: "协作会升温",
+        attraction: 74,
+        risk: 46,
+        pace: 66,
+        paceLabel: "共同经历",
+        riskLabel: "主动边界",
+      },
+      romance: {
+        verdict: "有亲密潜力",
+        attraction: 82,
+        risk: 56,
+        pace: 72,
+        paceLabel: "慢速升温",
+        riskLabel: "过早定义",
+      },
+      conflict: {
+        verdict: "需要校准",
+        attraction: 48,
+        risk: 78,
+        pace: 36,
+        paceLabel: "暂停确认",
+        riskLabel: "压力后退",
+      },
+    } satisfies Record<SimulationScenarioMode, {
+      attraction: number;
+      pace: number;
+      paceLabel: string;
+      risk: number;
+      riskLabel: string;
+      verdict: string;
+    }>;
+
+    return insightMap[activeScenario.mode];
+  }, [activeScenario.mode]);
   const beats = useMemo(
     () => [
       {
@@ -41,8 +102,8 @@ export function SimulationDetailPage({
       },
       {
         eyebrow: "相遇模拟",
-        title: "如果你们在这里相遇",
-        body: simulation.scene,
+        title: `如果进入：${activeScenario.label}`,
+        body: activeScenario.premise,
         signal: simulation.hypothesisSignal,
         selfSignal: "进入相遇场景",
         otherSignal: "进入同一事件",
@@ -56,42 +117,42 @@ export function SimulationDetailPage({
         selfSignal: "发出第一动作",
         otherSignal: "等待是否接住",
         systemSignal: "生成对话片段",
-        details: simulation.conversationPreview,
+        details: activeScenario.likelyDialogue,
       },
       {
         eyebrow: "关系走势",
         title: "如果继续，会怎么发展",
-        body: simulation.counterpartSimulatedReply,
+        body: activeScenario.relationshipOutcome,
         signal: simulation.replySignal,
         selfSignal: "观察推进欲望",
         otherSignal: "回应轨迹出现",
         systemSignal: "推演关系路径",
-        details: simulation.relationshipTrajectory,
+        details: activeScenario.behaviorPreview,
       },
       {
         eyebrow: "结果建议",
         title: "AI 模拟结果和下一步建议",
-        body: simulation.rehearsalOutcome,
+        body: activeScenario.suggestedMove,
         signal: simulation.outcomeSignal,
         selfSignal: "整理第一句话",
         otherSignal: "确认关系入口",
         systemSignal: "输出行动建议",
       },
     ],
-    [simulation],
+    [activeScenario, simulation],
   );
   const outcomeIndex = beats.length - 1;
   const activeBeat = beats[activeBeatIndex];
   const isLastBeat = activeBeatIndex === outcomeIndex;
+  const rehearsalModeLabel = isAutoPlaying ? "自动预演中" : hasViewedOutcome ? "结论已生成" : "手动推演";
   const hasActiveDecision = node.status === "waiting" || node.status === "opened";
   const actionLabel =
     node.status === "opened" ? "进入已打开的梦境门" : node.status === "waiting" ? "回到等待状态" : "想进入这个梦境";
   const canEnterDream = (hasViewedOutcome && isLastBeat) || hasActiveDecision;
-  const reportItems = [
-    { label: "会聊什么", value: simulation.conversationPreview.join(" ") },
-    { label: "关系怎么发展", value: simulation.relationshipTrajectory.join(" ") },
-    { label: "恋爱可能性", value: simulation.romancePossibility },
-    { label: "冲突与坏走向", value: `${simulation.conflictRisk} ${simulation.badOutcomeScenario}` },
+  const reportMetrics = [
+    { label: "吸引可能", value: scenarioInsight.attraction, tone: "blue" },
+    { label: "推进速度", value: scenarioInsight.pace, tone: "violet" },
+    { label: "风险压力", value: scenarioInsight.risk, tone: "gold" },
   ];
 
   const scrollReportIntoView = () => {
@@ -101,12 +162,13 @@ export function SimulationDetailPage({
   };
 
   useEffect(() => {
+    setActiveScenarioMode(simulation.scenarios[0]?.mode ?? "first_meet");
     setActiveBeatIndex(resumeAtOutcome ? outcomeIndex : 0);
     setIsAutoPlaying(!resumeAtOutcome);
     setIsBeatSkipped(false);
     setHasViewedOutcome(resumeAtOutcome);
     setReplayToken(0);
-  }, [outcomeIndex, resumeAtOutcome, simulation.id]);
+  }, [outcomeIndex, resumeAtOutcome, simulation.id, simulation.scenarios]);
 
   useEffect(() => {
     if (!isAutoPlaying) return undefined;
@@ -162,8 +224,26 @@ export function SimulationDetailPage({
     if (index === outcomeIndex) scrollReportIntoView();
   };
 
+  const selectScenario = (mode: SimulationScenarioMode) => {
+    setActiveScenarioMode(mode);
+    setIsAutoPlaying(false);
+    setIsBeatSkipped(false);
+    setReplayToken((current) => current + 1);
+
+    if (activeBeatIndex === 0) {
+      setActiveBeatIndex(1);
+      return;
+    }
+    if (activeBeatIndex === outcomeIndex || hasViewedOutcome) {
+      setHasViewedOutcome(true);
+      scrollReportIntoView();
+    }
+  };
+
   return (
-    <section className={`page page-scroll scene-page simulation-page simulation-beat-${activeBeatIndex}`}>
+    <section
+      className={`page page-scroll scene-page simulation-page simulation-beat-${activeBeatIndex} simulation-scenario-${activeScenario.mode}`}
+    >
       <ThreeDreamScene variant="ambient" className="page-scene simulation-scene" />
       <div className="page-content simulation-content">
         <div className="simulation-hero">
@@ -191,13 +271,41 @@ export function SimulationDetailPage({
           </div>
           <div>
             <span>输出内容</span>
-            <strong>对话 / 行为 / 走势 / 风险</strong>
+            <strong>{activeScenario.label} / 对话 / 行为 / 走势 / 风险</strong>
+          </div>
+        </section>
+        <section className="scenario-switcher" aria-label="选择关系预演问题">
+          <div className="scenario-switcher-heading">
+            <span>选择预演问题</span>
+            <strong>你想看这段关系在哪一种情况下会怎么发展？</strong>
+          </div>
+          <div className="scenario-tabs" role="tablist" aria-label="关系预演场景">
+            {simulation.scenarios.map((scenario) => (
+              <button
+                aria-selected={scenario.mode === activeScenarioMode}
+                className={scenario.mode === activeScenarioMode ? "scenario-tab-active" : ""}
+                key={scenario.mode}
+                onClick={() => selectScenario(scenario.mode)}
+                role="tab"
+                type="button"
+              >
+                {scenario.label}
+              </button>
+            ))}
+          </div>
+          <p>{activeScenario.premise}</p>
+          <div className="scenario-signal-strip" aria-label="当前预演信号">
+            <span>结论：{scenarioInsight.verdict}</span>
+            <span>吸引 {scenarioInsight.attraction}</span>
+            <span>风险 {scenarioInsight.risk}</span>
           </div>
         </section>
         <div className="simulation-stage">
           <section className="relationship-lab" aria-live="polite">
-            <span>{isAutoPlaying ? "AUTO REHEARSAL" : hasViewedOutcome ? "OUTCOME READY" : "MANUAL MODE"}</span>
-            <strong>{isBeatSkipped ? "已跳到下一段判断。" : "两枚 AI 分身正在预演真实相遇后的反应。"}</strong>
+            <span>{rehearsalModeLabel}</span>
+            <strong>
+              {isBeatSkipped ? "已跳到下一段判断。" : `正在推演「${activeScenario.label}」里的双人反应。`}
+            </strong>
           </section>
           <section
             className={`relationship-animation relationship-animation-${activeBeatIndex}`}
@@ -267,24 +375,71 @@ export function SimulationDetailPage({
           </section>
           {isLastBeat ? (
             <section className="simulation-report" ref={reportRef} aria-label="AI 双人关系模拟结果">
-              <div className="simulation-report-header">
-                <span>AI 双人关系模拟结果</span>
-                <strong>{simulation.rehearsalOutcome}</strong>
+              <div className="simulation-report-hero">
+                <div>
+                  <span>AI 双人关系模拟结果</span>
+                  <strong>{scenarioInsight.verdict}</strong>
+                  <p>{activeScenario.relationshipOutcome}</p>
+                </div>
+                <div className="report-verdict-orbit" aria-hidden="true">
+                  <i />
+                  <b />
+                </div>
               </div>
-              <div className="simulation-report-grid">
-                {reportItems.map((item) => (
-                  <article key={item.label}>
-                    <span>{item.label}</span>
-                    <p>{item.value}</p>
-                  </article>
+              <div className="report-meter-row" aria-label="关系预演指标">
+                {reportMetrics.map((metric) => (
+                  <div className={`report-meter report-meter-${metric.tone}`} key={metric.label}>
+                    <span>{metric.label}</span>
+                    <strong>{metric.value}</strong>
+                    <div>
+                      <i style={{ width: `${metric.value}%` }} />
+                    </div>
+                  </div>
                 ))}
               </div>
-              <div className="recommended-move">
+              <section className="relationship-script" aria-label="可能对话回放">
+                <div className="report-section-title">
+                  <MessageCircle size={15} />
+                  <span>可能会聊什么</span>
+                </div>
+                {activeScenario.likelyDialogue.map((line, index) => (
+                  <div className={index % 2 === 0 ? "script-line script-line-self" : "script-line script-line-other"} key={line}>
+                    <span>{index % 2 === 0 ? "你的分身" : simulation.counterpartName}</span>
+                    <p>{line}</p>
+                  </div>
+                ))}
+              </section>
+              <section className="relationship-trajectory" aria-label="可能行为轨迹">
+                <div className="report-section-title">
+                  <Route size={15} />
+                  <span>可能会做什么</span>
+                </div>
+                {activeScenario.behaviorPreview.map((step, index) => (
+                  <div className="trajectory-step" key={step}>
+                    <b>{String(index + 1).padStart(2, "0")}</b>
+                    <p>{step}</p>
+                  </div>
+                ))}
+              </section>
+              <section className="relationship-outcome-panel" aria-label="关系走势和风险">
+                <article>
+                  <Heart size={15} />
+                  <span>恋爱可能性</span>
+                  <strong>{scenarioInsight.paceLabel}</strong>
+                  <p>{activeScenario.romanceSignal}</p>
+                </article>
+                <article>
+                  <AlertTriangle size={15} />
+                  <span>风险与不好走向</span>
+                  <strong>{scenarioInsight.riskLabel}</strong>
+                  <p>{activeScenario.riskSignal}</p>
+                </article>
+              </section>
+              <div className="recommended-move recommended-move-primary">
                 <span>建议第一步</span>
-                <strong>{simulation.recommendedMove}</strong>
+                <strong>{activeScenario.suggestedMove}</strong>
                 <blockquote className="simulation-quote">{simulation.possibleFirstLine}</blockquote>
               </div>
-              <p className="friction-signal">{simulation.frictionSignal}</p>
             </section>
           ) : null}
           <div className="match-reasons">

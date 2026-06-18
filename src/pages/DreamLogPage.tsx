@@ -1,5 +1,6 @@
 import type { DreamNode, TwinProjection as TwinProjectionModel } from "../types/dreamtwin";
 import { DreamStarMap } from "../components/DreamStarMap";
+import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import { TwinProjection } from "../components/TwinProjection";
 
 interface DreamLogPageProps {
@@ -15,7 +16,8 @@ export function DreamLogPage({ twin, nodes, onSelectNode }: DreamLogPageProps) {
   const hasAnyProgress = viewedCount + waitingCount + openedCount > 0;
 
   return (
-    <section className="page page-scroll dream-log-page">
+    <section className="page page-scroll scene-page dream-log-page">
+      <ThreeDreamScene variant="ambient" className="page-scene dream-log-scene" />
       <div className="page-content dream-log-content">
         <div className="dream-log-hero">
           <p className="label">昨夜梦境日志</p>
