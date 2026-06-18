@@ -63,6 +63,10 @@ export function DreamLogPage({ twin, nodes, onOpenFriendInvite, onSelectNode }: 
             <span>等待回应</span>
             <span>门已打开</span>
           </div>
+          <div className="star-map-route-tip" aria-label="路演推荐节点">
+            <span>推荐演示</span>
+            <strong>先点「雨夜便利店」</strong>
+          </div>
           <div className="star-map-caption">
             <span>Dream Star Map</span>
             <p>点击任意节点，查看你的 AI 分身替你完成的关系预演。</p>

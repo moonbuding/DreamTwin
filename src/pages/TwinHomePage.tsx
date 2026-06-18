@@ -54,6 +54,12 @@ export function TwinHomePage({
           </div>
         </section>
 
+        <section className="twin-home-route" aria-label="路演推荐路径">
+          <span>路演推荐</span>
+          <strong>先走梦境广场，再补好友入梦。</strong>
+          <p>3-5 分钟内展示完整闭环：AI 分身预演关系，双方确认后才进入真实聊天。</p>
+        </section>
+
         <section className="twin-home-actions" aria-label="下一步玩法">
           <PrimaryButton icon={<ArrowRight size={18} />} onClick={onEnterDreamPlaza}>
             进入梦境广场
