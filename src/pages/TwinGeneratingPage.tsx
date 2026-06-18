@@ -4,7 +4,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { TwinProjection } from "../components/TwinProjection";
 import type { TwinProjection as TwinProjectionModel } from "../types/dreamtwin";
 
-const generationSteps = ["读取靠近方式", "生成抽象投影", "投放梦境节点", "带回关系预演"];
+const generationSteps = ["读取靠近方式", "生成抽象投影", "保存分身入口", "带回关系预演"];
 
 export function TwinGeneratingPage({ twin, onComplete }: { twin: TwinProjectionModel; onComplete: () => void }) {
   const [step, setStep] = useState(0);
@@ -38,7 +38,7 @@ export function TwinGeneratingPage({ twin, onComplete }: { twin: TwinProjectionM
       </div>
       <div className="bottom-action">
         <PrimaryButton disabled={!isComplete} icon={<ArrowRight size={18} />} onClick={onComplete}>
-          查看昨夜梦境日志
+          进入 AI 分身主页
         </PrimaryButton>
       </div>
     </section>

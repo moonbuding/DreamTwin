@@ -6,13 +6,21 @@ import type { RelationshipSimulation } from "../types/dreamtwin";
 
 interface ChatEntryPageProps {
   simulation: RelationshipSimulation;
+  selectedRoamingSceneId: string | null;
   onBackToLog: () => void;
   onBackToSimulation: () => void;
 }
 
-export function ChatEntryPage({ simulation, onBackToLog, onBackToSimulation }: ChatEntryPageProps) {
+export function ChatEntryPage({ simulation, selectedRoamingSceneId, onBackToLog, onBackToSimulation }: ChatEntryPageProps) {
+  const activeRoamingScene =
+    simulation.roamingScenes?.find((scene) => scene.id === selectedRoamingSceneId) ?? simulation.roamingScenes?.[0];
+  const isFriendInvite = simulation.entryMode === "friend_invite";
+  const suggestedFirstLine = activeRoamingScene?.possibleFirstLine ?? simulation.possibleFirstLine;
+  const recommendedMove = activeRoamingScene?.suggestedMove ?? simulation.recommendedMove;
+  const handoffOutcome = activeRoamingScene?.relationshipOutcome ?? simulation.rehearsalOutcome;
+  const sceneTitle = activeRoamingScene?.label ?? simulation.title;
   const [selectedStarter, setSelectedStarter] = useState("recommended");
-  const [draft, setDraft] = useState(simulation.possibleFirstLine);
+  const [draft, setDraft] = useState(suggestedFirstLine);
   const [sentMessages, setSentMessages] = useState<string[]>([]);
   const simulatedReplySource = simulation.counterpartSimulatedReply || simulation.counterpartProjection;
   const starterOptions = useMemo(
@@ -21,13 +29,13 @@ export function ChatEntryPage({ simulation, onBackToLog, onBackToSimulation }: C
         id: "recommended",
         label: "用建议第一句",
         note: "最贴近预演结论",
-        value: simulation.possibleFirstLine,
+        value: suggestedFirstLine,
       },
       {
         id: "soft",
         label: "先轻一点",
         note: "降低压力，留给对方空间",
-        value: `我想先从${simulation.title}这件小事聊起，你会怎么开始？`,
+        value: `我想先从${sceneTitle}这件事聊起，你会怎么开始？`,
       },
       {
         id: "honest",
@@ -36,7 +44,7 @@ export function ChatEntryPage({ simulation, onBackToLog, onBackToSimulation }: C
         value: "刚才那段预演里，有哪一秒让你觉得像真实会发生的事？",
       },
     ],
-    [simulation.possibleFirstLine, simulation.title],
+    [sceneTitle, suggestedFirstLine],
   );
   const activeStarter = starterOptions.find((option) => option.id === selectedStarter) ?? starterOptions[0];
   const simulatedReply = useMemo(
@@ -48,9 +56,9 @@ export function ChatEntryPage({ simulation, onBackToLog, onBackToSimulation }: C
 
   useEffect(() => {
     setSelectedStarter("recommended");
-    setDraft(simulation.possibleFirstLine);
+    setDraft(suggestedFirstLine);
     setSentMessages([]);
-  }, [simulation.id, simulation.possibleFirstLine]);
+  }, [simulation.id, selectedRoamingSceneId, suggestedFirstLine]);
 
   const selectStarter = (option: (typeof starterOptions)[number]) => {
     setSelectedStarter(option.id);
@@ -71,9 +79,9 @@ export function ChatEntryPage({ simulation, onBackToLog, onBackToSimulation }: C
         <p className="label">真实聊天入口</p>
         <h1>现在由你开始。</h1>
         <section className="counterpart-presence">
-          <span>双人关系预演已转入真实聊天</span>
+          <span>{isFriendInvite ? "好友梦境漫游已转入真实聊天" : "双人关系预演已转入真实聊天"}</span>
           <strong>{simulation.counterpartName}</strong>
-          <p>{simulation.rehearsalOutcome}</p>
+          <p>{handoffOutcome}</p>
         </section>
         <section className="chat-handoff-panel" aria-label="真实聊天交接状态">
           <div>
@@ -91,7 +99,7 @@ export function ChatEntryPage({ simulation, onBackToLog, onBackToSimulation }: C
         </section>
         <section className="chat-briefing" aria-label="预演后的行动建议">
           <span>建议动作</span>
-          <p>{simulation.recommendedMove}</p>
+          <p>{recommendedMove}</p>
         </section>
         <section className="chat-suggestions" aria-label="第一句话建议">
           <span>选择一种开场</span>

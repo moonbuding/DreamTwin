@@ -1,6 +1,7 @@
 import {
   createSimulationsForProfile,
   createTwinFromProfile,
+  demoFriends,
   demoNodes,
   demoProfile,
   demoSimulations,
@@ -12,13 +13,22 @@ export type DemoFlowAction =
   | { type: "START_TWIN_CREATE" }
   | { type: "SUBMIT_TWIN_PROFILE"; profile: UserProfile }
   | { type: "COMPLETE_TWIN_GENERATION" }
+  | { type: "OPEN_TWIN_HOME" }
+  | { type: "EDIT_TWIN" }
+  | { type: "ENTER_DREAM_PLAZA" }
   | { type: "OPEN_DREAM_LOG" }
+  | { type: "OPEN_FRIEND_INVITE" }
+  | { type: "SELECT_FRIEND"; friendId: string }
+  | { type: "SELECT_ROAMING_SCENE"; sceneId: string }
+  | { type: "SEND_DREAM_INVITE"; friendId: string; sceneId: string }
   | { type: "SELECT_NODE"; nodeId: string }
   | { type: "OPEN_SIMULATION_RESULT"; nodeId: string }
   | { type: "ENTER_DREAM"; nodeId: string }
   | { type: "OPEN_WAITING"; nodeId: string }
   | { type: "OPEN_DREAM_GATE"; nodeId: string }
   | { type: "SIMULATE_COUNTERPART_CONFIRM"; nodeId: string }
+  | { type: "SIMULATE_FRIEND_ACCEPT"; nodeId: string }
+  | { type: "OPEN_ROAMING_SIMULATION"; nodeId: string }
   | { type: "WITHDRAW_DREAM"; nodeId: string }
   | { type: "OPEN_CHAT_ENTRY"; nodeId: string }
   | { type: "GO_BACK" }
@@ -27,10 +37,15 @@ export type DemoFlowAction =
 export const initialDemoFlowState: DemoFlowState = {
   currentPage: "welcome",
   pageHistory: [],
+  hasCompletedTwinSetup: false,
   selectedNodeId: null,
+  selectedFriendId: demoFriends[0]?.id ?? null,
+  selectedRoamingSceneId: "undersea",
+  dreamInviteStatus: "draft",
   resumeAtOutcomeNodeId: null,
   profile: demoProfile,
   twin: demoTwin,
+  friends: demoFriends,
   nodes: demoNodes,
   simulations: demoSimulations,
 };
@@ -73,16 +88,56 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
           ...state,
           profile: action.profile,
           twin: createTwinFromProfile(action.profile),
+          hasCompletedTwinSetup: false,
           nodes: demoNodes.map((node) => ({ ...node, status: "unviewed" })),
           simulations: createSimulationsForProfile(action.profile),
           selectedNodeId: null,
+          selectedFriendId: demoFriends[0]?.id ?? null,
+          selectedRoamingSceneId: "undersea",
+          dreamInviteStatus: "draft",
           resumeAtOutcomeNodeId: null,
         },
         "twin-generating",
       );
     case "COMPLETE_TWIN_GENERATION":
+      return {
+        ...state,
+        hasCompletedTwinSetup: true,
+        currentPage: "twin-home",
+        pageHistory: [],
+      };
+    case "OPEN_TWIN_HOME":
+      return goToPage(state, "twin-home");
+    case "EDIT_TWIN":
+      return goToPage(state, "twin-create");
+    case "ENTER_DREAM_PLAZA":
     case "OPEN_DREAM_LOG":
       return goToPage(state, "dream-log");
+    case "OPEN_FRIEND_INVITE":
+      return goToPage(
+        {
+          ...state,
+          selectedFriendId: state.selectedFriendId ?? state.friends[0]?.id ?? null,
+          selectedRoamingSceneId: state.selectedRoamingSceneId ?? "undersea",
+          dreamInviteStatus: state.dreamInviteStatus === "accepted" ? "draft" : state.dreamInviteStatus,
+        },
+        "friend-invite",
+      );
+    case "SELECT_FRIEND":
+      return { ...state, selectedFriendId: action.friendId };
+    case "SELECT_ROAMING_SCENE":
+      return { ...state, selectedRoamingSceneId: action.sceneId };
+    case "SEND_DREAM_INVITE":
+      return goToPage(
+        {
+          ...setNodeStatus(state, "node-friend-mika", "waiting"),
+          selectedFriendId: action.friendId,
+          selectedRoamingSceneId: action.sceneId,
+          dreamInviteStatus: "sent",
+          resumeAtOutcomeNodeId: null,
+        },
+        "waiting",
+      );
     case "SELECT_NODE":
       return goToPage({ ...selectNode(state, action.nodeId), resumeAtOutcomeNodeId: null }, "simulation-detail");
     case "OPEN_SIMULATION_RESULT":
@@ -95,7 +150,28 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
       return goToPage({ ...state, selectedNodeId: action.nodeId, resumeAtOutcomeNodeId: action.nodeId }, "dream-gate");
     case "SIMULATE_COUNTERPART_CONFIRM":
       return goToPage({ ...setNodeStatus(state, action.nodeId, "opened"), resumeAtOutcomeNodeId: action.nodeId }, "dream-gate");
+    case "SIMULATE_FRIEND_ACCEPT":
+      return goToPage(
+        {
+          ...setNodeStatus(state, action.nodeId, "opened"),
+          dreamInviteStatus: "accepted",
+          resumeAtOutcomeNodeId: action.nodeId,
+        },
+        "simulation-detail",
+      );
+    case "OPEN_ROAMING_SIMULATION":
+      return goToPage({ ...state, selectedNodeId: action.nodeId, resumeAtOutcomeNodeId: action.nodeId }, "simulation-detail");
     case "WITHDRAW_DREAM":
+      if (state.nodes.find((node) => node.id === action.nodeId)?.entryMode === "friend_invite") {
+        return goToPage(
+          {
+            ...setNodeStatus(state, action.nodeId, "unviewed"),
+            dreamInviteStatus: "withdrawn",
+            resumeAtOutcomeNodeId: null,
+          },
+          "friend-invite",
+        );
+      }
       return goToPage({ ...setNodeStatus(state, action.nodeId, "viewed"), resumeAtOutcomeNodeId: action.nodeId }, "simulation-detail");
     case "OPEN_CHAT_ENTRY":
       return goToPage({ ...state, selectedNodeId: action.nodeId }, "chat-entry");

@@ -2,17 +2,24 @@ import type { DreamNode, TwinProjection as TwinProjectionModel } from "../types/
 import { DreamStarMap } from "../components/DreamStarMap";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import { TwinProjection } from "../components/TwinProjection";
+import { PrimaryButton } from "../components/PrimaryButton";
+import { Send } from "lucide-react";
 
 interface DreamLogPageProps {
   twin: TwinProjectionModel;
   nodes: DreamNode[];
+  onOpenFriendInvite: () => void;
   onSelectNode: (nodeId: string) => void;
 }
 
-export function DreamLogPage({ twin, nodes, onSelectNode }: DreamLogPageProps) {
-  const viewedCount = nodes.filter((node) => node.status !== "unviewed").length;
-  const waitingCount = nodes.filter((node) => node.status === "waiting").length;
-  const openedCount = nodes.filter((node) => node.status === "opened").length;
+export function DreamLogPage({ twin, nodes, onOpenFriendInvite, onSelectNode }: DreamLogPageProps) {
+  const overnightNodes = nodes.filter((node) => node.entryMode === "overnight_discovery");
+  const friendNode = nodes.find((node) => node.entryMode === "friend_invite");
+  const viewedCount = overnightNodes.filter((node) => node.status !== "unviewed").length;
+  const waitingCount = overnightNodes.filter((node) => node.status === "waiting").length;
+  const openedCount = overnightNodes.filter((node) => node.status === "opened").length;
+  const friendStateText =
+    friendNode?.status === "opened" ? "好友已入梦" : friendNode?.status === "waiting" ? "邀请等待中" : "可邀请";
   const hasAnyProgress = viewedCount + waitingCount + openedCount > 0;
 
   return (
@@ -32,9 +39,24 @@ export function DreamLogPage({ twin, nodes, onSelectNode }: DreamLogPageProps) {
             <p>每个节点都是一次 AI 双人模拟：先看如果相遇会怎样，再决定是否把真实关系打开。</p>
           </section>
         </div>
+        <section className="dream-entry-switch" aria-label="DreamTwin 使用场景入口">
+          <article>
+            <span>昨晚我遇见了谁</span>
+            <strong>AI 分身带回 3 个新关系入口</strong>
+            <p>适合下班回家打开 App，看昨夜有哪些值得开启的关系可能。</p>
+          </article>
+          <article className="dream-entry-invite">
+            <span>邀请好友梦境漫游 · {friendStateText}</span>
+            <strong>和 Mika 一起进入共同经历</strong>
+            <p>先发出低压邀请，好友接受后，再看你们在海底、星际、日料、电影里的关系变化。</p>
+            <PrimaryButton icon={<Send size={16} />} onClick={onOpenFriendInvite}>
+              邀请好友入梦
+            </PrimaryButton>
+          </article>
+        </section>
         <TwinProjection twin={twin} compact />
         <div className="star-map-stage">
-          <DreamStarMap nodes={nodes} onSelectNode={onSelectNode} />
+          <DreamStarMap nodes={overnightNodes} onSelectNode={onSelectNode} />
           <div className="star-map-legend" aria-label="节点状态图例">
             <span>未查看</span>
             <span>已预演</span>

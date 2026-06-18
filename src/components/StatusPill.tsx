@@ -7,6 +7,6 @@ const labels: Record<DreamNodeStatus, string> = {
   opened: "梦境门打开",
 };
 
-export function StatusPill({ status }: { status: DreamNodeStatus }) {
-  return <span className={`status-pill status-${status}`}>{labels[status]}</span>;
+export function StatusPill({ label, status }: { label?: string; status: DreamNodeStatus }) {
+  return <span className={`status-pill status-${status}`}>{label ?? labels[status]}</span>;
 }

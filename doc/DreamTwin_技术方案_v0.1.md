@@ -110,7 +110,9 @@ src/
     WelcomePage.tsx
     TwinCreatePage.tsx
     TwinGeneratingPage.tsx
+    TwinHomePage.tsx
     DreamLogPage.tsx
+    FriendInvitePage.tsx
     SimulationDetailPage.tsx
     WaitingPage.tsx
     DreamGatePage.tsx
@@ -141,6 +143,7 @@ src/
 - `canvas` 只放 Canvas 绘制逻辑。
 - `prototype/visual-spikes` 只放视觉验证小样，不直接承载主 Demo 业务逻辑。
 - `state` 只放 Demo 流程状态。
+- `localStorage` 只用于模拟 Demo 分身保存，后端阶段再替换为账号级持久化。
 - `data` 只放静态 Demo 数据。
 - `types` 统一承接 PRD 数据结构。
 
@@ -163,7 +166,34 @@ export type DreamNodeStatus =
 - `waiting`：等待对方入梦。
 - `opened`：梦境门打开。
 
-### 4.2 UserProfile
+### 4.2 RelationshipEntryMode 与 DreamInviteStatus
+
+```ts
+export type RelationshipEntryMode =
+  | "overnight_discovery"
+  | "friend_invite";
+
+export type DreamInviteStatus =
+  | "draft"
+  | "sent"
+  | "accepted"
+  | "withdrawn";
+```
+
+用途：
+
+- 区分梦境广场的新关系发现路径和好友邀请梦境漫游路径。
+- 支撑等待页在不同路径下显示“等待对方入梦”或“等待好友入梦”。
+- 支撑 Demo 中的好友邀请状态变化。
+
+边界：
+
+- `friend_invite` 只表示静态 Demo 邀请闭环。
+- 不接真实通讯录。
+- 不生成真实邀请链接。
+- 不发送真实消息。
+
+### 4.3 UserProfile
 
 ```ts
 export interface UserProfile {
@@ -182,7 +212,7 @@ export interface UserProfile {
 - 支撑静态 Demo 数据。
 - 不用于真实账号系统。
 
-### 4.3 TwinProjection
+### 4.4 TwinProjection
 
 ```ts
 export interface TwinProjection {
@@ -198,7 +228,8 @@ export interface TwinProjection {
 用途：
 
 - 支撑 AI 分身生成页。
-- 支撑昨夜梦境日志页。
+- 支撑 AI 分身主页。
+- 支撑梦境广场 / 昨夜梦境日志页。
 - 支撑抽象投影视觉。
 
 边界：
@@ -210,7 +241,7 @@ export interface TwinProjection {
 - 不包含等级。
 - 不包含养成属性。
 
-### 4.4 DreamNode
+### 4.5 DreamNode
 
 ```ts
 export interface DreamNode {
@@ -218,6 +249,7 @@ export interface DreamNode {
   title: string;
   status: DreamNodeStatus;
   simulationId: string;
+  entryMode: RelationshipEntryMode;
   x: number;
   y: number;
   intensity: number;
@@ -227,6 +259,7 @@ export interface DreamNode {
 用途：
 
 - 支撑梦境星图。
+- 支撑新关系发现和好友邀请两类入口。
 - 支撑节点状态变化。
 - `x` 和 `y` 是相对坐标，范围建议为 `0` 到 `1`。
 - `intensity` 用于节点亮度和呼吸强度。
@@ -237,7 +270,43 @@ export interface DreamNode {
 - 不表示附近的人。
 - 不表示可探索地图路径。
 
-### 4.5 RelationshipSimulation
+### 4.6 FriendProfile 与 DreamRoamingScene
+
+```ts
+export interface FriendProfile {
+  id: string;
+  name: string;
+  relationLabel: string;
+  presence: string;
+  keywords: string[];
+}
+
+export interface DreamRoamingScene {
+  id: string;
+  label: string;
+  premise: string;
+  relationshipOutcome: string;
+  likelyDialogue: string[];
+  behaviorPreview: string[];
+  romanceSignal: string;
+  riskSignal: string;
+  suggestedMove: string;
+  possibleFirstLine: string;
+}
+```
+
+用途：
+
+- 支撑好友邀请梦境漫游。
+- 支撑用户选择不同共同经历场景。
+- 支撑好友接受后共同预演的静态内容切换。
+
+边界：
+
+- `FriendProfile` 是 Demo 静态好友，不是通讯录或真实好友系统。
+- `DreamRoamingScene` 是关系预演场景，不是游戏地图或可走空间。
+
+### 4.7 RelationshipSimulation
 
 > 口径校准：前端类型、状态字段、页面名统一使用 `RelationshipSimulation` / `simulation`，即 AI 双人关系预演模拟。
 
@@ -245,6 +314,8 @@ export interface DreamNode {
 export interface RelationshipSimulation {
   id: string;
   nodeId: string;
+  entryMode: RelationshipEntryMode;
+  friendProfile?: FriendProfile;
   title: string;
   counterpartName: string;
   counterpartProjection: string;
@@ -262,6 +333,7 @@ export interface RelationshipSimulation {
   tension: string;
   possibleFirstLine: string;
   matchReasons: string[];
+  roamingScenes?: DreamRoamingScene[];
 }
 ```
 
@@ -278,14 +350,16 @@ export interface RelationshipSimulation {
 - 不把内容写成玄学预言。
 - 不只生成正向结果，必须包含冲突风险和不好的走向。
 
-### 4.6 DemoFlowState
+### 4.8 DemoFlowState
 
 ```ts
 export type DemoPage =
   | "welcome"
   | "twin-create"
   | "twin-generating"
+  | "twin-home"
   | "dream-log"
+  | "friend-invite"
   | "simulation-detail"
   | "waiting"
   | "dream-gate"
@@ -293,9 +367,15 @@ export type DemoPage =
 
 export interface DemoFlowState {
   currentPage: DemoPage;
+  pageHistory: DemoPage[];
+  hasCompletedTwinSetup: boolean;
   selectedNodeId: string | null;
+  selectedFriendId: string | null;
+  selectedRoamingSceneId: string | null;
+  dreamInviteStatus: DreamInviteStatus;
   profile: UserProfile;
   twin: TwinProjection;
+  friends: FriendProfile[];
   nodes: DreamNode[];
   simulations: RelationshipSimulation[];
 }
@@ -304,10 +384,13 @@ export interface DemoFlowState {
 用途：
 
 - 支撑单页 App 内部页面状态。
+- 支撑 AI 分身主页作为长期入口。
+- 支撑 Demo 分身保存与刷新恢复。
+- 支撑好友邀请梦境漫游路径。
 - 支撑节点状态流转。
 - 支撑完整演示路径。
 
-第一版不需要持久化，刷新后可以重置 Demo。
+第一版使用 `localStorage` 模拟 Demo 分身保存。刷新后如果 `hasCompletedTwinSetup` 为 `true`，默认回到 AI 分身主页；点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
 
 ## 5. 状态与路由方案
 
@@ -320,7 +403,9 @@ export interface DemoFlowState {
 - `welcome`
 - `twin-create`
 - `twin-generating`
+- `twin-home`
 - `dream-log`
+- `friend-invite`
 - `simulation-detail`
 - `waiting`
 - `dream-gate`
@@ -328,7 +413,7 @@ export interface DemoFlowState {
 
 这样做的原因：
 
-- 第一版是演示闭环，不是多入口产品。
+- 第一版是演示闭环，但 AI 分身主页需要承接两个主入口。
 - 可以减少路由依赖。
 - 演示状态更容易控制。
 - 后续接真实 App 时再迁移到正式路由。
@@ -344,10 +429,18 @@ type DemoFlowAction =
   | { type: "START_TWIN_CREATE" }
   | { type: "SUBMIT_TWIN_PROFILE"; profile: UserProfile }
   | { type: "COMPLETE_TWIN_GENERATION" }
+  | { type: "OPEN_TWIN_HOME" }
+  | { type: "EDIT_TWIN" }
+  | { type: "ENTER_DREAM_PLAZA" }
   | { type: "OPEN_DREAM_LOG" }
+  | { type: "OPEN_FRIEND_INVITE" }
+  | { type: "SELECT_FRIEND"; friendId: string }
+  | { type: "SELECT_ROAMING_SCENE"; sceneId: string }
+  | { type: "SEND_DREAM_INVITE"; friendId: string; sceneId: string }
   | { type: "SELECT_NODE"; nodeId: string }
   | { type: "ENTER_DREAM"; nodeId: string }
   | { type: "SIMULATE_COUNTERPART_CONFIRM"; nodeId: string }
+  | { type: "SIMULATE_FRIEND_ACCEPT"; nodeId: string }
   | { type: "OPEN_CHAT_ENTRY"; nodeId: string }
   | { type: "RESET_DEMO" };
 ```
@@ -358,12 +451,26 @@ type DemoFlowAction =
 welcome
   -> twin-create
   -> twin-generating
+  -> twin-home
   -> dream-log
   -> simulation-detail
   -> waiting
   -> dream-gate
   -> chat-entry
 ```
+
+好友邀请路径：
+
+```text
+twin-home
+  -> friend-invite
+  -> waiting
+  -> simulation-detail
+  -> dream-gate
+  -> chat-entry
+```
+
+> 说明：好友接受后可以先进入共同梦境漫游预演，再进入梦境门与真实聊天入口。第一版可复用 `simulation-detail`、`waiting`、`dream-gate` 和 `chat-entry` 页面，只通过 `entryMode` 区分文案和数据。
 
 节点状态流转：
 
@@ -381,6 +488,7 @@ unviewed
 - 用户点击梦境节点，节点进入 `viewed`。
 - 用户点击“想进入这个梦境”，节点进入 `waiting`。
 - 等待页可以提供一个路演用推进操作，模拟对方也确认。
+- 好友邀请页可以提供一个路演用推进操作，模拟好友接受邀请。
 - 对方确认后节点进入 `opened`。
 - 梦境门打开页进入真实聊天入口。
 
@@ -464,7 +572,7 @@ unviewed
 
 主操作：
 
-- 点击“查看昨夜梦境日志”触发 `COMPLETE_TWIN_GENERATION`。
+- 点击“进入 AI 分身主页”触发 `COMPLETE_TWIN_GENERATION`。
 
 实现建议：
 
@@ -474,7 +582,38 @@ unviewed
 - 如果 Three.js 视觉小样效果明显更好，再接入 3D 光团、轮廓和环绕粒子。
 - 不接 AI 实时生成。
 
-### 6.4 DreamLogPage
+### 6.4 TwinHomePage
+
+对应需求：
+
+- `DT-P0-014`
+- `DT-P0-015`
+
+职责：
+
+- 展示已保存 AI 分身。
+- 作为用户后续打开 App 的默认入口。
+- 提供进入梦境广场、邀请好友梦境漫游和修改分身。
+
+主要组件：
+
+- `TwinProjection`
+- `PrimaryButton`
+- `StatusPill`
+
+主操作：
+
+- 点击“进入梦境广场”触发 `ENTER_DREAM_PLAZA`。
+- 点击“邀请好友梦境漫游”触发 `OPEN_FRIEND_INVITE`。
+- 点击“修改分身”触发 `EDIT_TWIN`。
+
+实现建议：
+
+- 进入该页时应展示 `hasCompletedTwinSetup` 对应的已保存状态。
+- 刷新时如果本地 Demo 状态显示分身已创建，应回到该页。
+- 该页不是 AI 陪伴页，也不是角色养成页，不展示亲密度、等级或养成任务。
+
+### 6.5 DreamLogPage
 
 对应需求：
 
@@ -485,7 +624,7 @@ unviewed
 
 职责：
 
-- 作为昨夜梦境日志首页。
+- 作为梦境广场 / 昨夜梦境日志首页。
 - 展示 AI 分身摘要。
 - 展示梦境星图和 3 个节点。
 
@@ -499,6 +638,7 @@ unviewed
 主操作：
 
 - 点击梦境节点触发 `SELECT_NODE`。
+- 从页面内的好友入口可触发 `OPEN_FRIEND_INVITE`。
 
 验收重点：
 
@@ -506,7 +646,37 @@ unviewed
 - 3 个节点状态可被理解。
 - 背景、星图和光效可以先做 Canvas 2D 与 Three.js 对比小样，再决定正式版本。
 
-### 6.5 SimulationDetailPage
+### 6.6 FriendInvitePage
+
+对应需求：
+
+- `DT-P0-016`
+
+职责：
+
+- 支撑用户选择静态好友和梦境漫游场景。
+- 展示邀请预览和产品边界。
+- 发出 Demo 邀请后进入等待好友入梦状态。
+
+主要组件：
+
+- `PrimaryButton`
+- 好友选择卡片
+- 梦境场景选择卡片
+
+主操作：
+
+- 选择好友触发 `SELECT_FRIEND`。
+- 选择梦境场景触发 `SELECT_ROAMING_SCENE`。
+- 点击“邀请好友入梦”触发 `SEND_DREAM_INVITE`。
+
+验收重点：
+
+- 不能表现为偷偷分析好友。
+- 不能接真实通讯录、真实邀请链接或真实消息发送。
+- 必须说明好友接受后才共同预演。
+
+### 6.7 SimulationDetailPage
 
 对应需求：
 
@@ -538,7 +708,7 @@ unviewed
 - 不能像玄学预言。
 - 必须有真实关系即将开始的感觉。
 
-### 6.6 WaitingPage
+### 6.8 WaitingPage
 
 对应需求：
 
@@ -548,6 +718,7 @@ unviewed
 职责：
 
 - 展示等待对方入梦状态。
+- 好友路径下展示等待好友入梦状态。
 - 表达双方确认机制。
 - 为路演提供稳定推进到梦境门打开的方式。
 
@@ -560,13 +731,14 @@ unviewed
 主操作：
 
 - 路演推进：触发 `SIMULATE_COUNTERPART_CONFIRM`。
+- 好友路径路演推进：触发 `SIMULATE_FRIEND_ACCEPT`。
 
 验收重点：
 
 - 不展示真实聊天输入框。
 - 不表达 AI 替用户聊天。
 
-### 6.7 DreamGatePage
+### 6.9 DreamGatePage
 
 对应需求：
 
@@ -588,7 +760,7 @@ unviewed
 
 - 是真实关系入口，不是游戏关卡奖励。
 
-### 6.8 ChatEntryPage
+### 6.10 ChatEntryPage
 
 对应需求：
 
@@ -603,7 +775,7 @@ unviewed
 
 - 对方简短投影。
 - 建议开场白。
-- 关系预告片回顾。
+- 关系预演回顾。
 
 边界：
 
@@ -879,7 +1051,9 @@ Three.js scene：
 - 1 个用户画像。
 - 1 个 AI 分身抽象投影。
 - 3 个梦境节点。
-- 3 条关系预告片。
+- 3 条新关系预演模拟。
+- 至少 1 个静态好友。
+- 至少 6 个好友梦境漫游场景。
 
 ### 9.2 数据文件
 
@@ -894,6 +1068,7 @@ src/data/demoData.ts
 ```ts
 export const demoProfile: UserProfile = { ... };
 export const demoTwin: TwinProjection = { ... };
+export const demoFriends: FriendProfile[] = [ ... ];
 export const demoNodes: DreamNode[] = [ ... ];
 export const demoSimulations: RelationshipSimulation[] = [ ... ];
 ```
@@ -913,8 +1088,10 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 建议方式：
 
 - 提供隐藏或低优先级的“重新开始”操作。
-- 刷新页面自动回到初始状态。
-- 不持久化状态到后端。
+- 使用 `localStorage` 模拟分身保存和 Demo 状态恢复。
+- 刷新页面时，如果已有已完成的分身状态，默认回到 AI 分身主页。
+- 点击“重新开始”清空本地 Demo 状态并回到欢迎页。
+- 不持久化状态到后端，正式阶段再接账号级存储。
 
 ## 10. P0 需求映射
 
@@ -925,8 +1102,11 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 | `DT-P0-003` | `WelcomePage` |
 | `DT-P0-004` | `TwinCreatePage` |
 | `DT-P0-005` | `TwinGeneratingPage`、`TwinProjection` |
+| `DT-P0-014` | `TwinHomePage`、`localStorage` Demo 保存 |
+| `DT-P0-015` | `TwinHomePage` 双入口、`ENTER_DREAM_PLAZA`、`OPEN_FRIEND_INVITE` |
 | `DT-P0-006` | `DreamLogPage` |
 | `DT-P0-007` | `DreamStarMap`、`DreamNodeBadge` |
+| `DT-P0-016` | `FriendInvitePage`、`SEND_DREAM_INVITE`、`SIMULATE_FRIEND_ACCEPT` |
 | `DT-P0-008` | `SimulationDetailPage`、`SimulationCard` |
 | `DT-P0-009` | `ENTER_DREAM` action |
 | `DT-P0-010` | `WaitingPage` |
@@ -937,7 +1117,11 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 P0 完成标准：
 
 - 从欢迎页能跑到聊天入口页。
+- 生成分身后能进入 AI 分身主页。
+- 刷新后已创建分身的用户能回到 AI 分身主页。
+- AI 分身主页能进入梦境广场和好友邀请梦境漫游。
 - 梦境节点状态能从 `unviewed` 到 `opened`。
+- 好友邀请路径能完成等待、接受、共同预演和聊天入口。
 - Demo 不依赖真实接口。
 - 视觉不能像静态文档。
 
@@ -967,6 +1151,10 @@ P1 实现原则：
 
 - 登录注册。
 - 真实用户匹配。
+- 真实好友系统。
+- 通讯录导入。
+- 真实邀请链接或真实消息触达。
+- 后端分身持久化。
 - AI 实时生成。
 - 聊天后端。
 - 推送通知。
@@ -1001,15 +1189,17 @@ P1 实现原则：
 9. 实现欢迎页。
 10. 实现 AI 分身创建页。
 11. 实现 AI 分身生成页和抽象投影。
-12. 实现昨夜梦境日志页。
-13. 实现梦境星图与节点点击。
-14. 实现关系预告片详情页。
-15. 实现等待对方入梦页。
-16. 实现梦境门打开页。
-17. 实现真实聊天入口页。
-18. 根据视觉验证结果补齐 Three.js 或 Canvas 2D 核心动效。
-19. 做移动端浏览器验收。
-20. 做路演路径录屏检查。
+12. 实现 AI 分身主页和 `localStorage` Demo 保存。
+13. 实现梦境广场 / 昨夜梦境日志页。
+14. 实现梦境星图与节点点击。
+15. 实现好友邀请梦境漫游页。
+16. 实现关系预演模拟详情页。
+17. 实现等待对方入梦 / 等待好友入梦页。
+18. 实现梦境门打开页。
+19. 实现真实聊天入口页。
+20. 根据视觉验证结果补齐 Three.js 或 Canvas 2D 核心动效。
+21. 做移动端浏览器验收。
+22. 做路演路径录屏检查。
 
 开发原则：
 
@@ -1046,15 +1236,22 @@ npm run build
 1. 打开欢迎页。
 2. 进入 AI 分身创建页。
 3. 使用默认 Demo 信息生成 AI 分身。
-4. 查看 AI 分身抽象投影。
-5. 进入昨夜梦境日志。
-6. 点击梦境星图中的一个节点。
-7. 查看关系预告片详情。
-8. 点击想进入这个梦境。
-9. 进入等待对方入梦页。
-10. 模拟对方确认。
-11. 进入梦境门打开页。
-12. 进入真实聊天入口页。
+4. 进入 AI 分身主页。
+5. 刷新页面后仍回到 AI 分身主页。
+6. 从 AI 分身主页进入梦境广场 / 昨夜梦境日志。
+7. 点击梦境星图中的一个节点。
+8. 查看关系预演模拟详情。
+9. 点击想进入这个梦境。
+10. 进入等待对方入梦页。
+11. 模拟对方确认。
+12. 进入梦境门打开页。
+13. 进入真实聊天入口页。
+14. 回到 AI 分身主页，进入邀请好友梦境漫游。
+15. 选择好友和梦境场景。
+16. 发出 Demo 邀请并进入等待好友入梦页。
+17. 模拟好友接受邀请。
+18. 进入共同梦境漫游预演。
+19. 进入梦境门和真实聊天入口。
 
 ### 14.3 视觉验收
 
@@ -1085,6 +1282,8 @@ npm run build
 - 没有换装表达。
 - 没有 AI 代聊表达。
 - 没有真实匹配已完成的暗示。
+- 没有偷偷推演好友的表达。
+- 没有真实通讯录、真实邀请链接或真实消息发送。
 
 ## 15. 当前结论
 
@@ -1096,7 +1295,7 @@ DreamTwin 第一版技术实现应该是一个 React + Vite + TypeScript 的移�
 
 - 稳定的 Demo 数据。
 - 清晰的状态流转。
-- 可信的关系预告片。
+- 可信的关系预演模拟。
 - 有可保底的 Canvas 2D 视觉。
 - 有经过对比验证后再采用的 Three.js 3D 场景增强。
 - 有先看效果、再决定技术投入的视觉验证流程。

@@ -1,4 +1,4 @@
-import type { DreamNode, RelationshipSimulation, TwinProjection, UserProfile } from "../types/dreamtwin";
+import type { DreamNode, FriendProfile, RelationshipSimulation, TwinProjection, UserProfile } from "../types/dreamtwin";
 
 export const demoProfile: UserProfile = {
   id: "user-aurora",
@@ -38,6 +38,7 @@ export const demoNodes: DreamNode[] = [
     title: "雨夜便利店",
     status: "unviewed",
     simulationId: "simulation-rain-store",
+    entryMode: "overnight_discovery",
     x: 0.25,
     y: 0.36,
     intensity: 0.84,
@@ -47,6 +48,7 @@ export const demoNodes: DreamNode[] = [
     title: "凌晨海边电台",
     status: "unviewed",
     simulationId: "simulation-seaside-radio",
+    entryMode: "overnight_discovery",
     x: 0.66,
     y: 0.28,
     intensity: 0.96,
@@ -56,11 +58,232 @@ export const demoNodes: DreamNode[] = [
     title: "月光候车厅",
     status: "unviewed",
     simulationId: "simulation-moon-platform",
+    entryMode: "overnight_discovery",
     x: 0.72,
     y: 0.68,
     intensity: 0.88,
   },
+  {
+    id: "node-friend-mika",
+    title: "和 Mika 的梦境漫游",
+    status: "unviewed",
+    simulationId: "simulation-friend-mika",
+    entryMode: "friend_invite",
+    x: 0.48,
+    y: 0.52,
+    intensity: 0.92,
+  },
 ];
+
+export const demoFriends: FriendProfile[] = [
+  {
+    id: "friend-mika",
+    name: "Mika",
+    relationLabel: "认识很久但还没真正聊深的好友",
+    presence: "她很会接住玩笑，也会在认真时突然安静下来。",
+    keywords: ["慢热", "行动派", "喜欢运动", "重视边界"],
+  },
+];
+
+function createFriendInviteSimulation(profile: UserProfile): RelationshipSimulation {
+  const friend = demoFriends[0];
+
+  return {
+    id: "simulation-friend-mika",
+    nodeId: "node-friend-mika",
+    entryMode: "friend_invite",
+    friendProfile: friend,
+    title: "和 Mika 的梦境漫游",
+    counterpartName: friend.name,
+    counterpartProjection: "她像一束带着速度感的银蓝光，外表轻松，真正靠近时会先确认彼此有没有空间。",
+    scene: "你想邀请 Mika 进入一次共同梦境漫游。AI 会先搭好共同经历，再模拟你们在里面会怎么相处。",
+    relationshipHypothesis: `你的分身判断：你和 ${friend.name} 不是缺少话题，而是缺少一个低压、共同参与的语境来确认关系能否往前走。`,
+    twinApproach: `你的 DreamTwin 会先把邀请说成一次共同体验，而不是关系试探：一起进梦境看看我们会怎么配合。`,
+    counterpartSimulatedReply: "Mika 会先用玩笑确认是不是太认真，但如果邀请足够轻，她会愿意一起试一次。",
+    rehearsalOutcome: "预演结论：好友梦境漫游适合用共同经历降低尴尬，让关系从熟悉感进入可推进的真实判断。",
+    conversationPreview: [
+      `你：要不要一起进一个梦境？不是测试关系，就是看看我们会怎么配合。`,
+      `${friend.name}：听起来有点离谱，但如果是探险类我可以。`,
+      "你：那就选一个你不会觉得被审问的场景。",
+    ],
+    relationshipTrajectory: [
+      "邀请阶段：用轻松语气说明不是表白、不是压力。",
+      "漫游阶段：通过共同选择和协作看见真实相处方式。",
+      "回到现实：如果双方都觉得自然，再进入真实聊天或线下邀约。",
+    ],
+    romancePossibility: "恋爱可能：取决于共同经历后的余温。如果她愿意继续聊梦境里的选择，关系推进信号会增强。",
+    conflictRisk: "冲突风险：如果邀请太像关系测试，她会防御；如果完全不说意图，你会得不到推进判断。",
+    badOutcomeScenario: "不好的走向：两个人把梦境当成玩笑，避开了真正想确认的问题，关系继续停在好友区。",
+    recommendedMove: "建议动作：先把邀请说轻，再把选择权交给她，让她知道可以拒绝或换场景。",
+    hypothesisSignal: "共同语境已建立",
+    approachSignal: "你发出轻量邀请",
+    replySignal: "好友接受共同漫游",
+    outcomeSignal: "适合通过共同经历判断关系推进",
+    frictionSignal: "风险点：好友关系最怕邀请过重，需要把主动权和退出感留给对方。",
+    tension: `你想知道和 ${friend.name} 是否能从熟悉走向更亲近，但又不希望把这件事变成压力。`,
+    possibleFirstLine: `要不要一起进一个梦境漫游？我们先选一个好玩的场景，不急着定义什么。`,
+    matchReasons: ["已有信任基础", "共同经历能降低尴尬", `${profile.nickname || "你"} 更适合低压推进`],
+    scenarios: [],
+    roamingScenes: [
+      {
+        id: "undersea",
+        label: "海底探险",
+        premise: "你们一起潜入蓝色海底，AI 会观察你们在未知环境里谁先安抚、谁先行动。",
+        verdict: "协作感明显",
+        attraction: 76,
+        pace: 68,
+        risk: 42,
+        paceLabel: "共同冒险",
+        riskLabel: "保护过度",
+        relationshipOutcome: "如果你们一起面对未知，她会更容易看到你的稳定和照顾感，关系有机会从好友感进入亲密想象。",
+        likelyDialogue: [
+          "你们会先互相确认氧气和方向，而不是急着开玩笑。",
+          "她会用一句玩笑缓解紧张，但会观察你有没有真的在照顾她。",
+          "当海底光线变暗，你们会自然讨论：谁更擅长在不确定里做决定。",
+        ],
+        behaviorPreview: [
+          "你的分身会先放慢速度等她适应。",
+          "Mika 会主动指出路线，但在危险感出现时看你是否接得住。",
+          "双方的配合会让关系产生“我们可以一起处理事”的感觉。",
+        ],
+        romanceSignal: "如果她在紧张后还愿意继续靠近你，说明安全感开始转化为亲密信号。",
+        riskSignal: "如果你过度保护，她会觉得被当成需要照顾的人；如果你完全不管，她会觉得你不可靠。",
+        suggestedMove: "邀请时说：我们选海底探险吧，我想看看我们遇到未知时会不会配合得很好。",
+        possibleFirstLine: "如果我们在海底走散，你觉得你会先找出口，还是先找我？",
+      },
+      {
+        id: "starlight",
+        label: "星际漫游",
+        premise: "你们坐进一艘安静飞船，AI 会推演长时间相处里的沉默、好奇和价值观靠近。",
+        verdict: "精神同频升高",
+        attraction: 82,
+        pace: 62,
+        risk: 48,
+        paceLabel: "慢速靠近",
+        riskLabel: "太抽象",
+        relationshipOutcome: "星际漫游会放大你们的精神同频，但需要把漂亮想象落回现实，否则容易只停在氛围感。",
+        likelyDialogue: [
+          "你们会聊如果离开地球，最想带走哪段记忆。",
+          "她会问一个很实际的问题，测试你是不是只会浪漫化。",
+          "你们可能第一次聊到彼此真正害怕失去什么。",
+        ],
+        behaviorPreview: [
+          "你的分身会把宏大问题落到一个具体生活瞬间。",
+          "Mika 会在沉默里观察你是否自在。",
+          "如果沉默不尴尬，关系会产生更强的亲密想象。",
+        ],
+        romanceSignal: "她愿意和你共享沉默，是比热闹聊天更强的升温信号。",
+        riskSignal: "如果你们一直停在宇宙感和宿命感，回到现实后可能没有行动。",
+        suggestedMove: "邀请时说：我们试试星际漫游，看我们能不能在安静里也不尴尬。",
+        possibleFirstLine: "如果飞船只能保留一段地球记忆，你会选哪一段？",
+      },
+      {
+        id: "sushi",
+        label: "吃日料",
+        premise: "你们坐在吧台前点餐，AI 会观察日常选择里是否能形成轻松、真实的相处感。",
+        verdict: "日常感稳定",
+        attraction: 70,
+        pace: 58,
+        risk: 32,
+        paceLabel: "低压日常",
+        riskLabel: "暧昧不足",
+        relationshipOutcome: "吃日料是最安全的推进场景，能验证你们日常相处是否舒服，但浪漫张力不会自动出现。",
+        likelyDialogue: [
+          "你们会从点什么聊到各自对仪式感的要求。",
+          "她会观察你是否尊重她的选择，而不是替她安排。",
+          "如果聊天顺利，会自然出现下一次一起吃什么的轻邀请。",
+        ],
+        behaviorPreview: [
+          "你的分身会给建议但不替她决定。",
+          "Mika 会用轻松吐槽测试你是否接得住她的生活感。",
+          "关系会从熟人聊天变成更真实的日常陪伴。",
+        ],
+        romanceSignal: "如果她主动提出下次想试另一家，说明关系从一次体验延伸到未来想象。",
+        riskSignal: "太安全也可能让关系继续停在好友区，需要一个更明确但不重的邀请。",
+        suggestedMove: "邀请时说：我们选吃日料这种日常场景，看看我们是不是线下也会舒服。",
+        possibleFirstLine: "如果只能点一份分享，你会选稳妥的，还是选没吃过的？",
+      },
+      {
+        id: "movie",
+        label: "看电影",
+        premise: "你们看完同一部电影，AI 会推演审美、情绪共振和观后交流是否能把关系推深。",
+        verdict: "情绪入口强",
+        attraction: 78,
+        pace: 64,
+        risk: 52,
+        paceLabel: "情绪共振",
+        riskLabel: "解读分歧",
+        relationshipOutcome: "看电影能快速暴露你们的情绪理解方式，适合判断是否能从共同内容聊到彼此真实经历。",
+        likelyDialogue: [
+          "你们会先争论最喜欢哪一幕。",
+          "她会把一个角色的选择联想到现实关系。",
+          "如果你能接住她的解读，聊天会从电影走向真实关系观。",
+        ],
+        behaviorPreview: [
+          "你的分身会先听她解读，再补自己的感受。",
+          "Mika 会在观点不同处观察你是否尊重差异。",
+          "观点分歧如果处理得好，会变成吸引点。",
+        ],
+        romanceSignal: "她愿意把电影里的情绪和自己的真实经历联系起来，是明显靠近信号。",
+        riskSignal: "如果你急着纠正她的理解，她会感到被评判。",
+        suggestedMove: "邀请时说：我们选看电影吧，我想知道我们看同一个故事会不会想到不同的关系答案。",
+        possibleFirstLine: "你觉得电影里那个人是在靠近，还是在逃避？",
+      },
+      {
+        id: "stars",
+        label: "看星空",
+        premise: "你们并肩坐在夜色里，AI 会推演安静陪伴是否能变成真实亲密。",
+        verdict: "亲密想象强",
+        attraction: 84,
+        pace: 66,
+        risk: 58,
+        paceLabel: "安静陪伴",
+        riskLabel: "过度浪漫化",
+        relationshipOutcome: "看星空会让关系快速进入亲密想象，但也最容易把氛围误认为确定关系。",
+        likelyDialogue: [
+          "你们会先聊哪颗星最亮，随后聊到各自想逃离什么。",
+          "她会因为安静而放松，也会因为太浪漫而保持一点防备。",
+          "如果你不急着定义，气氛会更自然地延长。",
+        ],
+        behaviorPreview: [
+          "你的分身会留出沉默，不用话填满每一秒。",
+          "Mika 会通过靠近或停顿表达她的边界。",
+          "关系会进入暧昧感强、但需要慢慢确认的阶段。",
+        ],
+        romanceSignal: "如果她愿意分享一个很私人的愿望，恋爱可能明显上升。",
+        riskSignal: "氛围太强时，任何确认关系的动作都可能显得过重。",
+        suggestedMove: "邀请时说：我们选看星空，但不急着聊结论，只看这段沉默舒不舒服。",
+        possibleFirstLine: "如果今晚只能许一个很小的愿望，你会许什么？",
+      },
+      {
+        id: "badminton",
+        label: "打羽毛球",
+        premise: "你们打一场轻松的球，AI 会推演竞争、配合和玩笑感里的真实关系张力。",
+        verdict: "互动能量高",
+        attraction: 73,
+        pace: 75,
+        risk: 44,
+        paceLabel: "行动升温",
+        riskLabel: "胜负压力",
+        relationshipOutcome: "打羽毛球能最快让关系动起来，适合把好友熟悉感变成更鲜活的互动张力。",
+        likelyDialogue: [
+          "你们会从互相放水还是认真打开始玩笑。",
+          "她会观察你输赢时是否松弛。",
+          "运动后的短暂休息会自然出现真实聊天窗口。",
+        ],
+        behaviorPreview: [
+          "你的分身会认真接球，但不会把胜负看得太重。",
+          "Mika 会用玩笑测试你的脾气和反应速度。",
+          "关系会通过身体行动和笑场快速升温。",
+        ],
+        romanceSignal: "如果她在运动后仍然想继续待一会儿，说明互动能量没有用完。",
+        riskSignal: "如果你太想表现，会让轻松体验变成压力。",
+        suggestedMove: "邀请时说：我们选羽毛球吧，看看我们是会互相配合，还是互相拆台。",
+        possibleFirstLine: "如果我故意放水，你会觉得贴心还是很欠？",
+      },
+    ],
+  };
+}
 
 export function createSimulationsForProfile(profile: UserProfile): RelationshipSimulation[] {
   const interest = profile.interests[0] ?? "城市夜行";
@@ -69,10 +292,11 @@ export function createSimulationsForProfile(profile: UserProfile): RelationshipS
   const openingStyle = profile.personalityKeywords.includes("直接表达") ? "更坦白地" : "不急着";
   const closenessStyle = profile.personalityKeywords.includes("直接表达") ? "先把真实意图说清楚" : "先用低压细节确认安全感";
 
-  return [
+  const overnightSimulations: RelationshipSimulation[] = [
   {
     id: "simulation-rain-store",
     nodeId: "node-rain-store",
+    entryMode: "overnight_discovery",
     title: "雨夜便利店",
     counterpartName: "Nora",
     counterpartProjection: "她像一束很安静的蓝色灯光，习惯先观察，再用一句很准的话靠近。",
@@ -187,6 +411,7 @@ export function createSimulationsForProfile(profile: UserProfile): RelationshipS
   {
     id: "simulation-seaside-radio",
     nodeId: "node-seaside-radio",
+    entryMode: "overnight_discovery",
     title: "凌晨海边电台",
     counterpartName: "Kai",
     counterpartProjection: "他像低频电台里的回声，外表松弛，但会认真接住别人没有说完的部分。",
@@ -299,6 +524,7 @@ export function createSimulationsForProfile(profile: UserProfile): RelationshipS
   {
     id: "simulation-moon-platform",
     nodeId: "node-moon-platform",
+    entryMode: "overnight_discovery",
     title: "月光候车厅",
     counterpartName: "Mika",
     counterpartProjection: "她像月光下的候车牌，清醒、明亮，也愿意等一个真正说得上话的人。",
@@ -409,6 +635,8 @@ export function createSimulationsForProfile(profile: UserProfile): RelationshipS
     ],
   },
   ];
+
+  return [...overnightSimulations, createFriendInviteSimulation(profile)];
 }
 
 export const demoSimulations: RelationshipSimulation[] = createSimulationsForProfile(demoProfile);
