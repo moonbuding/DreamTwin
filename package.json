@@ -5,8 +5,11 @@
   "type": "module",
   "scripts": {
     "dev": "vite --host 127.0.0.1",
-    "build": "tsc -b && vite build",
-    "preview": "vite preview --host 127.0.0.1"
+    "build": "tsc -b && vite build && npm run server:build",
+    "preview": "vite preview --host 127.0.0.1",
+    "server:build": "tsc -p tsconfig.server.json",
+    "server:dev": "npm run server:build && node dist-server/server/index.js",
+    "server:start": "node dist-server/server/index.js"
   },
   "dependencies": {
     "lucide-react": "^0.468.0",
@@ -15,8 +18,10 @@
     "three": "^0.165.0"
   },
   "devDependencies": {
+    "@types/node": "^25.9.3",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",
+    "@types/node": "^25.0.3",
     "@types/three": "^0.184.1",
     "@vitejs/plugin-react": "^6.0.2",
     "typescript": "^6.0.3",
