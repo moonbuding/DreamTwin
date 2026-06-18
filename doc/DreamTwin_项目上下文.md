@@ -1,8 +1,8 @@
 # DreamTwin 项目上下文
 
 > 用途：记录 DreamTwin 从概念讨论到产品说明书 v0.1 的关键决策，方便在新项目目录中继续推进。  
-> 当前阶段：前端 Demo 已进入主流程验证，下一步是让 PRD、需求池、技术方案与最新实现口径保持一致。
-> 基准文档：`doc/DreamTwin_产品说明书_v0.1.md`、`doc/DreamTwin_MVP原型方案_v0.1.md`、`doc/DreamTwin_路演Demo方案_v0.1.md`、`doc/DreamTwin_PRD_v0.1.md`、`doc/DreamTwin_需求池_v0.1.md`、`doc/DreamTwin_技术方案_v0.1.md`
+> 当前阶段：前端 Demo 主流程已合入远端 `dev`，下一步进入真实 App 后端 / AI 架构设计。
+> 基准文档：`doc/DreamTwin_产品说明书_v0.1.md`、`doc/DreamTwin_MVP原型方案_v0.1.md`、`doc/DreamTwin_路演Demo方案_v0.1.md`、`doc/DreamTwin_PRD_v0.1.md`、`doc/DreamTwin_需求池_v0.1.md`、`doc/DreamTwin_技术方案_v0.1.md`、`doc/DreamTwin_App后端与AI架构_v0.1.md`
 
 ## 1. 当前项目目标
 
@@ -17,8 +17,9 @@ DreamTwin 当前按一个独立产品项目推进，而不是 Soul 文件夹中�
 5. 需求池文档
 6. 技术方案
 7. 开发移动端 Web MVP / Demo
+8. App 后端与 AI 架构方案
 
-已经完成第 1、2、3、4、5、6 步，并开始移动端 Web MVP / Demo 主流程验证：
+已经完成第 1、2、3、4、5、6 步，并已将移动端 Web MVP / Demo 主流程合入远端 `dev`：
 
 - `doc/DreamTwin_产品说明书_v0.1.md`
 - `doc/DreamTwin_MVP原型方案_v0.1.md`
@@ -26,6 +27,7 @@ DreamTwin 当前按一个独立产品项目推进，而不是 Soul 文件夹中�
 - `doc/DreamTwin_PRD_v0.1.md`
 - `doc/DreamTwin_需求池_v0.1.md`
 - `doc/DreamTwin_技术方案_v0.1.md`
+- `doc/DreamTwin_App后端与AI架构_v0.1.md`
 
 当前前端 Demo 的新主流程：
 
@@ -318,13 +320,14 @@ MVP 不做：
 
 ## 10. 下一步路线
 
-当前不再回到纯文档阶段，也不急着接 API。下一步继续：
+当前不急着部署公开 Demo，也不急着把 API key 接进前端。下一步进入真实 App 后端 / AI 架构设计：
 
-1. 保持 PRD、需求池、技术方案与前端 Demo 同步。
-2. 继续验证 AI 分身主页、梦境广场、邀请好友梦境漫游这三个主入口体验。
-3. 优先打磨 C 端体验和路演稳定性。
-4. 等主流程和信息层级稳定后，再设计真实后端、AI 生成和好友邀请服务。
+1. 设计账号与用户资料。
+2. 设计 AI 分身持久化与版本。
+3. 设计关系预演异步生成任务。
+4. 设计好友邀请、梦境门双向确认和真实聊天边界。
+5. 再决定后端技术栈与第一批接口实现顺序。
 
 当前最重要的原则：
 
-> 不要急着接后端或 API。先把 C 端主路径定稳：AI 分身主页是长期入口，梦境广场服务新关系发现，好友梦境漫游服务已有关系推进。
+> 不要把静态 Demo 的临时结构固化成长期架构。API key 不能放前端，AI 只生成关系预演和建议，不替用户发送真实消息；好友关系必须先邀请、再共同预演。
