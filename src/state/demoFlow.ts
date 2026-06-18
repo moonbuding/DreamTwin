@@ -58,6 +58,14 @@ function goToPage(state: DemoFlowState, currentPage: DemoPage): DemoFlowState {
   };
 }
 
+function openDreamLog(state: DemoFlowState): DemoFlowState {
+  return {
+    ...state,
+    currentPage: "dream-log",
+    pageHistory: state.hasCompletedTwinSetup ? ["twin-home"] : [],
+  };
+}
+
 function setNodeStatus(state: DemoFlowState, nodeId: string, status: DreamNodeStatus): DemoFlowState {
   return {
     ...state,
@@ -112,7 +120,7 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
       return goToPage(state, "twin-create");
     case "ENTER_DREAM_PLAZA":
     case "OPEN_DREAM_LOG":
-      return goToPage(state, "dream-log");
+      return openDreamLog(state);
     case "OPEN_FRIEND_INVITE":
       return goToPage(
         {

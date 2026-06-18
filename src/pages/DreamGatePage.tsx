@@ -25,6 +25,11 @@ export function DreamGatePage({ node, simulation, onBackToSimulation, onBackToLo
           <StatusPill status={node.status} />
           <span>{simulation.title}</span>
         </div>
+        <div className="gate-threshold" aria-label="梦境门打开条件">
+          <span>{isFriendInvite ? "邀请确认" : "你的分身确认"}</span>
+          <span>{simulation.counterpartName} 确认</span>
+          <span>真实聊天打开</span>
+        </div>
         <p className="lead">
           {isFriendInvite
             ? "好友已经同意进入共同梦境。AI 漫游预演完成后，真实关系仍然交还给你们两个人。"

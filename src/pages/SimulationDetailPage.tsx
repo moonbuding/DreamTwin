@@ -245,6 +245,11 @@ export function SimulationDetailPage({
             <span>{isFriendInvite ? "AI 漫游结论" : "AI 关系结论"}</span>
             <strong>你 × {simulation.counterpartName}</strong>
           </div>
+          <div className="decision-steps" aria-label="关系预演决策节奏">
+            <span>先看结论</span>
+            <span>再看原因</span>
+            <span>最后决定</span>
+          </div>
           <div className="decision-verdict">
             <strong>{activeExperience.insight.verdict}</strong>
             <p>{activeExperience.relationshipOutcome}</p>

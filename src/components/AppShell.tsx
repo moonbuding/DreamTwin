@@ -36,10 +36,10 @@ export function AppShell({
           </div>
           <button className="icon-button icon-button-reset" onClick={onReset} type="button" aria-label="重新开始演示">
             <RotateCcw size={17} />
-            <span>重置</span>
+            <span>重置演示</span>
           </button>
           <div className="demo-progress" aria-label="演示进度">
-            <span>{stepLabel}</span>
+            <span>路演路径 · {stepLabel}</span>
             <strong>{progressLabel}</strong>
             <div className="demo-progress-track">
               <i style={{ width: `${progressValue}%` }} />
