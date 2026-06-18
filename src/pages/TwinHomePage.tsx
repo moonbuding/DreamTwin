@@ -33,7 +33,7 @@ export function TwinHomePage({
           <p className="label">AI 分身主页</p>
           <h1>{twin.nickname} 已经保存。</h1>
           <p>
-            后续打开 App，会先回到这里。你可以带着它进入梦境广场，也可以邀请好友一起梦境漫游。
+            这里是你的长期入口。带着分身进入梦境广场，或邀请好友一起完成一次低压关系预演。
           </p>
         </header>
 
@@ -70,7 +70,7 @@ export function TwinHomePage({
         <section className="twin-home-guidance" aria-label="当前 Demo 状态说明">
           <div>
             <Sparkles size={16} />
-            <span>分身会作为你的关系预演入口，不是陪伴角色。</span>
+            <span>分身负责预演关系，不替你聊天，也不是陪伴角色。</span>
           </div>
           <p>{profile.relationshipIntention}</p>
           <div className="keyword-row">

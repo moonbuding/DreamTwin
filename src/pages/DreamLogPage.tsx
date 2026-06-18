@@ -27,28 +27,28 @@ export function DreamLogPage({ twin, nodes, onOpenFriendInvite, onSelectNode }: 
       <ThreeDreamScene variant="ambient" className="page-scene dream-log-scene" />
       <div className="page-content dream-log-content">
         <div className="dream-log-hero">
-          <p className="label">昨夜梦境日志</p>
-          <h1>你的分身带回了 3 个关系入口。</h1>
+          <p className="label">梦境广场</p>
+          <h1>昨夜 AI 已预演好 3 个关系入口。</h1>
           <div className="dream-log-stats" aria-label="梦境星图状态">
             <span>{viewedCount}/3 已预演</span>
             <span>{waitingCount} 等待回应</span>
             <span>{openedCount} 已打开</span>
           </div>
           <section className="dream-log-guidance" aria-label="演示状态说明">
-            <span>{hasAnyProgress ? "继续选择节点，观察状态如何变化。" : "点击第一个节点，先看一段完整关系预演。"}</span>
-            <p>每个节点都是一次 AI 双人模拟：先看如果相遇会怎样，再决定是否把真实关系打开。</p>
+            <span>{hasAnyProgress ? "继续选择节点，查看新的关系可能。" : "点击一个节点，先看结论再决定要不要进入。"}</span>
+            <p>每个节点都是一次 AI 双人关系预演，不是聊天记录，也不是可走地图。</p>
           </section>
         </div>
         <section className="dream-entry-switch" aria-label="DreamTwin 使用场景入口">
           <article>
             <span>昨晚我遇见了谁</span>
-            <strong>AI 分身带回 3 个新关系入口</strong>
-            <p>适合下班回家打开 App，看昨夜有哪些值得开启的关系可能。</p>
+            <strong>下班后打开，直接看值得开启的关系。</strong>
+            <p>先看 AI 预演结论，再决定是否让真实关系发生。</p>
           </article>
           <article className="dream-entry-invite">
             <span>邀请好友梦境漫游 · {friendStateText}</span>
-            <strong>和 Mika 一起进入共同经历</strong>
-            <p>先发出低压邀请，好友接受后，再看你们在海底、星际、日料、电影里的关系变化。</p>
+            <strong>已有好友时，先邀请，再共同预演。</strong>
+            <p>好友接受后，双方一起看共同经历会怎样改变关系。</p>
             <PrimaryButton icon={<Send size={16} />} onClick={onOpenFriendInvite}>
               邀请好友入梦
             </PrimaryButton>

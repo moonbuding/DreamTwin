@@ -164,7 +164,7 @@ export function SimulationDetailPage({
 
   const actionLabel =
     isFriendInvite && node.status === "opened"
-      ? "进入真实聊天入口"
+      ? "进入梦境门"
       : isFriendInvite && node.status === "waiting"
         ? "回到等待好友入梦"
         : node.status === "opened"
@@ -225,12 +225,12 @@ export function SimulationDetailPage({
       <div className="page-content simulation-content">
         <div className="simulation-hero simulation-hero-compact">
           <div>
-            <p className="label">{isFriendInvite ? "共同梦境漫游预演" : "这段关系可能怎么开始"}</p>
+            <p className="label">{isFriendInvite ? "共同梦境预演" : "先看关系结论"}</p>
             <h1>{simulation.title}</h1>
             <p className="simulation-subtitle">
               {isFriendInvite
-                ? `你和 ${simulation.counterpartName} 已进入「${activeExperience.label}」，AI 正在模拟共同经历后的关系变化。`
-                : `AI 已模拟你和 ${simulation.counterpartName} 在「${activeExperience.label}」里的第一段关系走向。`}
+                ? `你和 ${simulation.counterpartName} 选择了「${activeExperience.label}」，先看关系会被怎样推动。`
+                : `AI 已模拟你和 ${simulation.counterpartName} 的第一段关系走向。`}
             </p>
           </div>
           <StatusPill status={node.status} />
@@ -269,8 +269,8 @@ export function SimulationDetailPage({
 
         <section className="scenario-switcher scenario-switcher-compact" ref={scenarioRef} aria-label="换个问题看看">
           <div className="scenario-switcher-heading">
-            <span>{isFriendInvite ? "换个梦境场景看看" : "换个问题看看"}</span>
-            <strong>{isFriendInvite ? "同一个好友，不同共同经历。" : "只切换结论，不打断当前决策。"}</strong>
+            <span>{isFriendInvite ? "换个共同经历" : "换个关系问题"}</span>
+            <strong>{isFriendInvite ? "同一个好友，不同梦境。" : "轻量切换，不打断决策。"}</strong>
           </div>
           <div className="scenario-tabs" role="tablist" aria-label="关系预演场景">
             {isFriendInvite
@@ -304,7 +304,7 @@ export function SimulationDetailPage({
 
         <section className={`simulation-details ${showDetails ? "simulation-details-open" : ""}`} ref={detailsRef}>
           <div className="detail-summary-row">
-            <span>想看原因再展开</span>
+            <span>想看原因和片段再展开</span>
             <button onClick={toggleDetails} type="button">
               {showDetails ? "收起详细推演" : "看详细推演"}
             </button>

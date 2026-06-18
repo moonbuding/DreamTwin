@@ -794,10 +794,9 @@ textarea {
 .dream-entry-switch article {
   display: grid;
   gap: 6px;
-  padding: 13px;
-  border: 1px solid rgba(255, 255, 255, 0.1);
-  border-radius: var(--radius);
-  background: rgba(255, 255, 255, 0.045);
+  padding: 2px 0 2px 12px;
+  border-left: 2px solid rgba(111, 211, 255, 0.38);
+  background: transparent;
   backdrop-filter: blur(18px);
 }
 
@@ -822,7 +821,8 @@ textarea {
 }
 
 .dream-entry-invite {
-  box-shadow: inset 0 0 0 1px rgba(111, 211, 255, 0.06);
+  padding-top: 10px !important;
+  border-left-color: rgba(255, 114, 210, 0.44) !important;
 }
 
 .dream-entry-invite .primary-button {
@@ -836,7 +836,7 @@ textarea {
   position: relative;
   overflow: hidden;
   margin: 0 -20px;
-  min-height: 520px;
+  min-height: 486px;
   background:
     radial-gradient(circle at 50% 42%, rgba(111, 211, 255, 0.2), transparent 30%),
     radial-gradient(circle at 72% 26%, rgba(255, 114, 210, 0.18), transparent 28%),
@@ -944,7 +944,7 @@ textarea {
 }
 
 .dream-log-content .star-map {
-  min-height: 480px;
+  min-height: 448px;
   margin: 0;
   border-radius: 0;
 }
@@ -1076,7 +1076,7 @@ textarea {
 }
 
 .roaming-scene-card {
-  min-height: 148px;
+  min-height: 128px;
   align-content: start;
 }
 
@@ -1084,6 +1084,13 @@ textarea {
   color: var(--pink);
   font-size: 12px;
   font-weight: 900;
+}
+
+.roaming-scene-card p {
+  overflow: hidden;
+  display: -webkit-box;
+  -webkit-box-orient: vertical;
+  -webkit-line-clamp: 3;
 }
 
 .invite-preview {
@@ -1131,6 +1138,49 @@ textarea {
   width: 100%;
   height: 100%;
   min-height: 100%;
+}
+
+.three-scene-fallback {
+  position: relative;
+  overflow: hidden;
+  background:
+    radial-gradient(circle at 50% 30%, rgba(111, 211, 255, 0.16), transparent 34%),
+    radial-gradient(circle at 72% 58%, rgba(255, 114, 210, 0.12), transparent 30%),
+    linear-gradient(180deg, rgba(9, 13, 32, 0.9), rgba(5, 7, 19, 0.98));
+}
+
+.three-scene-fallback span {
+  position: absolute;
+  width: 2px;
+  height: 2px;
+  border-radius: 999px;
+  background: rgba(255, 255, 255, 0.82);
+  box-shadow:
+    42px 22px 0 rgba(111, 211, 255, 0.72),
+    116px 88px 0 rgba(255, 114, 210, 0.58),
+    188px 36px 0 rgba(255, 255, 255, 0.62),
+    254px 142px 0 rgba(167, 121, 255, 0.74),
+    318px 68px 0 rgba(111, 211, 255, 0.54);
+  animation: fallback-drift 7s ease-in-out infinite;
+}
+
+.three-scene-fallback span:nth-child(1) {
+  top: 18%;
+  left: 12%;
+}
+
+.three-scene-fallback span:nth-child(2) {
+  top: 42%;
+  left: 20%;
+  opacity: 0.72;
+  animation-delay: -2s;
+}
+
+.three-scene-fallback span:nth-child(3) {
+  top: 68%;
+  left: 8%;
+  opacity: 0.58;
+  animation-delay: -4s;
 }
 
 .star-map .three-scene {
@@ -1352,10 +1402,10 @@ textarea {
 }
 
 .scenario-switcher-compact {
-  gap: 10px;
+  gap: 9px;
   margin-top: 0;
-  padding-top: 14px;
-  padding-bottom: 14px;
+  padding-top: 13px;
+  padding-bottom: 13px;
 }
 
 .scenario-switcher-compact .scenario-switcher-heading {
@@ -1364,7 +1414,7 @@ textarea {
 
 .scenario-switcher-compact .scenario-switcher-heading strong {
   color: rgba(255, 255, 255, 0.68);
-  font-size: 13px;
+  font-size: 12px;
   font-weight: 800;
 }
 
@@ -1436,17 +1486,17 @@ textarea {
 .simulation-content {
   min-height: calc(100% - 72px);
   align-content: start;
-  gap: 16px;
+  gap: 14px;
   padding-top: 58px;
-  padding-bottom: 220px;
+  padding-bottom: 198px;
 }
 
 .simulation-decision {
   position: relative;
   display: grid;
-  gap: 14px;
+  gap: 12px;
   margin: 0 -4px;
-  padding: 16px 4px 4px;
+  padding: 14px 4px 2px;
 }
 
 .simulation-decision::before {
@@ -1486,16 +1536,16 @@ textarea {
 
 .decision-verdict strong {
   color: rgba(255, 255, 255, 0.96);
-  font-size: 34px;
+  font-size: 30px;
   line-height: 1;
 }
 
 .decision-verdict p {
   max-width: 350px;
   color: rgba(255, 255, 255, 0.82);
-  font-size: 15px;
+  font-size: 14px;
   font-weight: 760;
-  line-height: 1.55;
+  line-height: 1.48;
 }
 
 .decision-meter-row {
@@ -1510,7 +1560,7 @@ textarea {
 }
 
 .decision-meter-row .report-meter strong {
-  font-size: 25px;
+  font-size: 22px;
 }
 
 .decision-move {
@@ -2994,6 +3044,13 @@ blockquote {
 @keyframes pulse {
   50% {
     scale: 1.16;
+  }
+}
+
+@keyframes fallback-drift {
+  50% {
+    translate: 10px -8px;
+    opacity: 0.72;
   }
 }
 

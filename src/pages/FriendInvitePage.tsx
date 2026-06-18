@@ -40,9 +40,9 @@ export function FriendInvitePage({
       <div className="page-content friend-invite-content">
         <div className="friend-invite-hero">
           <p className="label">邀请好友梦境漫游</p>
-          <h1>先邀请，再一起看关系会怎么变化。</h1>
+          <h1>邀请好友一起入梦。</h1>
           <p>
-            这不是偷偷分析好友，也不是 AI 替你表白。你只发出一次低压邀请，好友同意入梦后，双方一起进入关系实验场。
+            先发出低压邀请，好友同意后，双方一起看 AI 对共同经历的关系预演。
           </p>
         </div>
 
@@ -74,7 +74,7 @@ export function FriendInvitePage({
 
         <section className="roaming-scene-picker" aria-label="选择梦境漫游场景">
           <div className="section-heading-inline">
-            <span>选择梦境场景</span>
+            <span>选择共同经历</span>
             <strong>让共同经历驱动关系预演</strong>
           </div>
           <div className="roaming-scene-grid" role="list">
