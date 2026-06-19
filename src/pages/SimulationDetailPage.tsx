@@ -445,13 +445,27 @@ export function SimulationDetailPage({
   const actionLabel =
     isFriendInvite && node.status === "opened"
       ? "进入梦境门"
+      : isFriendInvite && node.status === "both_entered"
+        ? "确认这段共同梦境"
       : isFriendInvite && node.status === "waiting"
         ? "回到等待好友入梦"
         : node.status === "opened"
           ? "进入已打开的梦境门"
           : node.status === "waiting"
             ? "回到等待状态"
-            : "想进入这个梦境";
+            : "发送入梦邀请";
+  const actionHint =
+    isFriendInvite && node.status === "opened"
+      ? "梦境门已打开，下一步由你亲自编辑第一句话。"
+      : isFriendInvite && node.status === "both_entered"
+        ? "双方已入梦，确认这段共同梦境后才会打开真实聊天入口。"
+      : isFriendInvite && node.status === "waiting"
+        ? "好友确认前不会生成共同预演，也不会打开聊天。"
+        : node.status === "opened"
+          ? "梦境门已打开，下一步由你亲自编辑第一句话。"
+          : node.status === "waiting"
+            ? "对方确认前不会打开消息，你可以回到今日等待回应。"
+            : "发送后进入等待区；对方确认前不会出现真实聊天。";
   const reportMetrics = [
     {
       label: "共鸣线索",
@@ -614,11 +628,11 @@ export function SimulationDetailPage({
                 : `AI 正在预演你和 ${simulation.counterpartName} 的第一段关系可能。`}
             </p>
           </div>
-          <StatusPill status={node.status} />
+          <StatusPill entryMode={node.entryMode} status={node.status} />
         </div>
         <button className="text-button simulation-log-link" onClick={onBackToLog} type="button">
           <Compass size={15} />
-          回到梦境星图
+          回到梦境地图
         </button>
 
         <section className="simulation-decision" aria-label="关系预演结论">
@@ -631,6 +645,13 @@ export function SimulationDetailPage({
             <span>再看原因</span>
             <span>最后决定</span>
           </div>
+          {isFriendInvite ? (
+            <div className="simulation-shared-handoff" aria-label="共同梦境确认路径">
+              <span>{simulation.counterpartName} 已入梦</span>
+              <strong>{renderedExperience.label}</strong>
+              <span>确认后梦境门打开</span>
+            </div>
+          ) : null}
           <div className={`api-status simulation-api-status api-status-${apiMode}`} role="status">
             <span>{apiMode === "live" ? "AI 生成" : apiMode === "fallback" ? "保底内容" : "本地内容"}</span>
             <p>{apiStatusLabel}</p>
@@ -659,72 +680,21 @@ export function SimulationDetailPage({
             <strong>{displaySuggestedMove}</strong>
             <blockquote className="simulation-quote">{renderedExperience.possibleFirstLine}</blockquote>
           </div>
-          <div className="scene-stage-brief" aria-label="3D 场景舞台规格">
-            <span>{activeSceneStageSpec.title}</span>
-            <strong>{activeSceneStageSpec.relationTrigger}</strong>
-            <p>{activeSceneStageSpec.visualTone}</p>
-            <div className="scene-stage-flow" role="tablist" aria-label="场景事件进度">
-              {guidedSceneEvents.map((event, index) => (
-                <button
-                  aria-label={`查看场景事件：${event.label}`}
-                  aria-selected={event.id === activeSceneEvent.id}
-                  className={event.id === activeSceneEvent.id ? "scene-stage-flow-active" : ""}
-                  key={event.id}
-                  onClick={() => setActiveSceneEventId(event.id)}
-                  role="tab"
-                  type="button"
-                >
-                  <b>{String(index + 1).padStart(2, "0")}</b>
-                  <span>{event.label}</span>
-                </button>
-              ))}
-            </div>
+          <div className="decision-action-strip" aria-label="关系预演后可选择的下一步">
+            <button onClick={() => onContinue(node.id)} type="button">
+              <DoorOpen size={15} />
+              <span>{actionLabel}</span>
+            </button>
+            <button onClick={() => scrollIntoView(scenarioRef.current)} type="button">
+              <ArrowRight size={15} />
+              <span>{isFriendInvite ? "换个场景" : "换个问题"}</span>
+            </button>
+            <button onClick={() => openDetails("overview")} type="button">
+              <Sparkles size={15} />
+              <span>看原因</span>
+            </button>
           </div>
-          <div className="simulation-basis" aria-label="AI 模拟依据">
-            {simulationBasis.map((item) => (
-              <div key={item.label}>
-                <span>{item.label}</span>
-                <strong>{item.value}</strong>
-              </div>
-            ))}
-          </div>
-        </section>
-
-        <section className="guided-scene-events" aria-label="引导式梦境场景事件">
-          <div className="guided-scene-heading">
-            <span>3D 场景观察点</span>
-            <strong>{activeSceneStageSpec.boundaryNote}</strong>
-          </div>
-          <div className="guided-hotspot-row" role="tablist" aria-label="梦境事件热点">
-            {guidedSceneEvents.map((event, index) => (
-              <button
-                aria-selected={event.id === activeSceneEvent.id}
-                className={event.id === activeSceneEvent.id ? "guided-hotspot-active" : ""}
-                key={event.id}
-                onClick={() => setActiveSceneEventId(event.id)}
-                role="tab"
-                type="button"
-              >
-                <b>{String(index + 1).padStart(2, "0")}</b>
-                <span>{event.label}</span>
-              </button>
-            ))}
-          </div>
-          <article className="guided-scene-panel" aria-label="当前梦境事件">
-            <div>
-              <span>热点</span>
-              <strong>{activeSceneEvent.hotspot}</strong>
-            </div>
-            <p>{activeSceneEvent.prompt}</p>
-            <div className="guided-scene-question">
-              <span>{activeSceneEvent.relationQuestion}</span>
-              <strong>{activeSceneEvent.expectedSignal}</strong>
-            </div>
-            <div className="guided-scene-camera">
-              <span>镜头提示</span>
-              <strong>{activeSceneStageSpec.cameraHint}</strong>
-            </div>
-          </article>
+          <p className="decision-action-hint">{actionHint}</p>
         </section>
 
         <section className="scenario-switcher scenario-switcher-compact" ref={scenarioRef} aria-label="换个问题看看">
@@ -789,14 +759,58 @@ export function SimulationDetailPage({
 
               {detailMode === "overview" ? (
                 <section className="detail-panel" aria-label="关系推演过程">
+                  <div className="simulation-basis simulation-basis-detail" aria-label="AI 模拟依据">
+                    {simulationBasis.map((item) => (
+                      <div key={item.label}>
+                        <span>{item.label}</span>
+                        <strong>{item.value}</strong>
+                      </div>
+                    ))}
+                  </div>
+                  <section className="guided-scene-events guided-scene-events-inline" aria-label="引导式梦境场景事件">
+                    <div className="guided-scene-heading">
+                      <span>场景触发点</span>
+                      <strong>{activeSceneStageSpec.relationTrigger}</strong>
+                    </div>
+                    <div className="guided-hotspot-row" role="tablist" aria-label="梦境事件热点">
+                      {guidedSceneEvents.map((event, index) => (
+                        <button
+                          aria-selected={event.id === activeSceneEvent.id}
+                          className={event.id === activeSceneEvent.id ? "guided-hotspot-active" : ""}
+                          key={event.id}
+                          onClick={() => setActiveSceneEventId(event.id)}
+                          role="tab"
+                          type="button"
+                        >
+                          <b>{String(index + 1).padStart(2, "0")}</b>
+                          <span>{event.label}</span>
+                        </button>
+                      ))}
+                    </div>
+                    <article className="guided-scene-panel" aria-label="当前梦境事件">
+                      <div>
+                        <span>{activeSceneStageSpec.title}</span>
+                        <strong>{activeSceneEvent.hotspot}</strong>
+                      </div>
+                      <p>{activeSceneEvent.prompt}</p>
+                      <div className="guided-scene-question">
+                        <span>{activeSceneEvent.relationQuestion}</span>
+                        <strong>{activeSceneEvent.expectedSignal}</strong>
+                      </div>
+                      <div className="guided-scene-camera">
+                        <span>场景范围</span>
+                        <strong>{activeSceneStageSpec.boundaryNote}</strong>
+                      </div>
+                    </article>
+                  </section>
                   <section className="relationship-animation relationship-animation-compact relationship-animation-4">
                     <div className="relation-depth-grid" />
                     <div className="relation-field-label relation-field-label-self">你的分身</div>
                     <div className="relation-field-label relation-field-label-other">{simulation.counterpartName}</div>
                     <div className="relation-signal-board" aria-label="关系预演信号">
                       <div>
-                      <span>SELF</span>
-                      <strong>{simulation.approachSignal}</strong>
+                        <span>SELF</span>
+                        <strong>{simulation.approachSignal}</strong>
                       </div>
                       <div>
                         <span>OTHER</span>

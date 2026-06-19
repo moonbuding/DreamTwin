@@ -50,11 +50,28 @@ function isRelationshipNormalizerLine(line) {
   return line.includes(".replace(") || line.includes("looksLikeInventedSharedMemory") || line.includes("sceneAnchor");
 }
 
+function isAllowedDemoModeLine(rel, line) {
+  if (rel === "src/components/AppShell.tsx") {
+    return /showDemoChrome|phone-shell-demo-mode|app-topbar-demo/.test(line);
+  }
+  if (rel === "src/pages/WaitingPage.tsx") {
+    return /showDemoControls|responsePreviewLabel|demo-control-note|Demo 控制|演示：模拟|下面的模拟按钮/.test(line);
+  }
+  return false;
+}
+
 const allFiles = walk(rootDir);
 const runtimeFiles = allFiles.filter(isRuntimeFile);
 const apiAdapter = readFileSync(join(rootDir, "src/api/dreamTwinApi.ts"), "utf8");
 const twinGeneratingPage = readFileSync(join(rootDir, "src/pages/TwinGeneratingPage.tsx"), "utf8");
 const simulationDetailPage = readFileSync(join(rootDir, "src/pages/SimulationDetailPage.tsx"), "utf8");
+const todayPage = readFileSync(join(rootDir, "src/pages/TodayPage.tsx"), "utf8");
+const messagesPage = readFileSync(join(rootDir, "src/pages/MessagesPage.tsx"), "utf8");
+const friendInvitePage = readFileSync(join(rootDir, "src/pages/FriendInvitePage.tsx"), "utf8");
+const dreamLogPage = readFileSync(join(rootDir, "src/pages/DreamLogPage.tsx"), "utf8");
+const waitingPage = readFileSync(join(rootDir, "src/pages/WaitingPage.tsx"), "utf8");
+const dreamGatePage = readFileSync(join(rootDir, "src/pages/DreamGatePage.tsx"), "utf8");
+const chatEntryPage = readFileSync(join(rootDir, "src/pages/ChatEntryPage.tsx"), "utf8");
 
 for (const file of allFiles) {
   const rel = relative(rootDir, file);
@@ -69,7 +86,7 @@ for (const file of allFiles) {
 
 for (const file of runtimeFiles) {
   const rel = relative(rootDir, file);
-  for (const { line, index } of lineMatches(file, /路演|演示|Demo|验证/)) {
+  for (const { line, index } of lineMatches(file, /路演|演示|Demo|验证/, (line) => isAllowedDemoModeLine(rel, line))) {
     fail(`Internal demo wording leaked to runtime UI in ${rel}:${index}: ${line.trim()}`);
   }
 }
@@ -90,10 +107,26 @@ for (const file of runtimeFiles) {
   }
 }
 
+const prematureChatLabelPattern = /已进入聊天/;
+for (const file of runtimeFiles) {
+  const rel = relative(rootDir, file);
+  for (const { line, index } of lineMatches(file, prematureChatLabelPattern)) {
+    fail(`Premature chat wording found in runtime UI in ${rel}:${index}: ${line.trim()}`);
+  }
+}
+
+const oldDreamMapReturnPattern = /回到(?:梦境)?星图/;
+for (const file of runtimeFiles) {
+  const rel = relative(rootDir, file);
+  for (const { line, index } of lineMatches(file, oldDreamMapReturnPattern)) {
+    fail(`Old dream map return wording found in runtime UI in ${rel}:${index}: ${line.trim()}`);
+  }
+}
+
 const leakedPrototypeControlPattern = /模拟对方同意入梦|模拟好友接受邀请|模拟对方同意|模拟好友接受/;
 for (const file of runtimeFiles) {
   const rel = relative(rootDir, file);
-  for (const { line, index } of lineMatches(file, leakedPrototypeControlPattern)) {
+  for (const { line, index } of lineMatches(file, leakedPrototypeControlPattern, (line) => isAllowedDemoModeLine(rel, line))) {
     fail(`Prototype-only control wording leaked to runtime UI in ${rel}:${index}: ${line.trim()}`);
   }
 }
@@ -117,6 +150,68 @@ if (!twinGeneratingPage.includes("if (!isDreamTwinApiEnabled())")) {
 }
 if (!simulationDetailPage.includes("if (!isDreamTwinApiEnabled())")) {
   fail("Simulation detail page must not call the backend unless Live AI is explicitly enabled.");
+}
+for (const requiredMessageState of ["待写第一句", "等真人回应", "未开门"]) {
+  if (!messagesPage.includes(requiredMessageState)) {
+    fail(`Messages page must preserve the DreamTwin message state: ${requiredMessageState}.`);
+  }
+}
+if (!messagesPage.includes("AI 不再推进")) {
+  fail("Messages page must clearly state that AI stops after the first line is sent.");
+}
+for (const requiredMessageAction of ["当前行动", "先写第一句话", "去梦境地图开启关系"]) {
+  if (!messagesPage.includes(requiredMessageAction)) {
+    fail(`Messages page must lead with the next relationship action: ${requiredMessageAction}.`);
+  }
+}
+if (!todayPage.includes("sentFirstMessages") || !todayPage.includes("你发出的第一句话")) {
+  fail("Today page must preserve the sent first-line context while waiting for a real reply.");
+}
+for (const requiredTodayFriendHandoff of ["好友已入梦", "同一张梦境地图", "共同坐标"]) {
+  if (!todayPage.includes(requiredTodayFriendHandoff)) {
+    fail(`Today page must clearly route accepted friends back to the shared dream map: ${requiredTodayFriendHandoff}.`);
+  }
+}
+for (const requiredWaitingBoundary of ["对方确认前不打开聊天", "不会替你发送真实消息", "不会替你表达关系意图", "可以随时撤回"]) {
+  if (!waitingPage.includes(requiredWaitingBoundary)) {
+    fail(`Waiting page must preserve low-pressure relationship boundaries: ${requiredWaitingBoundary}.`);
+  }
+}
+for (const requiredFriendBoundary of ["先邀请，不先分析", "不单方面分析好友", "好友接受后", "进入同一张梦境地图"]) {
+  if (!friendInvitePage.includes(requiredFriendBoundary)) {
+    fail(`Friend page must preserve the consent-first invite boundary: ${requiredFriendBoundary}.`);
+  }
+}
+if (friendInvitePage.includes("possibleFirstLine") || friendInvitePage.includes("simulation.")) {
+  fail("Friend page must not show simulation outputs before the friend accepts the invite.");
+}
+for (const directSceneLabel of ["海底探险", "星际漫游", "吃日料", "看电影", "看星空", "打羽毛球"]) {
+  if (friendInvitePage.includes(directSceneLabel)) {
+    fail(`Friend page must not directly present scene cards before map selection: ${directSceneLabel}.`);
+  }
+}
+for (const requiredSharedMapCopy of ["共同选择梦境场景", "同一张梦境地图", "共同坐标", "进入这个场景预演"]) {
+  if (!dreamLogPage.includes(requiredSharedMapCopy)) {
+    fail(`Dream map must own accepted friend scene selection: ${requiredSharedMapCopy}.`);
+  }
+}
+if (!dreamLogPage.includes("onOpenFriendScene(activeSharedScene.id, nodeId)")) {
+  fail("Clicking the accepted friend map node must enter the selected shared scene preview.");
+}
+for (const requiredSharedSimulationCopy of ["确认后梦境门打开", "共同梦境确认", "共同梦境来源"]) {
+  if (
+    !simulationDetailPage.includes(requiredSharedSimulationCopy) &&
+    !dreamGatePage.includes(requiredSharedSimulationCopy) &&
+    !chatEntryPage.includes(requiredSharedSimulationCopy)
+  ) {
+    fail(`Friend shared simulation handoff must preserve the shared-dream source: ${requiredSharedSimulationCopy}.`);
+  }
+}
+if (!dreamGatePage.includes("activeRoamingScene?.possibleFirstLine")) {
+  fail("Friend dream gate must use the selected shared scene first-line preview.");
+}
+if (!chatEntryPage.includes("这不是普通好友私信")) {
+  fail("Friend chat entry must state that shared-dream chat is not ordinary friend DM.");
 }
 
 if (checks.length) {

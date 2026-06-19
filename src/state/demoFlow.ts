@@ -26,6 +26,7 @@ export type DemoFlowAction =
   | { type: "OPEN_TWIN_HOME" }
   | { type: "EDIT_TWIN" }
   | { type: "ENTER_DREAM_PLAZA" }
+  | { type: "OPEN_DREAM_TAB" }
   | { type: "OPEN_DREAM_LOG" }
   | { type: "OPEN_FRIEND_INVITE" }
   | { type: "SELECT_FRIEND"; friendId: string }
@@ -42,6 +43,7 @@ export type DemoFlowAction =
   | { type: "STORE_LIVE_SIMULATION_RESULT"; resultKey: string; result: RelationshipSimulationResult }
   | { type: "WITHDRAW_DREAM"; nodeId: string }
   | { type: "OPEN_CHAT_ENTRY"; nodeId: string }
+  | { type: "MARK_CHAT_SENT"; nodeId: string; text?: string }
   | { type: "GO_BACK" }
   | { type: "RESET_DEMO" };
 
@@ -55,6 +57,7 @@ export const initialDemoFlowState: DemoFlowState = {
   dreamInviteStatus: "draft",
   resumeAtOutcomeNodeId: null,
   liveSimulationResults: {},
+  sentFirstMessages: {},
   profile: demoProfile,
   twin: demoTwin,
   friends: demoFriends,
@@ -125,6 +128,7 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
           dreamInviteStatus: "draft",
           resumeAtOutcomeNodeId: null,
           liveSimulationResults: {},
+          sentFirstMessages: {},
         },
         "twin-generating",
       );
@@ -146,6 +150,8 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
       return openAppTab(state, "twin-home");
     case "EDIT_TWIN":
       return goToPage(state, "twin-create");
+    case "OPEN_DREAM_TAB":
+      return openAppTab(state, "dream-log");
     case "ENTER_DREAM_PLAZA":
     case "OPEN_DREAM_LOG":
       return openDreamLog(state);
@@ -217,7 +223,17 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
       }
       return goToPage({ ...setNodeStatus(state, action.nodeId, "viewed"), resumeAtOutcomeNodeId: action.nodeId }, "simulation-detail");
     case "OPEN_CHAT_ENTRY":
-      return goToPage({ ...setNodeStatus(state, action.nodeId, "in_chat"), selectedNodeId: action.nodeId }, "chat-entry");
+      return goToPage({ ...state, selectedNodeId: action.nodeId }, "chat-entry");
+    case "MARK_CHAT_SENT":
+      return {
+        ...setNodeStatus(state, action.nodeId, "in_chat"),
+        sentFirstMessages: action.text?.trim()
+          ? {
+              ...(state.sentFirstMessages ?? {}),
+              [action.nodeId]: action.text.trim(),
+            }
+          : state.sentFirstMessages ?? {},
+      };
     case "GO_BACK": {
       const pageHistory = state.pageHistory ?? [];
       const previousPage = pageHistory[pageHistory.length - 1];

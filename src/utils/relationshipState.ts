@@ -1,4 +1,10 @@
-import type { DreamNode, RelationshipSimulation, RelationshipState, RelationshipStateStatus } from "../types/dreamtwin";
+import type {
+  DreamNode,
+  RelationshipEntryMode,
+  RelationshipSimulation,
+  RelationshipState,
+  RelationshipStateStatus,
+} from "../types/dreamtwin";
 
 export function relationshipStatusFromNode(node: DreamNode): RelationshipStateStatus {
   if (node.status === "waiting") return "waiting_counterpart";
@@ -8,15 +14,16 @@ export function relationshipStatusFromNode(node: DreamNode): RelationshipStateSt
   return "ai_previewed";
 }
 
-export function relationshipStatusLabel(status: RelationshipStateStatus): string {
+export function relationshipStatusLabel(status: RelationshipStateStatus, entryMode?: RelationshipEntryMode): string {
   const labels: Record<RelationshipStateStatus, string> = {
     ai_previewed: "AI 已预演",
     waiting_counterpart: "等待对方入梦",
     both_entered: "双方已入梦",
     gate_opened: "梦境门打开",
-    in_chat: "已进入聊天",
+    in_chat: "等待真人回应",
   };
 
+  if (entryMode === "friend_invite" && status === "waiting_counterpart") return "等待好友入梦";
   return labels[status];
 }
 
@@ -31,7 +38,21 @@ export function createRelationshipStates(nodes: DreamNode[], simulations: Relati
       simulationId: node.simulationId,
       entryMode: node.entryMode,
       status,
-      label: simulation ? `${simulation.title} · ${relationshipStatusLabel(status)}` : relationshipStatusLabel(status),
+      label: simulation
+        ? `${simulation.title} · ${relationshipStatusLabel(status, node.entryMode)}`
+        : relationshipStatusLabel(status, node.entryMode),
     };
   });
+}
+
+export function selectTodayPrimaryNode(nodes: DreamNode[]): DreamNode | undefined {
+  return (
+    nodes.find((node) => node.status === "opened") ??
+    nodes.find((node) => node.status === "both_entered") ??
+    nodes.find((node) => node.status === "in_chat") ??
+    nodes.find((node) => node.status === "waiting") ??
+    nodes.find((node) => node.entryMode === "overnight_discovery" && node.status === "unviewed") ??
+    nodes.find((node) => node.entryMode === "overnight_discovery") ??
+    nodes[0]
+  );
 }

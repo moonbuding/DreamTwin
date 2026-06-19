@@ -14,5 +14,5 @@
     "outDir": ".qa-build",
     "tsBuildInfoFile": "./node_modules/.tmp/tsconfig.qa.tsbuildinfo"
   },
-  "include": ["src/data/**/*.ts", "src/state/**/*.ts", "src/types/**/*.ts"]
+  "include": ["src/data/**/*.ts", "src/state/**/*.ts", "src/types/**/*.ts", "src/utils/**/*.ts"]
 }

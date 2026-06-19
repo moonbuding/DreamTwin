@@ -1,5 +1,4 @@
-import { ArrowRight, Pencil, Send, Sparkles } from "lucide-react";
-import { PrimaryButton } from "../components/PrimaryButton";
+import { Pencil, ShieldCheck, Sparkles } from "lucide-react";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import { TwinProjection } from "../components/TwinProjection";
 import type { DreamNode, TwinProjection as TwinProjectionModel, UserProfile } from "../types/dreamtwin";
@@ -9,8 +8,6 @@ interface TwinHomePageProps {
   twin: TwinProjectionModel;
   nodes: DreamNode[];
   onEditTwin: () => void;
-  onEnterDreamPlaza: () => void;
-  onInviteFriend: () => void;
 }
 
 export function TwinHomePage({
@@ -18,12 +15,28 @@ export function TwinHomePage({
   twin,
   nodes,
   onEditTwin,
-  onEnterDreamPlaza,
-  onInviteFriend,
 }: TwinHomePageProps) {
   const overnightCount = nodes.filter((node) => node.entryMode === "overnight_discovery").length;
   const openedCount = nodes.filter((node) => node.status === "opened").length;
   const waitingCount = nodes.filter((node) => node.status === "waiting").length;
+  const profileSignals = [
+    {
+      label: "靠近方式",
+      value: profile.communicationStyle ?? profile.relationshipIntention,
+    },
+    {
+      label: "价值观",
+      value: profile.values?.slice(0, 3).join(" / ") || profile.personalityKeywords.slice(0, 3).join(" / "),
+    },
+    {
+      label: "兴趣线索",
+      value: profile.interests.slice(0, 3).join(" / "),
+    },
+    {
+      label: "叙事信号",
+      value: [profile.mbti, profile.zodiac, ...(profile.mysticTags ?? [])].filter(Boolean).slice(0, 3).join(" / ") || "可选补充",
+    },
+  ];
 
   return (
     <section className="page page-scroll scene-page twin-home-page">
@@ -31,52 +44,74 @@ export function TwinHomePage({
       <div className="page-content twin-home-content">
         <header className="twin-home-hero">
           <p className="label">分身</p>
-          <h1>{twin.nickname} 已经保存。</h1>
+          <h1>你的关系画像已经保存。</h1>
           <p>
-            这里用来管理你的 AI 人格画像。每天打开 App 先看今日关系动态，分身只负责帮助关系预演更像你。
+            {twin.nickname} 会记录你的靠近方式、价值观和表达习惯，用来生成更贴近你的关系预演。
           </p>
         </header>
 
-        <TwinProjection twin={twin} />
-
         <section className="twin-home-status" aria-label="分身状态">
           <div>
-            <span>分身状态</span>
-            <strong>已保存</strong>
+            <span>画像用途</span>
+            <strong>关系预演</strong>
           </div>
           <div>
-            <span>昨夜入口</span>
+            <span>梦境入口</span>
             <strong>{overnightCount} 个梦境</strong>
           </div>
           <div>
-            <span>关系进度</span>
+            <span>当前进度</span>
             <strong>{openedCount > 0 ? `${openedCount} 个已打开` : waitingCount > 0 ? `${waitingCount} 个等待中` : "可开始"}</strong>
           </div>
         </section>
 
-        <section className="twin-home-route" aria-label="推荐进入路径">
-          <span>分身边界</span>
-          <strong>它代表你参与预演，不替你聊天。</strong>
-          <p>DreamTwin 会用分身画像生成关系可能性，但真实确认和第一句话始终交给你。</p>
+        <section className="twin-home-route" aria-label="关系画像使用方式">
+          <span>它会怎么使用</span>
+          <strong>画像进入 AI 预演，真实决定留给你。</strong>
+          <div className="twin-use-flow">
+            <b>画像</b>
+            <b>预演</b>
+            <b>你决定</b>
+          </div>
         </section>
 
-        <section className="twin-home-actions" aria-label="下一步玩法">
-          <PrimaryButton icon={<ArrowRight size={18} />} onClick={onEnterDreamPlaza}>
-            进入梦境广场
-          </PrimaryButton>
-          <PrimaryButton icon={<Send size={18} />} variant="secondary" onClick={onInviteFriend}>
-            邀请好友梦境漫游
-          </PrimaryButton>
+        <TwinProjection twin={twin} />
+
+        <section className="twin-profile-panel" aria-label="关系画像管理">
+          <div className="section-heading-inline">
+            <span>关系画像</span>
+            <strong>用于预演，不用于养成</strong>
+          </div>
+          <div className="twin-profile-grid">
+            {profileSignals.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="twin-boundary-strip" aria-label="AI 分身边界">
+          <ShieldCheck size={17} />
+          <div>
+            <strong>分身只用于关系预演。</strong>
+            <p>它不会替你聊天、不会陪伴养成，也不会把星座或 MBTI 当成科学结论。</p>
+          </div>
+        </section>
+
+        <section className="twin-home-actions twin-home-actions-management" aria-label="分身管理">
           <button className="text-button twin-edit-button" onClick={onEditTwin} type="button">
             <Pencil size={15} />
             修改分身
           </button>
+          <p>想继续一段关系时，可以去今日看动态、去梦境看地图，或去好友发起共同入梦。</p>
         </section>
 
         <section className="twin-home-guidance" aria-label="当前分身状态说明">
           <div>
             <Sparkles size={16} />
-            <span>分身负责预演关系，不替你聊天，也不是陪伴角色。</span>
+            <span>这些标签只是关系预演信号，不是性格判定。</span>
           </div>
           <p>{profile.relationshipIntention}</p>
           <div className="keyword-row">

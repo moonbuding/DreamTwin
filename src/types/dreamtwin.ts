@@ -220,6 +220,7 @@ export interface DemoFlowState {
   dreamInviteStatus: DreamInviteStatus;
   resumeAtOutcomeNodeId: string | null;
   liveSimulationResults: Record<string, RelationshipSimulationResult>;
+  sentFirstMessages: Record<string, string>;
   profile: UserProfile;
   twin: TwinProjection;
   friends: FriendProfile[];

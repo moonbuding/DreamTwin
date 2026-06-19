@@ -251,7 +251,7 @@ export interface TwinProjection {
 用途：
 
 - 支撑 AI 分身生成页。
-- 支撑 AI 分身主页。
+- 支撑分身 Tab 管理页。
 - 支撑梦境广场 / 昨夜梦境日志页。
 - 支撑抽象投影视觉。
 - v0.2 支撑风格化全身 3D 分身候选。
@@ -455,15 +455,14 @@ export interface DemoFlowState {
 用途：
 
 - 支撑单页 App 内部页面状态。
-- 支撑当前 Demo 中 AI 分身主页作为过渡入口。
-- 支撑真实 App 后续迁移到 `今日 / 梦境 / 消息 / 好友 / 分身` 五区骨架。
+- 支撑 `今日 / 梦境 / 消息 / 好友 / 分身` 五区 App 骨架。
 - 支撑 Demo 分身保存与刷新恢复。
 - 支撑好友邀请梦境漫游路径。
 - 支撑节点状态流转。
-- 支撑跨页面关系状态对象：AI 已预演、等待对方入梦、双方已入梦、梦境门打开、已进入聊天。
+- 支撑跨页面关系状态对象：AI 已预演、等待对方入梦、双方已入梦、梦境门打开、等待真人回应。
 - 支撑完整演示路径。
 
-第一版使用 `localStorage` 模拟 Demo 分身保存。当前 Demo 刷新后如果 `hasCompletedTwinSetup` 为 `true`，可以默认回到 AI 分身主页；真实 App 骨架实现时应默认进入 `今日`，并将 AI 分身主页收敛为 `分身` Tab 内的管理页。点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
+第一版使用 `localStorage` 模拟 Demo 分身保存。当前实现中，如果 `hasCompletedTwinSetup` 为 `true`，刷新或后续打开默认进入 `今日`，并将原 AI 分身主页能力收敛为 `分身` Tab 内的管理页。Demo 控件通过 URL 参数显示，点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
 
 ## 5. 状态与路由方案
 
@@ -476,8 +475,10 @@ export interface DemoFlowState {
 - `welcome`
 - `twin-create`
 - `twin-generating`
+- `today`
 - `twin-home`
 - `dream-log`
+- `messages`
 - `friend-invite`
 - `simulation-detail`
 - `waiting`
@@ -486,10 +487,10 @@ export interface DemoFlowState {
 
 这样做的原因：
 
-- 第一版是演示闭环，但 AI 分身主页需要承接两个主入口。
+- 第一版已从单流程演示切到五区 App 骨架，`今日` 是默认首页。
 - 可以减少路由依赖。
 - 演示状态更容易控制。
-- 后续接真实 App 时再迁移到正式路由。
+- 后续接真实 App 时再迁移到正式路由或路由库。
 
 ### 5.2 状态管理
 
@@ -524,7 +525,7 @@ type DemoFlowAction =
 welcome
   -> twin-create
   -> twin-generating
-  -> twin-home
+  -> today
   -> dream-log
   -> simulation-detail
   -> waiting
@@ -535,15 +536,16 @@ welcome
 好友邀请路径：
 
 ```text
-twin-home
+today / friends
   -> friend-invite
   -> waiting
+  -> dream-log
   -> simulation-detail
   -> dream-gate
   -> chat-entry
 ```
 
-> 说明：好友接受后可以先进入共同梦境漫游预演，再进入梦境门与真实聊天入口。第一版可复用 `simulation-detail`、`waiting`、`dream-gate` 和 `chat-entry` 页面，只通过 `entryMode` 区分文案和数据。
+> 说明：好友接受后应回到统一梦境地图，由双方在同一套场景库中选择共同梦境，再进入共同梦境漫游预演、梦境门与真实聊天入口。第一版可复用 `dream-log`、`simulation-detail`、`waiting`、`dream-gate` 和 `chat-entry` 页面，只通过 `entryMode` 区分文案和数据。
 
 节点状态流转：
 
@@ -645,7 +647,7 @@ unviewed
 
 主操作：
 
-- 点击“进入 AI 分身主页”触发 `COMPLETE_TWIN_GENERATION`。
+- 点击“进入今日”触发 `COMPLETE_TWIN_GENERATION`。
 
 实现建议：
 
@@ -665,8 +667,8 @@ unviewed
 职责：
 
 - 展示已保存 AI 分身。
-- 作为用户后续打开 App 的默认入口。
-- 提供进入梦境广场、邀请好友梦境漫游和修改分身。
+- 作为 `分身` Tab 内的管理页。
+- 提供修改分身和分身边界说明。
 
 主要组件：
 
@@ -676,14 +678,12 @@ unviewed
 
 主操作：
 
-- 点击“进入梦境广场”触发 `ENTER_DREAM_PLAZA`。
-- 点击“邀请好友梦境漫游”触发 `OPEN_FRIEND_INVITE`。
 - 点击“修改分身”触发 `EDIT_TWIN`。
 
 实现建议：
 
 - 进入该页时应展示 `hasCompletedTwinSetup` 对应的已保存状态。
-- 刷新时如果本地 Demo 状态显示分身已创建，应回到该页。
+- 刷新时如果本地 Demo 状态显示分身已创建，应回到 `今日`，用户可从底部导航进入该页。
 - 该页不是 AI 陪伴页，也不是角色养成页，不展示亲密度、等级或养成任务。
 
 ### 6.5 DreamLogPage
@@ -727,7 +727,7 @@ unviewed
 
 职责：
 
-- 支撑用户选择静态好友和梦境漫游场景。
+- 支撑用户选择静态好友、发起入梦邀请和查看邀请状态。
 - 展示邀请预览和产品边界。
 - 发出 Demo 邀请后进入等待好友入梦状态。
 
@@ -735,17 +735,19 @@ unviewed
 
 - `PrimaryButton`
 - 好友选择卡片
-- 梦境场景选择卡片
+- 邀请状态说明
+- 进入统一梦境地图的入口
 
 主操作：
 
 - 选择好友触发 `SELECT_FRIEND`。
-- 选择梦境场景触发 `SELECT_ROAMING_SCENE`。
 - 点击“邀请好友入梦”触发 `SEND_DREAM_INVITE`。
+- 好友接受后点击进入梦境地图，后续场景选择由统一梦境地图承接。
 
 验收重点：
 
 - 不能表现为偷偷分析好友。
+- 不能在好友页直接用场景卡片选择梦境。
 - 不能接真实通讯录、真实邀请链接或真实消息发送。
 - 必须说明好友接受后才共同预演。
 
@@ -1155,7 +1157,7 @@ Three.js scene：
 - 3 个梦境节点。
 - 3 条新关系预演模拟。
 - 至少 1 个静态好友。
-- 至少 6 个好友梦境漫游场景。
+- 至少 6 个统一梦境地图场景，并可被好友共同入梦路径复用。
 
 ### 9.2 数据文件
 
@@ -1191,8 +1193,8 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 
 - 提供隐藏或低优先级的“重新开始”操作。
 - 使用 `localStorage` 模拟分身保存和 Demo 状态恢复。
-- 当前 Demo 刷新页面时，如果已有已完成的分身状态，可回到 AI 分身主页。
-- 真实 App 骨架实现时，如果已有已完成的分身状态，应默认进入今日首页。
+- 当前实现中，刷新页面时如果已有已完成的分身状态，默认进入今日首页。
+- 默认真实 App 模式隐藏顶部进度和重置；`?demo=1` / `?demo=true` / `?ux-profile-qa=...` 显示 Demo 控件。
 - 点击“重新开始”清空本地 Demo 状态并回到欢迎页。
 - 不持久化状态到后端，正式阶段再接账号级存储。
 
@@ -1205,8 +1207,8 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 | `DT-P0-003` | `WelcomePage` |
 | `DT-P0-004` | `TwinCreatePage` |
 | `DT-P0-005` | `TwinGeneratingPage`、`TwinProjection` |
-| `DT-P0-014` | `TwinHomePage`、`localStorage` Demo 保存 |
-| `DT-P0-015` | `TwinHomePage` 双入口、`ENTER_DREAM_PLAZA`、`OPEN_FRIEND_INVITE` |
+| `DT-P0-014` | `TwinHomePage`、`localStorage` Demo 保存、分身 Tab 管理 |
+| `DT-P0-015` | `AppShell` 五区导航、`ENTER_DREAM_PLAZA`、`OPEN_FRIEND_INVITE` |
 | `DT-P0-006` | `DreamLogPage` |
 | `DT-P0-007` | `DreamStarMap`、`DreamNodeBadge` |
 | `DT-P0-016` | `FriendInvitePage`、`SEND_DREAM_INVITE`、`SIMULATE_FRIEND_ACCEPT` |
@@ -1220,9 +1222,9 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 P0 完成标准：
 
 - 从欢迎页能跑到聊天入口页。
-- 生成分身后能进入 AI 分身主页。
-- 当前 Demo 刷新后已创建分身的用户能回到 AI 分身主页；真实 App 骨架中应默认进入今日首页。
-- AI 分身主页能进入梦境广场和好友邀请梦境漫游。
+- 生成分身后能进入今日首页。
+- 刷新后已创建分身的用户能回到今日首页。
+- 今日 / 梦境 / 好友 / 消息 / 分身五区能切换并承接对应路径。
 - 梦境节点状态能从 `unviewed` 到 `opened`。
 - 关系状态能跨今日、梦境、消息、好友流转。
 - 好友邀请路径能完成等待、接受、共同预演和聊天入口。
@@ -1296,17 +1298,18 @@ P1 实现原则：
 9. 实现欢迎页。
 10. 实现 AI 分身创建页。
 11. 实现 AI 分身生成页和抽象投影。
-12. 实现 AI 分身主页和 `localStorage` Demo 保存。
-13. 实现梦境广场 / 昨夜梦境日志页。
-14. 实现梦境星图与节点点击。
-15. 实现好友邀请梦境漫游页。
-16. 实现关系预演模拟详情页。
-17. 实现等待对方入梦 / 等待好友入梦页。
-18. 实现梦境门打开页。
-19. 实现真实聊天入口页。
-20. 根据视觉验证结果补齐 Three.js 或 Canvas 2D 核心动效。
-21. 做移动端浏览器验收。
-22. 做路演路径录屏检查。
+12. 实现今日首页和五区底部导航。
+13. 实现分身 Tab 管理页和 `localStorage` Demo 保存。
+14. 实现梦境广场 / 昨夜梦境日志页。
+15. 实现梦境星图与节点点击。
+16. 实现好友邀请梦境漫游页。
+17. 实现消息页边界和真实聊天入口页。
+18. 实现关系预演模拟详情页。
+19. 实现等待对方入梦 / 等待好友入梦页。
+20. 实现梦境门打开页。
+21. 根据视觉验证结果补齐 Three.js 或 Canvas 2D 核心动效。
+22. 做移动端浏览器验收。
+23. 做路演路径录屏检查。
 
 开发原则：
 
@@ -1343,9 +1346,9 @@ npm run build
 1. 打开欢迎页。
 2. 进入 AI 分身创建页。
 3. 使用默认 Demo 信息生成 AI 分身。
-4. 进入 AI 分身主页。
-5. 当前 Demo 刷新页面后仍回到 AI 分身主页；真实 App 骨架后续改为回到今日首页。
-6. 从 AI 分身主页进入梦境广场 / 昨夜梦境日志。
+4. 进入今日首页。
+5. 刷新页面后仍回到今日首页。
+6. 从今日或梦境 Tab 进入梦境广场 / 昨夜梦境日志。
 7. 点击梦境星图中的一个节点。
 8. 查看关系预演模拟详情。
 9. 点击想进入这个梦境。
@@ -1353,12 +1356,13 @@ npm run build
 11. 模拟对方确认。
 12. 进入梦境门打开页。
 13. 进入真实聊天入口页。
-14. 回到 AI 分身主页，进入邀请好友梦境漫游。
-15. 选择好友和梦境场景。
+14. 回到好友 Tab，进入邀请好友梦境漫游。
+15. 选择好友并发送一起入梦邀请。
 16. 发出 Demo 邀请并进入等待好友入梦页。
 17. 模拟好友接受邀请。
-18. 进入共同梦境漫游预演。
-19. 进入梦境门和真实聊天入口。
+18. 回到统一梦境地图选择共同场景。
+19. 进入共同梦境漫游预演。
+20. 进入梦境门和真实聊天入口。
 
 ### 14.3 视觉验收
 

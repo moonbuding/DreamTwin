@@ -39,6 +39,7 @@ export function normalizePersistedState(state: DemoFlowState): DemoFlowState {
     simulations: createSimulationsForProfile(state.profile),
     hasCompletedTwinSetup: inferredTwinSetup,
     liveSimulationResults: {},
+    sentFirstMessages: state.sentFirstMessages ?? {},
   };
 
   if (!inferredTwinSetup) return merged;

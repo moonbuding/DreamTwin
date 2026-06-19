@@ -50,10 +50,6 @@ export function App() {
     () => state.simulations.find((simulation) => simulation.id === selectedNode.simulationId) ?? state.simulations[0],
     [selectedNode.simulationId, state.simulations],
   );
-  const friendInviteSimulation = useMemo(
-    () => state.simulations.find((simulation) => simulation.entryMode === "friend_invite") ?? state.simulations[0],
-    [state.simulations],
-  );
   const friendInviteNode = useMemo(
     () => state.nodes.find((node) => node.entryMode === "friend_invite") ?? state.nodes[0],
     [state.nodes],
@@ -118,6 +114,10 @@ export function App() {
     }
     dispatch({ type: "SIMULATE_COUNTERPART_CONFIRM", nodeId });
   };
+  const openFriendSceneFromMap = (sceneId: string, nodeId: string) => {
+    dispatch({ type: "SELECT_ROAMING_SCENE", sceneId });
+    dispatch({ type: "OPEN_ROAMING_SIMULATION", nodeId });
+  };
   const storeLiveSimulationResult = useCallback((resultKey: string, result: RelationshipSimulationResult) => {
     dispatch({ type: "STORE_LIVE_SIMULATION_RESULT", resultKey, result });
   }, []);
@@ -144,7 +144,7 @@ export function App() {
             : "dream";
   const navigateTab = (tab: AppTab) => {
     if (tab === "today") dispatch({ type: "OPEN_TODAY" });
-    if (tab === "dream") dispatch({ type: "OPEN_DREAM_LOG" });
+    if (tab === "dream") dispatch({ type: "OPEN_DREAM_TAB" });
     if (tab === "messages") dispatch({ type: "OPEN_MESSAGES" });
     if (tab === "friends") dispatch({ type: "OPEN_FRIENDS" });
     if (tab === "twin") dispatch({ type: "OPEN_TWIN_HOME" });
@@ -186,6 +186,7 @@ export function App() {
           dreamInviteStatus={state.dreamInviteStatus}
           friends={state.friends}
           nodes={state.nodes}
+          sentFirstMessages={state.sentFirstMessages}
           simulations={state.simulations}
           twin={state.twin}
           onContinueNode={openNodeFromSurface}
@@ -201,15 +202,16 @@ export function App() {
           twin={state.twin}
           nodes={state.nodes}
           onEditTwin={() => dispatch({ type: "EDIT_TWIN" })}
-          onEnterDreamPlaza={() => dispatch({ type: "ENTER_DREAM_PLAZA" })}
-          onInviteFriend={() => dispatch({ type: "OPEN_FRIEND_INVITE" })}
         />
       )}
       {state.currentPage === "dream-log" && (
         <DreamLogPage
-          twin={state.twin}
           nodes={state.nodes}
+          simulations={state.simulations}
+          selectedRoamingSceneId={state.selectedRoamingSceneId}
           onOpenFriendInvite={() => dispatch({ type: "OPEN_FRIEND_INVITE" })}
+          onOpenFriendScene={openFriendSceneFromMap}
+          onSelectRoamingScene={(sceneId) => dispatch({ type: "SELECT_ROAMING_SCENE", sceneId })}
           onSelectNode={openNodeFromSurface}
         />
       )}
@@ -219,15 +221,16 @@ export function App() {
           inviteStatus={state.dreamInviteStatus}
           node={friendInviteNode}
           selectedFriendId={state.selectedFriendId}
-          simulation={friendInviteSimulation}
           onInvite={(friendId) => dispatch({ type: "SEND_DREAM_INVITE", friendId })}
           onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
+          onOpenWaiting={(nodeId) => dispatch({ type: "OPEN_WAITING", nodeId })}
           onSelectFriend={(friendId) => dispatch({ type: "SELECT_FRIEND", friendId })}
         />
       )}
       {state.currentPage === "messages" && (
         <MessagesPage
           nodes={state.nodes}
+          sentFirstMessages={state.sentFirstMessages}
           simulations={state.simulations}
           onOpenChat={(nodeId) => dispatch({ type: "OPEN_CHAT_ENTRY", nodeId })}
           onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
@@ -263,13 +266,16 @@ export function App() {
               : dispatch({ type: "OPEN_SIMULATION_RESULT", nodeId })
           }
           onConfirm={confirmWaitingNode}
+          onOpenToday={() => dispatch({ type: "OPEN_TODAY" })}
           onExplore={() => dispatch({ type: "OPEN_DREAM_LOG" })}
+          showDemoControls={showDemoChrome}
           onWithdraw={(nodeId) => dispatch({ type: "WITHDRAW_DREAM", nodeId })}
         />
       )}
       {state.currentPage === "dream-gate" && (
         <DreamGatePage
           node={selectedNode}
+          selectedRoamingSceneId={state.selectedRoamingSceneId}
           simulation={selectedSimulation}
           onBackToSimulation={(nodeId) => dispatch({ type: "OPEN_SIMULATION_RESULT", nodeId })}
           onBackToLog={() => dispatch({ type: "OPEN_DREAM_LOG" })}
@@ -278,11 +284,15 @@ export function App() {
       )}
       {state.currentPage === "chat-entry" && (
         <ChatEntryPage
+          hasSentFirstMessage={selectedNode.status === "in_chat"}
           liveSimulationResult={state.liveSimulationResults?.[selectedLiveResultKey]}
+          sentFirstMessage={state.sentFirstMessages?.[selectedNode.id]}
           simulation={selectedSimulation}
           selectedRoamingSceneId={state.selectedRoamingSceneId}
           onBackToLog={() => dispatch({ type: "OPEN_DREAM_LOG" })}
           onBackToSimulation={() => dispatch({ type: "OPEN_SIMULATION_RESULT", nodeId: selectedNode.id })}
+          onFirstMessageSent={(text) => dispatch({ type: "MARK_CHAT_SENT", nodeId: selectedNode.id, text })}
+          onOpenMessages={() => dispatch({ type: "OPEN_MESSAGES" })}
         />
       )}
     </AppShell>
