@@ -83,6 +83,21 @@ button {
   font-weight: 800;
 }
 
+.app-topbar-app {
+  align-items: center;
+  height: 56px;
+  padding-top: 0;
+  background: linear-gradient(180deg, rgba(5, 7, 19, 0.9), rgba(5, 7, 19, 0.08) 72%, rgba(5, 7, 19, 0));
+}
+
+.phone-shell-app-mode .page {
+  padding-top: 56px;
+}
+
+.phone-shell-app-mode .page-content {
+  padding-top: 30px;
+}
+
 .topbar-left,
 .app-topbar > div {
   display: inline-flex;

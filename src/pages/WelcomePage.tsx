@@ -13,7 +13,7 @@ export function WelcomePage({ onStart }: { onStart: () => void }) {
           DreamTwin 会先模拟你和对方如果相遇、聊天、靠近或产生误解，关系可能怎样发展。你选择想进入的那一个，只有双方都愿意，梦境门才会打开。
         </p>
         <PrimaryButton icon={<ArrowRight size={18} />} onClick={onStart}>
-          创建我的 AI 分身
+          首次创建我的 AI 分身
         </PrimaryButton>
         <div className="quiet-proof">
           <Sparkles size={16} />

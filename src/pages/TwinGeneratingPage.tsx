@@ -10,7 +10,7 @@ import { PrimaryButton } from "../components/PrimaryButton";
 import { TwinProjection } from "../components/TwinProjection";
 import type { TwinProjection as TwinProjectionModel, UserProfile } from "../types/dreamtwin";
 
-const generationSteps = ["读取靠近方式", "生成抽象投影", "保存分身入口", "带回关系预演"];
+const generationSteps = ["读取靠近方式", "生成抽象投影", "保存为长期分身", "带回关系动态"];
 
 export function TwinGeneratingPage({
   profile,
@@ -84,8 +84,8 @@ export function TwinGeneratingPage({
   return (
     <section className="page page-scroll">
       <div className="page-content">
-        <p className="label">Step 02</p>
-        <h1>分身已经醒来。</h1>
+        <p className="label">首次生成</p>
+        <h1>你的 DreamTwin 已保存。</h1>
         <TwinProjection twin={displayTwin} />
         <div className="generation-progress" aria-label="AI 分身生成进度">
           <span style={{ width: `${progress}%` }} />

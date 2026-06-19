@@ -33,6 +33,12 @@ const pageProgress: Record<DemoPage, { label: string; value: number }> = {
   "chat-entry": { label: "真实聊天", value: 100 },
 };
 
+function isDemoModeFromUrl(): boolean {
+  const search = (globalThis as typeof globalThis & { location?: Location }).location?.search ?? "";
+  const params = new URLSearchParams(search);
+  return params.get("demo") === "1" || params.get("demo") === "true" || params.has("ux-profile-qa");
+}
+
 export function App() {
   const [state, dispatch] = useReducer(demoFlowReducer, initialDemoFlowState, () => loadPersistedState());
 
@@ -117,6 +123,7 @@ export function App() {
   }, []);
 
   const canGoBack = (state.pageHistory ?? []).length > 0;
+  const showDemoChrome = useMemo(() => isDemoModeFromUrl(), []);
   const currentProgress = pageProgress[state.currentPage] ?? pageProgress.welcome;
   const progressLabel = `${Math.round(currentProgress.value)}%`;
   const stepLabel = currentProgress.label;
@@ -153,6 +160,7 @@ export function App() {
       canGoBack={canGoBack}
       progressLabel={progressLabel}
       progressValue={currentProgress.value}
+      showDemoChrome={showDemoChrome}
       showTabs={showTabs}
       stepLabel={stepLabel}
       onBack={() => dispatch({ type: "GO_BACK" })}

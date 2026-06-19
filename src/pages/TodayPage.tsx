@@ -54,7 +54,7 @@ export function TodayPage({
           <p className="label">今日</p>
           <h1>今天先看关系动态。</h1>
           <p>
-            {twin.nickname} 会把 AI 已预演、等待回应、梦境门和真实聊天整理到这里。你不需要从分身页开始找入口。
+            {twin.nickname} 已保存。后续每天打开 App，会直接看到 AI 已预演、等待回应、梦境门和真实聊天。
           </p>
         </header>
 

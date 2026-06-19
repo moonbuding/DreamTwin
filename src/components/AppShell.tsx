@@ -7,6 +7,7 @@ interface AppShellProps {
   children: ReactNode;
   activeTab?: AppTab;
   canGoBack: boolean;
+  showDemoChrome?: boolean;
   showTabs?: boolean;
   progressLabel: string;
   progressValue: number;
@@ -28,6 +29,7 @@ export function AppShell({
   children,
   activeTab,
   canGoBack,
+  showDemoChrome = false,
   showTabs = false,
   progressLabel,
   progressValue,
@@ -38,8 +40,16 @@ export function AppShell({
 }: AppShellProps) {
   return (
     <main className="app-stage">
-      <div className={showTabs ? "phone-shell phone-shell-with-tabs" : "phone-shell"}>
-        <header className="app-topbar">
+      <div
+        className={[
+          "phone-shell",
+          showTabs ? "phone-shell-with-tabs" : "",
+          showDemoChrome ? "phone-shell-demo-mode" : "phone-shell-app-mode",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        <header className={showDemoChrome ? "app-topbar app-topbar-demo" : "app-topbar app-topbar-app"}>
           <div className="topbar-left">
             {canGoBack ? (
               <button className="icon-button icon-button-back" onClick={onBack} type="button" aria-label="返回上一步">
@@ -50,17 +60,21 @@ export function AppShell({
             <span className="brand-mark" />
             <span>DreamTwin</span>
           </div>
-          <button className="icon-button icon-button-reset" onClick={onReset} type="button" aria-label="重新开始体验">
-            <RotateCcw size={17} />
-            <span>重置体验</span>
-          </button>
-          <div className="demo-progress" aria-label="体验进度">
-            <span>预演路径 · {stepLabel}</span>
-            <strong>{progressLabel}</strong>
-            <div className="demo-progress-track">
-              <i style={{ width: `${progressValue}%` }} />
-            </div>
-          </div>
+          {showDemoChrome ? (
+            <>
+              <button className="icon-button icon-button-reset" onClick={onReset} type="button" aria-label="重新开始体验">
+                <RotateCcw size={17} />
+                <span>重置体验</span>
+              </button>
+              <div className="demo-progress" aria-label="体验进度">
+                <span>预演路径 · {stepLabel}</span>
+                <strong>{progressLabel}</strong>
+                <div className="demo-progress-track">
+                  <i style={{ width: `${progressValue}%` }} />
+                </div>
+              </div>
+            </>
+          ) : null}
         </header>
         {children}
         {showTabs && onNavigateTab ? (
