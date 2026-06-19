@@ -41,6 +41,21 @@ The default server URL is:
 http://127.0.0.1:8787
 ```
 
+The frontend stays in static mode by default so the app can run cleanly without a backend.
+To enable Live AI in local development, explicitly opt in:
+
+```bash
+VITE_DREAMTWIN_ENABLE_LIVE_AI="true" npm run dev
+```
+
+To point Vite at another local API server, set the URL explicitly. Setting an API URL also enables Live AI:
+
+```bash
+VITE_DREAMTWIN_API_URL="http://127.0.0.1:8787" npm run dev
+```
+
+The frontend only de-duplicates in-flight AI requests; after a request finishes, generating again will call the API again.
+
 ## Environment
 
 DeepSeek is configured only through a server-side environment variable:
@@ -99,6 +114,8 @@ curl -sS -X POST http://127.0.0.1:8787/api/ai/twin-summary \
   -d '{}'
 ```
 
+The `twin-summary` response includes a stable `avatarStyleSpec` object for the frontend 3D personality projection. This is only a rendering hint for a stylized luminous twin, not a realistic human body, dress-up system, companion role, or identity claim.
+
 Generate a relationship simulation:
 
 ```bash
@@ -106,5 +123,7 @@ curl -sS -X POST http://127.0.0.1:8787/api/ai/relationship-simulation \
   -H 'Content-Type: application/json' \
   -d '{"counterpartName":"Nora","scene":"雨夜便利店"}'
 ```
+
+The relationship simulation route also accepts optional `counterpartProfile`, `sceneStageSpec`, `sceneEvent`, `guidedSceneEvents`, and `relationshipGoal` fields so the result can be based on both AI twin profiles plus a guided dream-stage event. `sceneStageSpec` is a fixed guided-stage semantic hint, not a walkable map, quest, or game level.
 
 If `DEEPSEEK_API_KEY` is missing, AI routes return `missing_api_key` with a blocked generation job.

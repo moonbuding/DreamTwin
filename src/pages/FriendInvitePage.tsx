@@ -1,55 +1,60 @@
-import { Compass, Send, Users } from "lucide-react";
+import { Compass, DoorOpen, Send, Users } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
+import { StatusPill } from "../components/StatusPill";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
-import type { DreamInviteStatus, FriendProfile, RelationshipSimulation } from "../types/dreamtwin";
+import type { DreamInviteStatus, DreamNode, FriendProfile, RelationshipSimulation } from "../types/dreamtwin";
 
 interface FriendInvitePageProps {
   friends: FriendProfile[];
   inviteStatus: DreamInviteStatus;
+  node: DreamNode;
   selectedFriendId: string | null;
-  selectedSceneId: string | null;
   simulation: RelationshipSimulation;
-  onInvite: (friendId: string, sceneId: string) => void;
+  onInvite: (friendId: string) => void;
+  onOpenDreamMap: () => void;
   onSelectFriend: (friendId: string) => void;
-  onSelectScene: (sceneId: string) => void;
 }
 
 export function FriendInvitePage({
   friends,
   inviteStatus,
+  node,
   selectedFriendId,
-  selectedSceneId,
   simulation,
   onInvite,
+  onOpenDreamMap,
   onSelectFriend,
-  onSelectScene,
 }: FriendInvitePageProps) {
   const selectedFriend = friends.find((friend) => friend.id === selectedFriendId) ?? friends[0];
-  const scenes = simulation.roamingScenes ?? [];
-  const selectedScene = scenes.find((scene) => scene.id === selectedSceneId) ?? scenes[0];
   const inviteCopy =
     inviteStatus === "withdrawn"
       ? "上一次邀请已撤回，可以换一个梦境重新发起。"
-      : "好友接受后，你们才会一起看到 AI 梦境漫游预演。";
+      : inviteStatus === "sent"
+        ? "邀请已发出。好友接受前，DreamTwin 不会替你表达关系意图。"
+        : inviteStatus === "accepted"
+          ? "好友已经入梦。下一步回到梦境地图，在同一张地图里共同选择场景。"
+          : "好友接受后，你们会进入同一张梦境地图，再一起选择场景和查看关系预演。";
 
-  const canInvite = Boolean(selectedFriend && selectedScene);
+  const canInvite = Boolean(selectedFriend);
+  const isAccepted = inviteStatus === "accepted" || node.status === "both_entered" || node.status === "opened" || node.status === "in_chat";
+  const isSent = inviteStatus === "sent" || node.status === "waiting";
 
   return (
     <section className="page page-scroll scene-page friend-invite-page">
       <ThreeDreamScene variant="ambient" className="page-scene friend-invite-scene" />
       <div className="page-content friend-invite-content">
         <div className="friend-invite-hero">
-          <p className="label">邀请好友梦境漫游</p>
-          <h1>邀请好友一起入梦。</h1>
+          <p className="label">好友</p>
+          <h1>先邀请，再共同入梦。</h1>
           <p>
-            先发出低压邀请，好友同意后，双方一起看 AI 对共同经历的关系预演。
+            好友页只负责发起和确认邀请。场景选择回到统一梦境地图，避免偷偷分析，也避免把好友路径做成另一套玩法。
           </p>
         </div>
 
         <section className="friend-picker" aria-label="选择好友">
           <div className="section-heading-inline">
             <span>选择好友</span>
-            <strong>Demo 使用静态好友</strong>
+            <strong>当前使用示例好友</strong>
           </div>
           <div className="friend-card-row">
             {friends.map((friend) => (
@@ -72,53 +77,50 @@ export function FriendInvitePage({
           </div>
         </section>
 
-        <section className="roaming-scene-picker" aria-label="选择梦境漫游场景">
-          <div className="section-heading-inline">
-            <span>选择共同经历</span>
-            <strong>让共同经历驱动关系预演</strong>
+        <section className="invite-preview" aria-label="邀请状态">
+          <div>
+            <Compass size={16} />
+            <span>邀请状态</span>
           </div>
-          <div className="roaming-scene-grid" role="list">
-            {scenes.map((scene) => (
-              <button
-                aria-pressed={scene.id === selectedScene?.id}
-                className={scene.id === selectedScene?.id ? "roaming-scene-card roaming-scene-active" : "roaming-scene-card"}
-                key={scene.id}
-                onClick={() => onSelectScene(scene.id)}
-                type="button"
-              >
-                <span>{scene.label}</span>
-                <strong>{scene.verdict}</strong>
-                <p>{scene.premise}</p>
-              </button>
-            ))}
+          <strong>
+            {isAccepted
+              ? `${selectedFriend?.name ?? "好友"} 已进入梦境地图入口`
+              : isSent
+                ? `等待 ${selectedFriend?.name ?? "好友"} 入梦`
+                : `邀请 ${selectedFriend?.name ?? "好友"} 一起进入梦境地图`}
+          </strong>
+          <p>{inviteCopy}</p>
+          <div className="friend-invite-state">
+            <StatusPill status={node.status} label={isAccepted ? "双方已入梦" : isSent ? "等待好友入梦" : "可邀请"} />
+            <span>先邀请好友，再共同预演。AI 不会单方面分析好友。</span>
           </div>
+          <blockquote>{simulation.possibleFirstLine}</blockquote>
         </section>
 
-        {selectedScene ? (
-          <section className="invite-preview" aria-label="邀请预览">
+        {isAccepted ? (
+          <section className="friend-map-handoff" aria-label="共同梦境地图入口">
+            <DoorOpen size={18} />
             <div>
-              <Compass size={16} />
-              <span>邀请预览</span>
+              <strong>下一步进入同一张梦境地图。</strong>
+              <p>你们会在梦境地图中共同选择海底、星空、日料、电影等场景，再查看 AI 关系预演。</p>
             </div>
-            <strong>
-              邀请 {selectedFriend?.name ?? "好友"} 一起进入「{selectedScene.label}」
-            </strong>
-            <p>{inviteCopy}</p>
-            <blockquote>{selectedScene.suggestedMove}</blockquote>
+            <PrimaryButton icon={<Compass size={17} />} onClick={onOpenDreamMap}>
+              进入梦境地图
+            </PrimaryButton>
           </section>
         ) : null}
       </div>
 
       <div className="bottom-action">
         <PrimaryButton
-          disabled={!canInvite}
+          disabled={!canInvite || isSent || isAccepted}
           icon={<Send size={18} />}
           onClick={() => {
-            if (!selectedFriend || !selectedScene) return;
-            onInvite(selectedFriend.id, selectedScene.id);
+            if (!selectedFriend) return;
+            onInvite(selectedFriend.id);
           }}
         >
-          邀请好友入梦
+          {isSent ? "已发送，等待好友" : isAccepted ? "好友已入梦" : "邀请好友入梦"}
         </PrimaryButton>
       </div>
     </section>

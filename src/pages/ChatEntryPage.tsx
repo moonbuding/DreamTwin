@@ -2,27 +2,37 @@ import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, Compass, RefreshCw, Send, ShieldCheck } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
-import type { RelationshipSimulation } from "../types/dreamtwin";
+import type { RelationshipSimulation, RelationshipSimulationResult } from "../types/dreamtwin";
+import { adaptFriendInviteMoveAfterAcceptance } from "../utils/relationshipCopy";
 
 interface ChatEntryPageProps {
+  liveSimulationResult?: RelationshipSimulationResult;
   simulation: RelationshipSimulation;
   selectedRoamingSceneId: string | null;
   onBackToLog: () => void;
   onBackToSimulation: () => void;
 }
 
-export function ChatEntryPage({ simulation, selectedRoamingSceneId, onBackToLog, onBackToSimulation }: ChatEntryPageProps) {
+export function ChatEntryPage({
+  liveSimulationResult,
+  simulation,
+  selectedRoamingSceneId,
+  onBackToLog,
+  onBackToSimulation,
+}: ChatEntryPageProps) {
   const activeRoamingScene =
     simulation.roamingScenes?.find((scene) => scene.id === selectedRoamingSceneId) ?? simulation.roamingScenes?.[0];
   const isFriendInvite = simulation.entryMode === "friend_invite";
-  const suggestedFirstLine = activeRoamingScene?.possibleFirstLine ?? simulation.possibleFirstLine;
-  const recommendedMove = activeRoamingScene?.suggestedMove ?? simulation.recommendedMove;
-  const handoffOutcome = activeRoamingScene?.relationshipOutcome ?? simulation.rehearsalOutcome;
+  const suggestedFirstLine = liveSimulationResult?.possibleFirstLine ?? activeRoamingScene?.possibleFirstLine ?? simulation.possibleFirstLine;
+  const recommendedMove = adaptFriendInviteMoveAfterAcceptance(
+    liveSimulationResult?.suggestedMove ?? activeRoamingScene?.suggestedMove ?? simulation.recommendedMove,
+    isFriendInvite,
+  );
+  const handoffOutcome = liveSimulationResult?.conclusion ?? activeRoamingScene?.relationshipOutcome ?? simulation.rehearsalOutcome;
   const sceneTitle = activeRoamingScene?.label ?? simulation.title;
   const [selectedStarter, setSelectedStarter] = useState("recommended");
   const [draft, setDraft] = useState(suggestedFirstLine);
   const [sentMessages, setSentMessages] = useState<string[]>([]);
-  const simulatedReplySource = simulation.counterpartSimulatedReply || simulation.counterpartProjection;
   const starterOptions = useMemo(
     () => [
       {
@@ -47,11 +57,6 @@ export function ChatEntryPage({ simulation, selectedRoamingSceneId, onBackToLog,
     [sceneTitle, suggestedFirstLine],
   );
   const activeStarter = starterOptions.find((option) => option.id === selectedStarter) ?? starterOptions[0];
-  const simulatedReply = useMemo(
-    () =>
-      simulatedReplySource.replace("她", "我").replace("他", "我").replace("这说明", "所以"),
-    [simulatedReplySource],
-  );
   const hasSentMessage = sentMessages.length > 0;
 
   useEffect(() => {
@@ -86,11 +91,11 @@ export function ChatEntryPage({ simulation, selectedRoamingSceneId, onBackToLog,
         <section className="chat-handoff-panel" aria-label="真实聊天交接状态">
           <div>
             <CheckCircle2 size={15} />
-            <span>预演结论已锁定</span>
+            <span>{liveSimulationResult ? "AI 预演建议已带入" : "预演建议已带入"}</span>
           </div>
           <div>
             <ShieldCheck size={15} />
-            <span>第一句话风险已校准</span>
+            <span>第一句话已低压处理</span>
           </div>
           <div>
             <Send size={15} />
@@ -130,9 +135,11 @@ export function ChatEntryPage({ simulation, selectedRoamingSceneId, onBackToLog,
           </div>
         </section>
         <section className="chat-thread" aria-label="聊天预览">
-          <div className="chat-bubble chat-bubble-counterpart">
-            <span>{simulation.counterpartName}</span>
-            <p>我也看到了刚才的关系预演。你想从哪一句开始聊？</p>
+          <div className="chat-delivery-receipt">
+            <ShieldCheck size={15} />
+            <span>
+              梦境门已打开。{simulation.counterpartName} 已确认进入，真实聊天从你亲自发送的第一句话开始。
+            </span>
           </div>
           {sentMessages.map((message, index) => (
             <div className="chat-bubble chat-bubble-me" key={`${message}-${index}`}>
@@ -140,16 +147,10 @@ export function ChatEntryPage({ simulation, selectedRoamingSceneId, onBackToLog,
               <p>{message}</p>
             </div>
           ))}
-          {sentMessages.length > 0 ? (
-            <div className="chat-bubble chat-bubble-counterpart">
-              <span>{simulation.counterpartName}</span>
-              <p>{simulatedReply}</p>
-            </div>
-          ) : null}
           {hasSentMessage ? (
             <div className="chat-delivery-receipt" aria-label="发送完成状态">
               <CheckCircle2 size={15} />
-              <span>第一句话已进入真实聊天。DreamTwin 的工作到这里结束，接下来交还给你。</span>
+              <span>第一句话已进入真实聊天。DreamTwin 的工作到这里结束，接下来只等待真人回应。</span>
             </div>
           ) : null}
         </section>

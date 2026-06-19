@@ -27,6 +27,17 @@
 - 梦境门是双向确认边界，未确认前不能打开真实聊天。
 - 当前前端 Demo 保留为体验基准，后续逐步替换静态数据。
 
+### 1.1 v0.2 架构补充
+
+下一阶段后端与 AI 架构需要支持 **风格化全身 3D AI 分身、引导式 3D 梦境场景、双方画像驱动的关系模拟**。
+
+关键变化：
+
+- AI 分身不仅保存摘要和关键词，也保存可渲染的 `AvatarStyleSpec`，用于前端生成风格化 3D 分身。
+- 用户画像允许包含 MBTI、血型、星座、玄学标签等自愿填写的叙事信号，但不作为科学预测或命运判断。
+- 关系预演生成必须读取双方分身画像、当前梦境场景事件和关系目标。
+- 3D 梦境场景只保存场景类型与引导事件，不保存可走地图、关卡或任务系统。
+
 ## 2. 后端模块
 
 ### 2.1 账号与用户资料
@@ -65,6 +76,7 @@ AI 分身应包含：
 - 表达风格。
 - 关系偏好。
 - 可视化投影参数。
+- 风格化 3D 分身展示参数。
 - 生成版本。
 
 边界：
@@ -72,6 +84,7 @@ AI 分身应包含：
 - AI 分身不是 AI 伴侣。
 - AI 分身不主动聊天。
 - AI 分身不代表用户向真人发送消息。
+- AI 分身不是换装或养成资产。
 
 ### 2.3 关系预演生成任务
 
@@ -89,6 +102,9 @@ AI 分身应包含：
 
 - 关系假设。
 - 梦境场景。
+- 引导式场景事件。
+- 双方分身画像快照。
+- 关系目标。
 - 可能对话。
 - 可能行为。
 - 关系走势。
@@ -103,6 +119,7 @@ AI 分身应包含：
 - 不生成操控、PUA、骚扰、越界表达。
 - 不替用户写成已发送消息。
 - 不把关系预演包装成心理诊断或命运判断。
+- 不把 MBTI、血型、星座或玄学标签包装成确定性结论。
 
 ### 2.4 梦境广场与梦境节点
 
@@ -121,7 +138,7 @@ AI 分身应包含：
 
 - 梦境广场不是真实地图。
 - 不做附近的人。
-- 不做可走地图或游戏关卡。
+- 不做自由可走地图、地图拖拽、地图缩放或游戏关卡。
 - 梦境节点服务关系预演入口，不服务玩法探索。
 
 ### 2.5 好友邀请与共同梦境漫游
@@ -243,6 +260,12 @@ interface UserProfile {
   expressionStyle: string;
   socialPace: string;
   optionalSignals: string[];
+  mbti?: string;
+  bloodType?: string;
+  zodiac?: string;
+  mysticTags?: string[];
+  communicationStyle?: string[];
+  values?: string[];
   updatedAt: string;
 }
 ```
@@ -260,8 +283,21 @@ interface TwinProjection {
   keywords: string[];
   colorPalette: string[];
   lightShape: "halo" | "mist" | "pulse" | "orbit";
+  avatarStyleSpec?: AvatarStyleSpec;
   generatedBy: string;
   createdAt: string;
+}
+```
+
+### 3.3.1 AvatarStyleSpec
+
+```ts
+interface AvatarStyleSpec {
+  silhouette: "soft-human" | "crystal-human" | "shadow-human" | "light-human";
+  materialTone: "mist" | "glass" | "stardust" | "neon";
+  motionStyle: "calm-breath" | "curious-turn" | "warm-idle";
+  auraColor: string[];
+  boundaryTags: Array<"no-real-face" | "no-outfit-swap" | "no-leveling" | "no-companion-mode">;
 }
 ```
 
@@ -276,7 +312,27 @@ interface DreamNode {
   title: string;
   status: "unviewed" | "viewed" | "waiting" | "opened" | "closed";
   visualTone: string;
+  sceneStageVariant?: SceneStageVariant;
   createdAt: string;
+}
+```
+
+### 3.4.1 GuidedSceneEvent
+
+```ts
+type SceneStageVariant =
+  | "rain_store"
+  | "starlight"
+  | "undersea"
+  | "sushi"
+  | "cinema"
+  | "badminton";
+
+interface GuidedSceneEvent {
+  id: string;
+  label: string;
+  prompt: string;
+  hotspot: "foreground" | "midground" | "background" | "gate";
 }
 ```
 
@@ -302,6 +358,10 @@ interface RelationshipSimulation {
   badOutcomeScenario: string;
   suggestedMove: string;
   possibleFirstLine: string;
+  selfProfileSnapshot?: UserProfile;
+  counterpartProfileSnapshot?: UserProfile;
+  guidedSceneEvents?: GuidedSceneEvent[];
+  relationshipGoal?: string;
   safetyStatus: "passed" | "limited" | "blocked";
   createdAt: string;
 }

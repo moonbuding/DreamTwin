@@ -4,8 +4,12 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "check": "npm run qa && npm run build",
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build && npm run server:build",
+    "qa": "npm run qa:state && npm run qa:safety",
+    "qa:safety": "node scripts/product-safety-qa.mjs",
+    "qa:state": "tsc -p tsconfig.qa.json && node scripts/state-flow-qa.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "server:build": "tsc -p tsconfig.server.json",
     "server:dev": "npm run server:build && node dist-server/server/index.js",

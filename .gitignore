@@ -4,6 +4,7 @@ dist/
 dist-server/
 output/
 .dreamtwin-local/
+.qa-build/
 .playwright-cli/
 *.tsbuildinfo
 npm-debug.log*

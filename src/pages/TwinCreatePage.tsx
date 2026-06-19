@@ -10,23 +10,46 @@ interface TwinCreatePageProps {
 
 const keywordOptions = ["慢热", "高共情", "夜间思考者", "重视真实感", "好奇心强", "直接表达"];
 const interestOptions = ["城市夜行", "独立音乐", "心理学", "影像叙事", "咖啡馆", "旅行观察"];
+const valueOptions = ["真实感", "边界感", "长期信任", "精神共鸣", "行动一致", "轻松相处"];
+const mysticSignalOptions = ["月亮感", "深夜直觉", "火象能量", "水象共情", "风象好奇", "土象稳定"];
 
 export function TwinCreatePage({ profile, onSubmit }: TwinCreatePageProps) {
   const [nickname, setNickname] = useState(profile.nickname);
   const [relationshipIntention, setRelationshipIntention] = useState(profile.relationshipIntention);
   const [personalityKeywords, setPersonalityKeywords] = useState(profile.personalityKeywords);
   const [interests, setInterests] = useState(profile.interests);
+  const [mbti, setMbti] = useState(profile.mbti ?? "");
+  const [zodiac, setZodiac] = useState(profile.zodiac ?? "");
+  const [communicationStyle, setCommunicationStyle] = useState(profile.communicationStyle ?? "");
+  const [values, setValues] = useState(profile.values ?? []);
+  const [mysticTags, setMysticTags] = useState(profile.mysticTags ?? []);
 
   const canSubmit = nickname.trim().length > 0 && relationshipIntention.trim().length > 3 && personalityKeywords.length > 0;
   const currentProfile = useMemo<UserProfile>(
-    () => ({
-      ...profile,
-      nickname: nickname.trim(),
-      relationshipIntention: relationshipIntention.trim(),
-      personalityKeywords,
-      interests,
-    }),
-    [interests, nickname, personalityKeywords, profile, relationshipIntention],
+    () => {
+      const baseSignals = profile.optionalSignals.filter(
+        (signal) => !signal.startsWith("沟通方式：") && !signal.startsWith("重视："),
+      );
+
+      return {
+        ...profile,
+        nickname: nickname.trim(),
+        relationshipIntention: relationshipIntention.trim(),
+        personalityKeywords,
+        interests,
+        mbti: mbti.trim() || undefined,
+        zodiac: zodiac.trim() || undefined,
+        communicationStyle: communicationStyle.trim() || undefined,
+        values,
+        mysticTags,
+        optionalSignals: [
+          ...baseSignals,
+          ...(communicationStyle.trim() ? [`沟通方式：${communicationStyle.trim()}`] : []),
+          ...(values.length ? [`重视：${values.join("、")}`] : []),
+        ],
+      };
+    },
+    [communicationStyle, interests, mbti, mysticTags, nickname, personalityKeywords, profile, relationshipIntention, values, zodiac],
   );
 
   const toggleValue = (value: string, values: string[], setter: (next: string[]) => void) => {
@@ -85,10 +108,79 @@ export function TwinCreatePage({ profile, onSubmit }: TwinCreatePageProps) {
               ))}
             </div>
           </div>
+          <section className="profile-signal-panel" aria-label="可选画像信号">
+            <div>
+              <p className="field-label">让 AI 更懂你的可选信号</p>
+              <p>这些只作为关系预演的叙事参考，不会被当成科学预测。</p>
+            </div>
+            <div className="profile-signal-grid">
+              <label>
+                MBTI
+                <input
+                  value={mbti}
+                  onChange={(event) => setMbti(event.target.value.toUpperCase())}
+                  aria-label="MBTI"
+                  placeholder="例如 INFJ"
+                />
+              </label>
+              <label>
+                星座
+                <input
+                  value={zodiac}
+                  onChange={(event) => setZodiac(event.target.value)}
+                  aria-label="星座"
+                  placeholder="例如 双鱼"
+                />
+              </label>
+            </div>
+            <label>
+              沟通方式
+              <textarea
+                className="compact-textarea"
+                value={communicationStyle}
+                onChange={(event) => setCommunicationStyle(event.target.value)}
+                aria-label="沟通方式"
+                placeholder="例如：先观察，再用具体细节靠近"
+              />
+            </label>
+            <div>
+              <p className="field-label">价值观标签</p>
+              <div className="keyword-row choice-row">
+                {valueOptions.map((value) => (
+                  <button
+                    className={`choice-chip ${values.includes(value) ? "choice-chip-active" : ""}`}
+                    key={value}
+                    onClick={() => toggleValue(value, values, setValues)}
+                    type="button"
+                  >
+                    {value}
+                  </button>
+                ))}
+              </div>
+            </div>
+            <div>
+              <p className="field-label">叙事信号</p>
+              <div className="keyword-row choice-row">
+                {mysticSignalOptions.map((signal) => (
+                  <button
+                    className={`choice-chip ${mysticTags.includes(signal) ? "choice-chip-active" : ""}`}
+                    key={signal}
+                    onClick={() => toggleValue(signal, mysticTags, setMysticTags)}
+                    type="button"
+                  >
+                    {signal}
+                  </button>
+                ))}
+              </div>
+            </div>
+          </section>
           <div className="projection-preview">
             <span>即将生成</span>
             <strong>{nickname || "你"} 的 DreamTwin</strong>
-            <p>{personalityKeywords.slice(0, 3).join(" / ") || "等待人格线索"}</p>
+            <p>
+              {[...personalityKeywords.slice(0, 2), ...values.slice(0, 1), mbti.trim()].filter(Boolean).join(" / ") ||
+                "等待人格线索"}
+            </p>
           </div>
         </div>
       </div>

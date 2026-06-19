@@ -17,10 +17,20 @@ export function DreamLogPage({ twin, nodes, onOpenFriendInvite, onSelectNode }: 
   const friendNode = nodes.find((node) => node.entryMode === "friend_invite");
   const viewedCount = overnightNodes.filter((node) => node.status !== "unviewed").length;
   const waitingCount = overnightNodes.filter((node) => node.status === "waiting").length;
-  const openedCount = overnightNodes.filter((node) => node.status === "opened").length;
+  const openedCount = overnightNodes.filter((node) => node.status === "opened" || node.status === "in_chat").length;
   const friendStateText =
-    friendNode?.status === "opened" ? "好友已入梦" : friendNode?.status === "waiting" ? "邀请等待中" : "可邀请";
+    friendNode?.status === "in_chat"
+      ? "已进入聊天"
+      : friendNode?.status === "opened"
+        ? "梦境门打开"
+        : friendNode?.status === "both_entered"
+          ? "好友已入梦"
+          : friendNode?.status === "waiting"
+            ? "邀请等待中"
+            : "可邀请";
   const hasAnyProgress = viewedCount + waitingCount + openedCount > 0;
+  const mapNodes =
+    friendNode && friendNode.status !== "unviewed" ? [...overnightNodes, friendNode] : overnightNodes;
 
   return (
     <section className="page page-scroll scene-page dream-log-page">
@@ -28,13 +38,13 @@ export function DreamLogPage({ twin, nodes, onOpenFriendInvite, onSelectNode }: 
       <div className="page-content dream-log-content">
         <div className="dream-log-hero">
           <p className="label">梦境广场</p>
-          <h1>昨夜 AI 已预演好 3 个关系入口。</h1>
+          <h1>同一张梦境地图，承接新关系和好友入梦。</h1>
           <div className="dream-log-stats" aria-label="梦境星图状态">
             <span>{viewedCount}/3 已预演</span>
             <span>{waitingCount} 等待回应</span>
             <span>{openedCount} 已打开</span>
           </div>
-          <section className="dream-log-guidance" aria-label="演示状态说明">
+          <section className="dream-log-guidance" aria-label="梦境广场说明">
             <span>{hasAnyProgress ? "继续选择节点，查看新的关系可能。" : "点击一个节点，先看结论再决定要不要进入。"}</span>
             <p>每个节点都是一次 AI 双人关系预演，不是聊天记录，也不是可走地图。</p>
           </section>
@@ -47,8 +57,8 @@ export function DreamLogPage({ twin, nodes, onOpenFriendInvite, onSelectNode }: 
           </article>
           <article className="dream-entry-invite">
             <span>邀请好友梦境漫游 · {friendStateText}</span>
-            <strong>已有好友时，先邀请，再共同预演。</strong>
-            <p>好友接受后，双方一起看共同经历会怎样改变关系。</p>
+            <strong>已有好友时，先邀请，再回到这张地图选场景。</strong>
+            <p>好友接受后，共同梦境节点会在地图里点亮。</p>
             <PrimaryButton icon={<Send size={16} />} onClick={onOpenFriendInvite}>
               邀请好友入梦
             </PrimaryButton>
@@ -56,23 +66,23 @@ export function DreamLogPage({ twin, nodes, onOpenFriendInvite, onSelectNode }: 
         </section>
         <TwinProjection twin={twin} compact />
         <div className="star-map-stage">
-          <DreamStarMap nodes={overnightNodes} onSelectNode={onSelectNode} />
+          <DreamStarMap nodes={mapNodes} onSelectNode={onSelectNode} />
           <div className="star-map-legend" aria-label="节点状态图例">
             <span>未查看</span>
             <span>已预演</span>
-            <span>等待回应</span>
+            <span>等待 / 已入梦</span>
             <span>门已打开</span>
           </div>
-          <div className="star-map-route-tip" aria-label="路演推荐节点">
-            <span>推荐演示</span>
+          <div className="star-map-route-tip" aria-label="推荐节点">
+            <span>推荐入口</span>
             <strong>先点「雨夜便利店」</strong>
           </div>
           <div className="star-map-caption">
             <span>Dream Star Map</span>
-            <p>点击任意节点，查看你的 AI 分身替你完成的关系预演。</p>
+          <p>点击任意节点，查看 AI 双人关系预演；好友节点也回到同一张地图。</p>
           </div>
         </div>
-        <p className="helper-copy">这些不是聊天记录，也不是可探索地图，只是关系可能性的预演。</p>
+        <p className="helper-copy">这不是可走地图，也不是游戏关卡；它只是关系可能性的共同入口。</p>
       </div>
     </section>
   );

@@ -1,4 +1,11 @@
-export type DreamNodeStatus = "unviewed" | "viewed" | "waiting" | "opened";
+export type DreamNodeStatus = "unviewed" | "viewed" | "waiting" | "both_entered" | "opened" | "in_chat";
+
+export type RelationshipStateStatus =
+  | "ai_previewed"
+  | "waiting_counterpart"
+  | "both_entered"
+  | "gate_opened"
+  | "in_chat";
 
 export type SimulationScenarioMode = "first_meet" | "shared_event" | "romance" | "conflict";
 
@@ -6,10 +13,15 @@ export type RelationshipEntryMode = "overnight_discovery" | "friend_invite";
 
 export type DreamInviteStatus = "draft" | "sent" | "accepted" | "withdrawn";
 
+export type SceneStageVariant = "rain_store" | "starlight" | "undersea" | "sushi" | "cinema" | "badminton";
+
 export type DemoPage =
   | "welcome"
   | "twin-create"
   | "twin-generating"
+  | "today"
+  | "messages"
+  | "friends"
   | "twin-home"
   | "dream-log"
   | "friend-invite"
@@ -25,6 +37,23 @@ export interface UserProfile {
   relationshipIntention: string;
   interests: string[];
   optionalSignals: string[];
+  mbti?: string;
+  bloodType?: string;
+  zodiac?: string;
+  mysticTags?: string[];
+  communicationStyle?: string;
+  values?: string[];
+}
+
+export interface AvatarStyleSpec {
+  silhouette: "full_body_luminous" | "abstract_projection";
+  posture: "reserved" | "open" | "curious" | "grounded";
+  material: "glass-light" | "mist-light" | "star-thread";
+  auraColor: string;
+  secondaryColor: string;
+  accentColor: string;
+  motionSignature: "slow_orbit" | "soft_pulse" | "spark_drift";
+  keywords: string[];
 }
 
 export interface TwinProjection {
@@ -34,6 +63,7 @@ export interface TwinProjection {
   colorPalette: string[];
   lightShape: "halo" | "mist" | "pulse" | "orbit";
   keywords: string[];
+  avatarStyleSpec?: AvatarStyleSpec;
 }
 
 export interface DreamNode {
@@ -47,12 +77,31 @@ export interface DreamNode {
   intensity: number;
 }
 
+export interface RelationshipState {
+  id: string;
+  nodeId: string;
+  simulationId: string;
+  entryMode: RelationshipEntryMode;
+  status: RelationshipStateStatus;
+  label: string;
+}
+
 export interface FriendProfile {
   id: string;
   name: string;
   relationLabel: string;
   presence: string;
   keywords: string[];
+}
+
+export interface RelationshipCounterpartProfile {
+  name: string;
+  relationLabel?: string;
+  personalityKeywords: string[];
+  interests: string[];
+  communicationStyle?: string;
+  values?: string[];
+  optionalSignals?: string[];
 }
 
 export interface RelationshipScenario {
@@ -71,6 +120,9 @@ export interface DreamRoamingScene {
   id: string;
   label: string;
   premise: string;
+  sceneStageVariant?: SceneStageVariant;
+  sceneStageSpec?: SceneStageSpec;
+  guidedSceneEvents?: GuidedSceneEvent[];
   relationshipOutcome: string;
   likelyDialogue: string[];
   behaviorPreview: string[];
@@ -86,6 +138,42 @@ export interface DreamRoamingScene {
   riskLabel: string;
 }
 
+export interface GuidedSceneEvent {
+  id: string;
+  label: string;
+  prompt: string;
+  hotspot: string;
+  relationQuestion: string;
+  expectedSignal: string;
+}
+
+export interface RelationshipSimulationResult {
+  conclusion: string;
+  attractionScore: number;
+  paceScore: number;
+  riskScore: number;
+  likelyDialogue: string[];
+  behaviorPreview: string[];
+  relationshipTrajectory: string[];
+  romancePossibility: string;
+  conflictRisk: string;
+  badOutcomeScenario: string;
+  suggestedMove: string;
+  possibleFirstLine: string;
+  safetyHint: string;
+}
+
+export interface SceneStageSpec {
+  variant: SceneStageVariant;
+  title: string;
+  visualTone: string;
+  spatialMetaphor: string;
+  relationTrigger: string;
+  cameraHint: string;
+  boundaryNote: string;
+  palette: string[];
+}
+
 export interface RelationshipSimulation {
   id: string;
   nodeId: string;
@@ -93,6 +181,7 @@ export interface RelationshipSimulation {
   friendProfile?: FriendProfile;
   title: string;
   counterpartName: string;
+  counterpartProfileSnapshot?: RelationshipCounterpartProfile;
   counterpartProjection: string;
   scene: string;
   relationshipHypothesis: string;
@@ -113,6 +202,10 @@ export interface RelationshipSimulation {
   tension: string;
   possibleFirstLine: string;
   matchReasons: string[];
+  sceneStageVariant?: SceneStageVariant;
+  sceneStageSpec?: SceneStageSpec;
+  guidedSceneEvents?: GuidedSceneEvent[];
+  relationshipGoal?: string;
   scenarios: RelationshipScenario[];
   roamingScenes?: DreamRoamingScene[];
 }
@@ -126,6 +219,7 @@ export interface DemoFlowState {
   selectedRoamingSceneId: string | null;
   dreamInviteStatus: DreamInviteStatus;
   resumeAtOutcomeNodeId: string | null;
+  liveSimulationResults: Record<string, RelationshipSimulationResult>;
   profile: UserProfile;
   twin: TwinProjection;
   friends: FriendProfile[];

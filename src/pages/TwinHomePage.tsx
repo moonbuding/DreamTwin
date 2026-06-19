@@ -30,10 +30,10 @@ export function TwinHomePage({
       <ThreeDreamScene variant="ambient" className="page-scene twin-home-scene" />
       <div className="page-content twin-home-content">
         <header className="twin-home-hero">
-          <p className="label">AI 分身主页</p>
+          <p className="label">分身</p>
           <h1>{twin.nickname} 已经保存。</h1>
           <p>
-            这里是你的长期入口。带着分身进入梦境广场，或邀请好友一起完成一次低压关系预演。
+            这里用来管理你的 AI 人格画像。每天打开 App 先看今日关系动态，分身只负责帮助关系预演更像你。
           </p>
         </header>
 
@@ -54,10 +54,10 @@ export function TwinHomePage({
           </div>
         </section>
 
-        <section className="twin-home-route" aria-label="路演推荐路径">
-          <span>路演推荐</span>
-          <strong>先走梦境广场，再补好友入梦。</strong>
-          <p>3-5 分钟内展示完整闭环：AI 分身预演关系，双方确认后才进入真实聊天。</p>
+        <section className="twin-home-route" aria-label="推荐进入路径">
+          <span>分身边界</span>
+          <strong>它代表你参与预演，不替你聊天。</strong>
+          <p>DreamTwin 会用分身画像生成关系可能性，但真实确认和第一句话始终交给你。</p>
         </section>
 
         <section className="twin-home-actions" aria-label="下一步玩法">
@@ -73,7 +73,7 @@ export function TwinHomePage({
           </button>
         </section>
 
-        <section className="twin-home-guidance" aria-label="当前 Demo 状态说明">
+        <section className="twin-home-guidance" aria-label="当前分身状态说明">
           <div>
             <Sparkles size={16} />
             <span>分身负责预演关系，不替你聊天，也不是陪伴角色。</span>

@@ -22,21 +22,37 @@
 第一版采用纯前端静态 Demo：
 
 - 不接真实后端。
-- 不接真实匹配。
-- 不接 AI 实时生成。
+- 不接真实用户关系发现。
+- 不接生产级 AI 实时生成；本地 Live AI adapter 可用于验证。
 - 不做真实聊天服务。
 - 不做账号系统。
 - 不做审核后台。
+
+默认运行前端时保持静态稳定模式，不主动探测本地后端，避免无后端时出现失败请求或控制台噪声。需要验证真实 AI 能力时，再通过 `VITE_DREAMTWIN_ENABLE_LIVE_AI=true` 或显式 `VITE_DREAMTWIN_API_URL` 开启 Live AI adapter。
 
 技术方案要优先保证：
 
 - 移动端 Web 体验像 App。
 - 静态 Demo 数据稳定。
 - 梦境星图可交互。
-- AI 分身抽象投影有存在感。
+- AI 分身人格投影有存在感，并为 v0.2 风格化 3D 分身验证预留空间。
 - 状态流转连续。
 - 完整路径可以从头跑到真实聊天入口。
 - Three.js 先作为 3D 视觉验证候选方案，不承担核心交互和状态逻辑。
+
+### 1.1 v0.2 技术方向补充
+
+在当前移动端 Web Demo 和 Live AI adapter 基础上，v0.2 技术验证方向升级为：
+
+- 风格化全身 3D AI 分身：使用 Three.js / WebGL 展示人格分身，当前抽象投影作为 fallback。
+- 引导式 3D 梦境场景：使用不可自由行走的 3D 场景舞台、镜头推进和热点事件承载关系预演。
+- 双方画像驱动的 AI 模拟：前端提交双方分身画像、场景事件和关系目标，后端返回结构化模拟结果。
+
+技术边界：
+
+- 3D 分身不做写实数字人、换装系统、骨骼复杂战斗动作、等级或养成属性。
+- 3D 场景不做自由漫游、地图拖拽、地图缩放、游戏关卡、副本或奖励系统。
+- Three.js 继续异步加载，不进入首屏主包；CSS / 抽象投影 / 静态场景继续作为 fallback。
 
 ## 2. 技术栈
 
@@ -203,6 +219,12 @@ export interface UserProfile {
   relationshipIntention: string;
   interests: string[];
   optionalSignals: string[];
+  mbti?: string;
+  bloodType?: string;
+  zodiac?: string;
+  mysticTags?: string[];
+  communicationStyle?: string[];
+  values?: string[];
 }
 ```
 
@@ -222,6 +244,7 @@ export interface TwinProjection {
   colorPalette: string[];
   lightShape: "halo" | "mist" | "pulse" | "orbit";
   keywords: string[];
+  avatarStyleSpec?: AvatarStyleSpec;
 }
 ```
 
@@ -231,15 +254,33 @@ export interface TwinProjection {
 - 支撑 AI 分身主页。
 - 支撑梦境广场 / 昨夜梦境日志页。
 - 支撑抽象投影视觉。
+- v0.2 支撑风格化全身 3D 分身候选。
 
 边界：
 
-- 不包含五官。
-- 不包含身体。
-- 不包含服装。
+- 不包含写实真人脸。
+- 不包含可替换服装。
 - 不包含换装。
 - 不包含等级。
 - 不包含养成属性。
+
+### 4.4.1 AvatarStyleSpec
+
+```ts
+export interface AvatarStyleSpec {
+  silhouette: "soft-human" | "crystal-human" | "shadow-human" | "light-human";
+  materialTone: "mist" | "glass" | "stardust" | "neon";
+  motionStyle: "calm-breath" | "curious-turn" | "warm-idle";
+  auraColor: string[];
+  boundaryTags: Array<"no-real-face" | "no-outfit-swap" | "no-leveling" | "no-companion-mode">;
+}
+```
+
+用途：
+
+- 将用户画像映射为风格化 3D 分身表现。
+- 只服务人格表达和关系预演入口。
+- 不承载换装、养成或虚拟伴侣能力。
 
 ### 4.5 DreamNode
 
@@ -253,6 +294,7 @@ export interface DreamNode {
   x: number;
   y: number;
   intensity: number;
+  sceneStageVariant?: SceneStageVariant;
 }
 ```
 
@@ -269,6 +311,31 @@ export interface DreamNode {
 - 不表示真实地图位置。
 - 不表示附近的人。
 - 不表示可探索地图路径。
+
+### 4.5.1 SceneStageVariant 与 GuidedSceneEvent
+
+```ts
+export type SceneStageVariant =
+  | "rain_store"
+  | "starlight"
+  | "undersea"
+  | "sushi"
+  | "cinema"
+  | "badminton";
+
+export interface GuidedSceneEvent {
+  id: string;
+  label: string;
+  prompt: string;
+  hotspot: "foreground" | "midground" | "background" | "gate";
+}
+```
+
+用途：
+
+- 支撑引导式 3D 梦境场景。
+- 将场景热点转换为关系模拟输入。
+- 不表示可走地图路径、地图坐标或游戏关卡。
 
 ### 4.6 FriendProfile 与 DreamRoamingScene
 
@@ -334,6 +401,10 @@ export interface RelationshipSimulation {
   possibleFirstLine: string;
   matchReasons: string[];
   roamingScenes?: DreamRoamingScene[];
+  selfProfileSnapshot?: UserProfile;
+  counterpartProfileSnapshot?: UserProfile;
+  guidedSceneEvents?: GuidedSceneEvent[];
+  relationshipGoal?: string;
 }
 ```
 
@@ -384,13 +455,15 @@ export interface DemoFlowState {
 用途：
 
 - 支撑单页 App 内部页面状态。
-- 支撑 AI 分身主页作为长期入口。
+- 支撑当前 Demo 中 AI 分身主页作为过渡入口。
+- 支撑真实 App 后续迁移到 `今日 / 梦境 / 消息 / 好友 / 分身` 五区骨架。
 - 支撑 Demo 分身保存与刷新恢复。
 - 支撑好友邀请梦境漫游路径。
 - 支撑节点状态流转。
+- 支撑跨页面关系状态对象：AI 已预演、等待对方入梦、双方已入梦、梦境门打开、已进入聊天。
 - 支撑完整演示路径。
 
-第一版使用 `localStorage` 模拟 Demo 分身保存。刷新后如果 `hasCompletedTwinSetup` 为 `true`，默认回到 AI 分身主页；点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
+第一版使用 `localStorage` 模拟 Demo 分身保存。当前 Demo 刷新后如果 `hasCompletedTwinSetup` 为 `true`，可以默认回到 AI 分身主页；真实 App 骨架实现时应默认进入 `今日`，并将 AI 分身主页收敛为 `分身` Tab 内的管理页。点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
 
 ## 5. 状态与路由方案
 
@@ -562,7 +635,7 @@ unviewed
 职责：
 
 - 展示 AI 分身生成过程。
-- 展示抽象投影、人格摘要和关键词。
+- 展示人格摘要、关键词和人格投影。
 
 主要组件：
 
@@ -578,9 +651,9 @@ unviewed
 
 - 生成过程使用静态 Demo 数据。
 - 可以用 1 到 2 秒视觉过渡制造生成感。
-- 抽象投影先用 CSS / Canvas 2D 保底实现。
-- 如果 Three.js 视觉小样效果明显更好，再接入 3D 光团、轮廓和环绕粒子。
-- 不接 AI 实时生成。
+- 抽象投影继续作为 CSS / Canvas 2D / Three.js fallback。
+- v0.2 验证风格化全身 3D 分身，但只做人格表达，不做换装或养成。
+- 默认使用静态分身摘要；Live AI adapter 需要显式开启，可用于生成分身摘要。生产级账号和分身持久化仍放到后端阶段。
 
 ### 6.4 TwinHomePage
 
@@ -695,7 +768,7 @@ unviewed
 - 相遇场景。
 - 关系张力。
 - 可能的第一句话。
-- 匹配依据。
+- 关系模拟依据。
 - 当前节点状态。
 
 主操作：
@@ -950,35 +1023,64 @@ Three.js scene：
 - 视觉不会让用户误解为游戏关卡。
 - 移动端性能稳定。
 
+### 7.6.1 GuidedDreamStage
+
+对应需求：
+
+- `DT-P1-010`
+- `DT-P1-011`
+
+实现方式：
+
+- 使用 Three.js 渲染不可自由行走的 3D 梦境舞台。
+- 使用 `SceneStageVariant` 决定场景：雨夜便利店、星空、海底、日料店、电影院、羽毛球场。
+- 使用 `GuidedSceneEvent` 定义热点事件，热点触发关系模拟内容更新。
+- HTML / React 层继续承载结论、指标、CTA、返回和详情展开。
+
+交互规则：
+
+- 用户点击热点或问题，不控制角色移动。
+- 场景可以有镜头推进、光效、人物站位暗示和事件焦点。
+- 首屏仍然优先展示关系结论、三项指标、建议第一步和主 CTA。
+
+边界：
+
+- 不做第一人称或第三人称移动。
+- 不做地图拖拽、缩放或路径导航。
+- 不做任务、关卡、副本、奖励或战斗。
+- 不把场景热点命名为任务。
+
 ### 7.7 TwinProjection
 
 对应需求：
 
 - `DT-P0-005`
 - `DT-P1-002`
+- `DT-P1-009`
 
 实现方式：
 
-- 第一版先用 CSS / Canvas 2D 表达抽象投影。
-- 在背景、星图、梦境门验证后，再决定是否追加 Three.js 分身小样。
-- Three.js 可验证人格光团、抽象轮廓、缓慢旋转结构和环绕粒子。
+- 当前抽象投影继续保留为 fallback。
+- v0.2 新增风格化全身 3D AI 分身候选。
+- 使用 `AvatarStyleSpec` 将用户画像映射为轮廓、材质、动作和人格色彩。
+- Three.js 只负责分身展示，不承担画像计算和主流程状态。
 
 视觉规则：
 
-- 使用颜色、光影、轮廓和关键词表达分身。
-- 不使用五官。
-- 不使用服装。
-- 不使用身体。
+- 使用风格化全身人形、颜色、光影、轮廓和关键词表达分身。
+- 不使用写实真人脸。
+- 不使用可替换服装。
 - 不使用换装。
 - 不使用等级条。
-- 不使用角色骨骼或角色模型。
+- 不使用养成属性。
+- 不使用复杂骨骼动画或游戏动作。
 
 优先级：
 
-- 先验证背景梦境空间。
-- 再验证梦境星图。
+- 先验证风格化全身 3D AI 分身。
+- 再验证引导式 3D 梦境场景。
 - 再验证梦境门打开。
-- 最后再验证 AI 分身抽象投影。
+- 最后回归移动端性能和内容可读性。
 
 ### 7.8 Canvas 与 Three.js 性能要求
 
@@ -1089,7 +1191,8 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 
 - 提供隐藏或低优先级的“重新开始”操作。
 - 使用 `localStorage` 模拟分身保存和 Demo 状态恢复。
-- 刷新页面时，如果已有已完成的分身状态，默认回到 AI 分身主页。
+- 当前 Demo 刷新页面时，如果已有已完成的分身状态，可回到 AI 分身主页。
+- 真实 App 骨架实现时，如果已有已完成的分身状态，应默认进入今日首页。
 - 点击“重新开始”清空本地 Demo 状态并回到欢迎页。
 - 不持久化状态到后端，正式阶段再接账号级存储。
 
@@ -1118,9 +1221,10 @@ P0 完成标准：
 
 - 从欢迎页能跑到聊天入口页。
 - 生成分身后能进入 AI 分身主页。
-- 刷新后已创建分身的用户能回到 AI 分身主页。
+- 当前 Demo 刷新后已创建分身的用户能回到 AI 分身主页；真实 App 骨架中应默认进入今日首页。
 - AI 分身主页能进入梦境广场和好友邀请梦境漫游。
 - 梦境节点状态能从 `unviewed` 到 `opened`。
+- 关系状态能跨今日、梦境、消息、好友流转。
 - 好友邀请路径能完成等待、接受、共同预演和聊天入口。
 - Demo 不依赖真实接口。
 - 视觉不能像静态文档。
@@ -1137,6 +1241,9 @@ P0 完成标准：
 | `DT-P1-006` | 默认 Demo 数据、重置演示 |
 | `DT-P1-007` | `WelcomePage` 首屏视觉 |
 | `DT-P1-008` | 触控反馈、加载状态、移动端滚动 |
+| `DT-P1-009` | `TwinProjection` 风格化全身 3D 分身候选；抽象投影 fallback |
+| `DT-P1-010` | `GuidedDreamStage` 引导式 3D 场景舞台和热点事件 |
+| `DT-P1-011` | 前端 API adapter + 后端 AI provider；双方画像和场景事件驱动模拟 |
 
 P1 实现原则：
 
@@ -1150,12 +1257,12 @@ P1 实现原则：
 以下内容不进入第一版技术实现：
 
 - 登录注册。
-- 真实用户匹配。
+- 真实用户关系发现系统。
 - 真实好友系统。
 - 通讯录导入。
 - 真实邀请链接或真实消息触达。
 - 后端分身持久化。
-- AI 实时生成。
+- 生产级 AI 实时生成。
 - 聊天后端。
 - 推送通知。
 - 审核举报。
@@ -1163,11 +1270,11 @@ P1 实现原则：
 - Native App。
 - 地图 SDK。
 - 真实地理位置。
-- 可走地图。
+- 自由可走地图。
 - 附近的人。
 - 游戏关卡。
-- 复杂 3D 世界。
-- 角色身体。
+- 复杂自由 3D 世界。
+- 写实数字人身体。
 - 角色养成。
 - 换装。
 - AI 伴侣聊天。
@@ -1237,7 +1344,7 @@ npm run build
 2. 进入 AI 分身创建页。
 3. 使用默认 Demo 信息生成 AI 分身。
 4. 进入 AI 分身主页。
-5. 刷新页面后仍回到 AI 分身主页。
+5. 当前 Demo 刷新页面后仍回到 AI 分身主页；真实 App 骨架后续改为回到今日首页。
 6. 从 AI 分身主页进入梦境广场 / 昨夜梦境日志。
 7. 点击梦境星图中的一个节点。
 8. 查看关系预演模拟详情。
@@ -1275,13 +1382,13 @@ npm run build
 - 没有真实地图表达。
 - 没有附近的人表达。
 - 没有可走地图表达。
-- 没有复杂 3D 世界表达。
+- 没有复杂自由 3D 世界表达。
 - 没有游戏关卡表达。
 - 没有角色养成表达。
-- 没有角色身体表达。
+- 没有写实数字人身体、换装身体资产或养成身体资产表达。
 - 没有换装表达。
 - 没有 AI 代聊表达。
-- 没有真实匹配已完成的暗示。
+- 没有真实用户关系发现已完成的暗示。
 - 没有偷偷推演好友的表达。
 - 没有真实通讯录、真实邀请链接或真实消息发送。
 

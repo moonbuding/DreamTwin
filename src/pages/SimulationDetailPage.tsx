@@ -9,28 +9,46 @@ import {
   Route,
   Sparkles,
 } from "lucide-react";
+import {
+  DreamTwinApiError,
+  describeDreamTwinApiError,
+  generateRelationshipSimulation,
+  isDreamTwinApiEnabled,
+  type DreamTwinApiMode,
+} from "../api/dreamTwinApi";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { StatusPill } from "../components/StatusPill";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
+import type { SceneVariant } from "../components/ThreeDreamScene";
 import type {
   DreamNode,
   DreamRoamingScene,
+  GuidedSceneEvent,
   RelationshipScenario,
   RelationshipSimulation,
+  RelationshipSimulationResult,
+  SceneStageSpec,
+  SceneStageVariant,
   SimulationScenarioMode,
+  UserProfile,
 } from "../types/dreamtwin";
+import { adaptFriendInviteMoveAfterAcceptance } from "../utils/relationshipCopy";
 
 interface SimulationDetailPageProps {
   node: DreamNode;
+  profile: UserProfile;
   simulation: RelationshipSimulation;
+  resultStorageKey: string;
   resumeAtOutcome: boolean;
   selectedRoamingSceneId: string | null;
   onBackToLog: () => void;
   onContinue: (nodeId: string) => void;
+  onLiveSimulationResult: (resultKey: string, result: RelationshipSimulationResult) => void;
   onSelectRoamingScene: (sceneId: string) => void;
 }
 
 type DetailMode = "overview" | "dialogue" | "behavior" | "risk";
+
 type ActiveExperience = {
   label: string;
   premise: string;
@@ -52,17 +70,180 @@ type ActiveExperience = {
   };
 };
 
+function fallbackGuidedEvents(label: string): GuidedSceneEvent[] {
+  return [
+    {
+      id: "scene-entry",
+      label: "进入场景",
+      hotspot: `${label}的入口光点`,
+      prompt: "两个人进入同一段梦境，先确认彼此是否愿意靠近。",
+      relationQuestion: "第一步靠近是否足够低压？",
+      expectedSignal: "对方是否愿意继续停留",
+    },
+    {
+      id: "scene-choice",
+      label: "共同选择",
+      hotspot: `${label}里的共同选择点`,
+      prompt: "场景给出一个小选择，两个人需要决定如何配合。",
+      relationQuestion: "选择权是否被双方共享？",
+      expectedSignal: "关系推进是否自然",
+    },
+    {
+      id: "scene-exit",
+      label: "离开前",
+      hotspot: `${label}的出口光线`,
+      prompt: "梦境即将结束，系统观察这段关系是否有进入真实聊天的理由。",
+      relationQuestion: "这段体验能不能带回现实？",
+      expectedSignal: "是否出现第一句话入口",
+    },
+  ];
+}
+
+function fallbackSceneStageSpec(label: string, variant: SceneStageVariant = "starlight"): SceneStageSpec {
+  return {
+    variant,
+    title: `${label}舞台`,
+    visualTone: "漂浮光层、柔和粒子、低压空间感",
+    spatialMetaphor: "一段用于观察关系选择的梦境舞台",
+    relationTrigger: "共同情境能否自然变成真实互动",
+    cameraHint: "镜头只在关键关系事件之间移动",
+    boundaryNote: "不可自由探索，只服务 AI 关系预演。",
+    palette: ["#6fd3ff", "#a779ff", "#ff72d2"],
+  };
+}
+
+function sceneVariantForStage(variant?: SceneStageVariant): SceneVariant {
+  if (variant === "rain_store") return "stage-rain";
+  if (variant === "undersea") return "stage-ocean";
+  if (variant === "sushi" || variant === "cinema") return "stage-social";
+  if (variant === "badminton") return "stage-motion";
+  if (variant === "starlight") return "stage-space";
+  return "ambient";
+}
+
+function signalLevel(value: number, kind: "connection" | "pace" | "risk"): string {
+  if (kind === "risk") {
+    if (value >= 70) return "需要留意";
+    if (value >= 45) return "可以校准";
+    return "相对低压";
+  }
+
+  if (value >= 70) return kind === "connection" ? "共鸣明显" : "可以推进";
+  if (value >= 45) return kind === "connection" ? "有机会" : "慢慢靠近";
+  return kind === "connection" ? "线索较少" : "先停一停";
+}
+
+function sceneAnchorKeywords(stageSpec: SceneStageSpec, events: GuidedSceneEvent[], label: string): string[] {
+  const variantAnchors = {
+    rain_store: ["下雨", "雨夜", "便利店", "伞", "货架", "路口", "热饮", "热可可"],
+    starlight: ["星", "飞船", "舷窗", "电台", "海边", "留言", "返航"],
+    undersea: ["海底", "下潜", "暗流", "洞穴", "气泡", "光束", "潜入"],
+    sushi: ["日料", "吧台", "菜单", "点餐", "上菜"],
+    cinema: ["电影", "银幕", "观影", "散场", "走廊"],
+    badminton: ["羽毛球", "球场", "发球", "失误", "场边"],
+  } satisfies Record<SceneStageVariant, string[]>;
+  const eventAnchors = events.flatMap((event) => [event.label, event.hotspot, event.prompt, event.expectedSignal]);
+  const rawAnchors = [
+    label,
+    stageSpec.title,
+    stageSpec.visualTone,
+    stageSpec.spatialMetaphor,
+    stageSpec.relationTrigger,
+    ...eventAnchors,
+    ...variantAnchors[stageSpec.variant],
+  ];
+
+  return Array.from(
+    new Set(
+      rawAnchors
+        .flatMap((item) => item.split(/[，。、：:；;、\s/]+/))
+        .map((item) => item.trim())
+        .filter((item) => item.length >= 2),
+    ),
+  );
+}
+
+function isSceneAnchoredSimulation(
+  result: RelationshipSimulationResult,
+  stageSpec: SceneStageSpec,
+  events: GuidedSceneEvent[],
+  label: string,
+): boolean {
+  const anchors = sceneAnchorKeywords(stageSpec, events, label);
+  if (!anchors.length) return true;
+
+  const primaryText = [result.conclusion, result.suggestedMove].join(" ");
+  return anchors.some((anchor) => primaryText.includes(anchor));
+}
+
+function hasSceneAnchor(text: string, anchors: string[]): boolean {
+  return anchors.some((anchor) => text.includes(anchor));
+}
+
+function softenRelationshipCopy(text: string): string {
+  return text
+    .replace(/观察/g, "看看")
+    .replace(/测试/g, "确认")
+    .replace(/一定/g, "可能")
+    .replace(/必然/g, "可能")
+    .replace(/肯定/g, "可能")
+    .replace(/注定/g, "有机会");
+}
+
+function looksLikeInventedSharedMemory(firstLine: string): boolean {
+  const compact = firstLine.replace(/\s/g, "");
+  return /上次|昨天|昨晚|前天|那天|之前|刚刚|刚才|你.*说的|你.*提到|我们.*见过|记得你|我知道你/.test(compact);
+}
+
+function normalizeLiveSimulation(
+  result: RelationshipSimulationResult,
+  fallbackFirstLine: string,
+  fallbackSuggestedMove: string,
+  sceneAnchors: string[],
+): RelationshipSimulationResult {
+  const possibleFirstLine = looksLikeInventedSharedMemory(result.possibleFirstLine) ||
+    !hasSceneAnchor(result.possibleFirstLine, sceneAnchors)
+    ? fallbackFirstLine
+    : softenRelationshipCopy(result.possibleFirstLine);
+  const suggestedMove = !looksLikeInventedSharedMemory(result.suggestedMove) &&
+    hasSceneAnchor(result.suggestedMove, sceneAnchors)
+    ? softenRelationshipCopy(result.suggestedMove)
+    : fallbackSuggestedMove;
+
+  return {
+    ...result,
+    conclusion: softenRelationshipCopy(result.conclusion),
+    likelyDialogue: result.likelyDialogue.map(softenRelationshipCopy),
+    behaviorPreview: result.behaviorPreview.map(softenRelationshipCopy),
+    relationshipTrajectory: result.relationshipTrajectory.map(softenRelationshipCopy),
+    romancePossibility: softenRelationshipCopy(result.romancePossibility),
+    conflictRisk: softenRelationshipCopy(result.conflictRisk),
+    badOutcomeScenario: softenRelationshipCopy(result.badOutcomeScenario),
+    suggestedMove,
+    possibleFirstLine,
+    safetyHint: softenRelationshipCopy(result.safetyHint),
+  };
+}
+
 export function SimulationDetailPage({
   node,
+  profile,
+  resultStorageKey,
   simulation,
   selectedRoamingSceneId,
   onBackToLog,
   onContinue,
+  onLiveSimulationResult,
   onSelectRoamingScene,
 }: SimulationDetailPageProps) {
   const [activeScenarioMode, setActiveScenarioMode] = useState<SimulationScenarioMode>("first_meet");
   const [showDetails, setShowDetails] = useState(false);
   const [detailMode, setDetailMode] = useState<DetailMode>("overview");
+  const [liveSimulation, setLiveSimulation] = useState<RelationshipSimulationResult | null>(null);
+  const [isGenerating, setIsGenerating] = useState(true);
+  const [generationError, setGenerationError] = useState<string | null>(null);
+  const [apiMode, setApiMode] = useState<DreamTwinApiMode>("static");
+  const [activeSceneEventId, setActiveSceneEventId] = useState<string | null>(null);
   const scenarioRef = useRef<HTMLElement | null>(null);
   const detailsRef = useRef<HTMLElement | null>(null);
   const isFriendInvite = simulation.entryMode === "friend_invite";
@@ -79,7 +260,7 @@ export function SimulationDetailPage({
         attraction: 68,
         risk: 38,
         pace: 54,
-        paceLabel: "低压试探",
+        paceLabel: "低压靠近",
         riskLabel: "误读慢热",
       },
       shared_event: {
@@ -121,6 +302,13 @@ export function SimulationDetailPage({
     () => roamingScenes.find((scene) => scene.id === selectedRoamingSceneId) ?? roamingScenes[0],
     [roamingScenes, selectedRoamingSceneId],
   );
+  const liveScenePrompt = useMemo(() => {
+    if (isFriendInvite && activeRoamingScene) {
+      return `${simulation.title} / ${activeRoamingScene.label}：${activeRoamingScene.premise}`;
+    }
+
+    return `${simulation.title} / ${activeScenario?.label ?? "关系预演"}：${activeScenario?.premise ?? simulation.scene}`;
+  }, [activeRoamingScene, activeScenario?.label, activeScenario?.premise, isFriendInvite, simulation.scene, simulation.title]);
   const activeExperience: ActiveExperience = useMemo(() => {
     if (isFriendInvite && activeRoamingScene) {
       return {
@@ -161,6 +349,98 @@ export function SimulationDetailPage({
       insight: scenarioInsight,
     };
   }, [activeRoamingScene, activeScenario, isFriendInvite, scenarioInsight, simulation.possibleFirstLine]);
+  const renderedExperience: ActiveExperience = useMemo(() => {
+    if (!liveSimulation) return activeExperience;
+
+    return {
+      ...activeExperience,
+      relationshipOutcome: liveSimulation.conclusion,
+      likelyDialogue: liveSimulation.likelyDialogue,
+      behaviorPreview: liveSimulation.behaviorPreview,
+      romanceSignal: liveSimulation.romancePossibility,
+      riskSignal: `${liveSimulation.conflictRisk} ${liveSimulation.badOutcomeScenario}`,
+      suggestedMove: liveSimulation.suggestedMove,
+      possibleFirstLine: liveSimulation.possibleFirstLine,
+      insight: {
+        ...activeExperience.insight,
+        attraction: liveSimulation.attractionScore,
+        pace: liveSimulation.paceScore,
+        risk: liveSimulation.riskScore,
+        verdict: "AI 实时预演",
+      },
+    };
+  }, [activeExperience, liveSimulation]);
+  const guidedSceneEvents = useMemo(() => {
+    const events =
+      isFriendInvite && activeRoamingScene?.guidedSceneEvents?.length
+        ? activeRoamingScene.guidedSceneEvents
+        : simulation.guidedSceneEvents;
+
+    return events?.length ? events : fallbackGuidedEvents(activeExperience.label);
+  }, [activeExperience.label, activeRoamingScene?.guidedSceneEvents, isFriendInvite, simulation.guidedSceneEvents]);
+  const activeSceneStageSpec = useMemo(() => {
+    if (isFriendInvite && activeRoamingScene?.sceneStageSpec) return activeRoamingScene.sceneStageSpec;
+    if (simulation.sceneStageSpec) return simulation.sceneStageSpec;
+
+    return fallbackSceneStageSpec(
+      activeExperience.label,
+      activeRoamingScene?.sceneStageVariant ?? simulation.sceneStageVariant ?? "starlight",
+    );
+  }, [
+    activeExperience.label,
+    activeRoamingScene?.sceneStageSpec,
+    activeRoamingScene?.sceneStageVariant,
+    isFriendInvite,
+    simulation.sceneStageSpec,
+    simulation.sceneStageVariant,
+  ]);
+  const activeSceneEvent = useMemo(
+    () => guidedSceneEvents.find((event) => event.id === activeSceneEventId) ?? guidedSceneEvents[0],
+    [activeSceneEventId, guidedSceneEvents],
+  );
+  const counterpartProfile = useMemo(() => {
+    if (simulation.counterpartProfileSnapshot) return simulation.counterpartProfileSnapshot;
+    if (simulation.friendProfile) {
+      return {
+        name: simulation.friendProfile.name,
+        relationLabel: simulation.friendProfile.relationLabel,
+        personalityKeywords: simulation.friendProfile.keywords,
+        interests: [],
+        communicationStyle: simulation.friendProfile.presence,
+        values: ["边界感", "共同经历"],
+        optionalSignals: [simulation.friendProfile.presence],
+      };
+    }
+
+    return {
+      name: simulation.counterpartName,
+      relationLabel: isFriendInvite ? "好友梦境漫游对象" : "梦境广场预演对象",
+      personalityKeywords: [simulation.counterpartProjection],
+      interests: [],
+      communicationStyle: simulation.counterpartProjection,
+      values: ["关系可能性", "真实互动"],
+      optionalSignals: simulation.matchReasons,
+    };
+  }, [
+    isFriendInvite,
+    simulation.counterpartName,
+    simulation.counterpartProfileSnapshot,
+    simulation.counterpartProjection,
+    simulation.friendProfile,
+    simulation.matchReasons,
+  ]);
+  const relationshipGoal =
+    simulation.relationshipGoal ||
+    (isFriendInvite
+      ? `判断和 ${simulation.counterpartName} 的好友关系能否通过共同经历自然推进。`
+      : profile.relationshipIntention);
+  const simulationBasis = [
+    { label: "你的分身", value: profile.personalityKeywords.slice(0, 2).join(" / ") || profile.nickname },
+    { label: "对方画像", value: counterpartProfile.personalityKeywords.slice(0, 2).join(" / ") || simulation.counterpartName },
+    { label: "场景舞台", value: activeSceneStageSpec.relationTrigger },
+    { label: "场景事件", value: activeSceneEvent.label },
+    { label: "关系目标", value: relationshipGoal },
+  ];
 
   const actionLabel =
     isFriendInvite && node.status === "opened"
@@ -173,22 +453,123 @@ export function SimulationDetailPage({
             ? "回到等待状态"
             : "想进入这个梦境";
   const reportMetrics = [
-    { label: "吸引", value: activeExperience.insight.attraction, tone: "blue" },
-    { label: "推进", value: activeExperience.insight.pace, tone: "violet" },
-    { label: "风险", value: activeExperience.insight.risk, tone: "gold" },
+    {
+      label: "共鸣线索",
+      value: renderedExperience.insight.attraction,
+      display: signalLevel(renderedExperience.insight.attraction, "connection"),
+      tone: "blue",
+    },
+    {
+      label: "推进节奏",
+      value: renderedExperience.insight.pace,
+      display: signalLevel(renderedExperience.insight.pace, "pace"),
+      tone: "violet",
+    },
+    {
+      label: "误解风险",
+      value: renderedExperience.insight.risk,
+      display: signalLevel(renderedExperience.insight.risk, "risk"),
+      tone: "gold",
+    },
   ];
+  const suggestedMoveLabel = isFriendInvite && node.status === "opened" ? "建议下一步" : "建议第一步";
+  const displaySuggestedMove = adaptFriendInviteMoveAfterAcceptance(renderedExperience.suggestedMove, isFriendInvite);
+  const apiStatusLabel =
+    apiMode === "live"
+      ? "当前结论来自 AI 生成，本地保底内容仍可随时接管。"
+      : apiMode === "fallback"
+        ? generationError
+        : isGenerating
+          ? "正在尝试生成当前关系预演。"
+          : "当前使用本地保底预演内容。";
   const detailSections: Array<{ id: DetailMode; icon: JSX.Element; label: string }> = [
     { id: "overview", icon: <Sparkles size={14} />, label: "推演过程" },
     { id: "dialogue", icon: <MessageCircle size={14} />, label: "会聊什么" },
     { id: "behavior", icon: <Route size={14} />, label: "会做什么" },
     { id: "risk", icon: <AlertTriangle size={14} />, label: "风险走向" },
   ];
+  const stageVariant = sceneVariantForStage(activeSceneStageSpec.variant);
 
   useEffect(() => {
     setActiveScenarioMode(simulation.scenarios[0]?.mode ?? "first_meet");
     setShowDetails(false);
     setDetailMode("overview");
+    setActiveSceneEventId(null);
   }, [simulation.id, simulation.scenarios]);
+
+  useEffect(() => {
+    setActiveSceneEventId(guidedSceneEvents[0]?.id ?? null);
+  }, [activeExperience.label, guidedSceneEvents]);
+
+  useEffect(() => {
+    let isCurrent = true;
+
+    setLiveSimulation(null);
+    setIsGenerating(true);
+    setGenerationError(null);
+    setApiMode("static");
+
+    if (!isDreamTwinApiEnabled()) {
+      setIsGenerating(false);
+      return () => {
+        isCurrent = false;
+      };
+    }
+
+    generateRelationshipSimulation({
+      profile,
+      counterpartName: simulation.counterpartName,
+      counterpartProfile,
+      scene: liveScenePrompt,
+      sceneStageSpec: activeSceneStageSpec,
+      sceneEvent: activeSceneEvent,
+      guidedSceneEvents,
+      relationshipGoal,
+    })
+      .then((result) => {
+        if (!isCurrent) return;
+        if (!isSceneAnchoredSimulation(result.simulation, activeSceneStageSpec, guidedSceneEvents, activeExperience.label)) {
+          throw new DreamTwinApiError(
+            "scene_unanchored",
+            "AI 输出没有贴合当前梦境场景，已切回静态场景预演。",
+          );
+        }
+        const normalizedSimulation = normalizeLiveSimulation(
+          result.simulation,
+          activeExperience.possibleFirstLine,
+          activeExperience.suggestedMove,
+          sceneAnchorKeywords(activeSceneStageSpec, guidedSceneEvents, activeExperience.label),
+        );
+        setLiveSimulation(normalizedSimulation);
+        setApiMode("live");
+        onLiveSimulationResult(resultStorageKey, normalizedSimulation);
+      })
+      .catch((error) => {
+        if (!isCurrent) return;
+        setGenerationError(describeDreamTwinApiError(error));
+        setApiMode("fallback");
+      })
+      .finally(() => {
+        if (!isCurrent) return;
+        setIsGenerating(false);
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    activeSceneEvent,
+    activeSceneStageSpec,
+    counterpartProfile,
+    guidedSceneEvents,
+    liveScenePrompt,
+    node.id,
+    onLiveSimulationResult,
+    profile,
+    relationshipGoal,
+    resultStorageKey,
+    simulation.counterpartName,
+  ]);
 
   const selectScenario = (mode: SimulationScenarioMode) => {
     setActiveScenarioMode(mode);
@@ -221,7 +602,7 @@ export function SimulationDetailPage({
 
   return (
     <section className={`page page-scroll scene-page simulation-page simulation-scenario-${activeExperience.className}`}>
-      <ThreeDreamScene variant="ambient" className="page-scene simulation-scene" />
+      <ThreeDreamScene variant={stageVariant} className={`page-scene simulation-scene simulation-stage-scene-${stageVariant}`} />
       <div className="page-content simulation-content">
         <div className="simulation-hero simulation-hero-compact">
           <div>
@@ -229,8 +610,8 @@ export function SimulationDetailPage({
             <h1>{simulation.title}</h1>
             <p className="simulation-subtitle">
               {isFriendInvite
-                ? `你和 ${simulation.counterpartName} 选择了「${activeExperience.label}」，先看关系会被怎样推动。`
-                : `AI 已模拟你和 ${simulation.counterpartName} 的第一段关系走向。`}
+                ? `你和 ${simulation.counterpartName} 选择了「${renderedExperience.label}」，先看关系可能被怎样推动。`
+                : `AI 正在预演你和 ${simulation.counterpartName} 的第一段关系可能。`}
             </p>
           </div>
           <StatusPill status={node.status} />
@@ -250,15 +631,23 @@ export function SimulationDetailPage({
             <span>再看原因</span>
             <span>最后决定</span>
           </div>
-          <div className="decision-verdict">
-            <strong>{activeExperience.insight.verdict}</strong>
-            <p>{activeExperience.relationshipOutcome}</p>
+          <div className={`api-status simulation-api-status api-status-${apiMode}`} role="status">
+            <span>{apiMode === "live" ? "AI 生成" : apiMode === "fallback" ? "保底内容" : "本地内容"}</span>
+            <p>{apiStatusLabel}</p>
           </div>
-          <div className="report-meter-row decision-meter-row" aria-label="关系预演指标">
+          <div className="decision-verdict">
+            <strong>{renderedExperience.insight.verdict}</strong>
+            <p>{renderedExperience.relationshipOutcome}</p>
+          </div>
+          <div className="report-meter-row decision-meter-row" aria-label="关系预演信号">
             {reportMetrics.map((metric) => (
-              <div className={`report-meter report-meter-${metric.tone}`} key={metric.label}>
+              <div
+                aria-label={`${metric.label}：${metric.display}`}
+                className={`report-meter report-meter-${metric.tone}`}
+                key={metric.label}
+              >
                 <span>{metric.label}</span>
-                <strong>{metric.value}</strong>
+                <strong>{metric.display}</strong>
                 <div>
                   <i style={{ width: `${metric.value}%` }} />
                 </div>
@@ -266,10 +655,76 @@ export function SimulationDetailPage({
             ))}
           </div>
           <div className="recommended-move decision-move">
-            <span>建议第一步</span>
-            <strong>{activeExperience.suggestedMove}</strong>
-            <blockquote className="simulation-quote">{activeExperience.possibleFirstLine}</blockquote>
+            <span>{suggestedMoveLabel}</span>
+            <strong>{displaySuggestedMove}</strong>
+            <blockquote className="simulation-quote">{renderedExperience.possibleFirstLine}</blockquote>
           </div>
+          <div className="scene-stage-brief" aria-label="3D 场景舞台规格">
+            <span>{activeSceneStageSpec.title}</span>
+            <strong>{activeSceneStageSpec.relationTrigger}</strong>
+            <p>{activeSceneStageSpec.visualTone}</p>
+            <div className="scene-stage-flow" role="tablist" aria-label="场景事件进度">
+              {guidedSceneEvents.map((event, index) => (
+                <button
+                  aria-label={`查看场景事件：${event.label}`}
+                  aria-selected={event.id === activeSceneEvent.id}
+                  className={event.id === activeSceneEvent.id ? "scene-stage-flow-active" : ""}
+                  key={event.id}
+                  onClick={() => setActiveSceneEventId(event.id)}
+                  role="tab"
+                  type="button"
+                >
+                  <b>{String(index + 1).padStart(2, "0")}</b>
+                  <span>{event.label}</span>
+                </button>
+              ))}
+            </div>
+          </div>
+          <div className="simulation-basis" aria-label="AI 模拟依据">
+            {simulationBasis.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+        </section>
+
+        <section className="guided-scene-events" aria-label="引导式梦境场景事件">
+          <div className="guided-scene-heading">
+            <span>3D 场景观察点</span>
+            <strong>{activeSceneStageSpec.boundaryNote}</strong>
+          </div>
+          <div className="guided-hotspot-row" role="tablist" aria-label="梦境事件热点">
+            {guidedSceneEvents.map((event, index) => (
+              <button
+                aria-selected={event.id === activeSceneEvent.id}
+                className={event.id === activeSceneEvent.id ? "guided-hotspot-active" : ""}
+                key={event.id}
+                onClick={() => setActiveSceneEventId(event.id)}
+                role="tab"
+                type="button"
+              >
+                <b>{String(index + 1).padStart(2, "0")}</b>
+                <span>{event.label}</span>
+              </button>
+            ))}
+          </div>
+          <article className="guided-scene-panel" aria-label="当前梦境事件">
+            <div>
+              <span>热点</span>
+              <strong>{activeSceneEvent.hotspot}</strong>
+            </div>
+            <p>{activeSceneEvent.prompt}</p>
+            <div className="guided-scene-question">
+              <span>{activeSceneEvent.relationQuestion}</span>
+              <strong>{activeSceneEvent.expectedSignal}</strong>
+            </div>
+            <div className="guided-scene-camera">
+              <span>镜头提示</span>
+              <strong>{activeSceneStageSpec.cameraHint}</strong>
+            </div>
+          </article>
         </section>
 
         <section className="scenario-switcher scenario-switcher-compact" ref={scenarioRef} aria-label="换个问题看看">
@@ -372,7 +827,7 @@ export function SimulationDetailPage({
 
               {detailMode === "dialogue" ? (
                 <section className="detail-panel relationship-script" aria-label="可能对话回放">
-                  {activeExperience.likelyDialogue.map((line, index) => (
+                  {renderedExperience.likelyDialogue.map((line, index) => (
                     <div className={index % 2 === 0 ? "script-line script-line-self" : "script-line script-line-other"} key={line}>
                       <span>{index % 2 === 0 ? "你的分身" : simulation.counterpartName}</span>
                       <p>{line}</p>
@@ -383,7 +838,7 @@ export function SimulationDetailPage({
 
               {detailMode === "behavior" ? (
                 <section className="detail-panel relationship-trajectory" aria-label="可能行为轨迹">
-                  {activeExperience.behaviorPreview.map((step, index) => (
+                  {renderedExperience.behaviorPreview.map((step, index) => (
                     <div className="trajectory-step" key={step}>
                       <b>{String(index + 1).padStart(2, "0")}</b>
                       <p>{step}</p>
@@ -397,14 +852,14 @@ export function SimulationDetailPage({
                   <article>
                     <Heart size={15} />
                     <span>恋爱可能性</span>
-                    <strong>{activeExperience.insight.paceLabel}</strong>
-                    <p>{activeExperience.romanceSignal}</p>
+                    <strong>{renderedExperience.insight.paceLabel}</strong>
+                    <p>{renderedExperience.romanceSignal}</p>
                   </article>
                   <article>
                     <AlertTriangle size={15} />
                     <span>风险与不好走向</span>
-                    <strong>{activeExperience.insight.riskLabel}</strong>
-                    <p>{activeExperience.riskSignal}</p>
+                    <strong>{renderedExperience.insight.riskLabel}</strong>
+                    <p>{renderedExperience.riskSignal}</p>
                   </article>
                 </section>
               ) : null}

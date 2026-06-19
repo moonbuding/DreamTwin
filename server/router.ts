@@ -8,7 +8,7 @@ import {
   missingApiKeyJob,
 } from "./deepseek.js";
 import { readDb, saveTwin, updateProfile } from "./storage.js";
-import type { ApiErrorBody, UserProfile } from "./types.js";
+import type { ApiErrorBody, RelationshipSimulationInput, UserProfile } from "./types.js";
 
 type HttpMethod = "GET" | "PATCH" | "POST" | "OPTIONS";
 
@@ -109,12 +109,17 @@ export async function routeRequest(request: IncomingMessage, response: ServerRes
     }
 
     if (method === "POST" && path === "/api/ai/relationship-simulation") {
-      const body = (await readJsonBody(request)) as { counterpartName?: string; scene?: string };
+      const body = (await readJsonBody(request)) as Partial<RelationshipSimulationInput>;
       const db = await readDb();
       const result = await generateRelationshipSimulation({
         profile: db.profile,
         counterpartName: body.counterpartName,
+        counterpartProfile: body.counterpartProfile,
         scene: body.scene,
+        sceneStageSpec: body.sceneStageSpec,
+        sceneEvent: body.sceneEvent,
+        guidedSceneEvents: body.guidedSceneEvents,
+        relationshipGoal: body.relationshipGoal,
       });
       sendJson(response, 200, result);
       return;
@@ -124,7 +129,7 @@ export async function routeRequest(request: IncomingMessage, response: ServerRes
   } catch (error) {
     if (error instanceof MissingApiKeyError) {
       const type = path.includes("relationship") ? "relationship_simulation" : "twin_summary";
-      sendJson(response, 503, {
+      sendJson(response, 200, {
         job: missingApiKeyJob(type),
         error: {
           code: "missing_api_key",

@@ -1,87 +1,40 @@
-import { useEffect, useMemo, useReducer } from "react";
-import { AppShell } from "./components/AppShell";
+import { useCallback, useEffect, useMemo, useReducer } from "react";
+import { AppShell, type AppTab } from "./components/AppShell";
 import { demoFlowReducer, initialDemoFlowState } from "./state/demoFlow";
+import { liveSimulationResultKey } from "./state/liveSimulationKey";
+import { loadPersistedState, persistDemoState } from "./state/persistence";
 import { ChatEntryPage } from "./pages/ChatEntryPage";
 import { DreamGatePage } from "./pages/DreamGatePage";
 import { DreamLogPage } from "./pages/DreamLogPage";
 import { FriendInvitePage } from "./pages/FriendInvitePage";
+import { MessagesPage } from "./pages/MessagesPage";
 import { SimulationDetailPage } from "./pages/SimulationDetailPage";
+import { TodayPage } from "./pages/TodayPage";
 import { TwinCreatePage } from "./pages/TwinCreatePage";
 import { TwinGeneratingPage } from "./pages/TwinGeneratingPage";
 import { TwinHomePage } from "./pages/TwinHomePage";
 import { WaitingPage } from "./pages/WaitingPage";
 import { WelcomePage } from "./pages/WelcomePage";
-import type { DemoFlowState, DemoPage, RelationshipSimulation } from "./types/dreamtwin";
-
-const DEMO_STORAGE_KEY = "dreamtwin.demoFlow.v3";
-const LEGACY_DEMO_STORAGE_KEYS = ["dreamtwin.demoFlow.v2", "dreamtwin.demoFlow.v1"];
+import type { DemoPage, RelationshipSimulationResult } from "./types/dreamtwin";
 
 const pageProgress: Record<DemoPage, { label: string; value: number }> = {
   welcome: { label: "产品解释", value: 8 },
   "twin-create": { label: "创建分身", value: 20 },
   "twin-generating": { label: "生成投影", value: 34 },
-  "twin-home": { label: "AI 分身", value: 42 },
-  "dream-log": { label: "梦境广场", value: 52 },
-  "friend-invite": { label: "好友入梦", value: 56 },
+  today: { label: "今日首页", value: 42 },
+  "twin-home": { label: "分身", value: 48 },
+  "dream-log": { label: "梦境地图", value: 56 },
+  messages: { label: "消息", value: 60 },
+  friends: { label: "好友", value: 60 },
+  "friend-invite": { label: "好友", value: 60 },
   "simulation-detail": { label: "关系预演", value: 64 },
   waiting: { label: "等待回应", value: 78 },
   "dream-gate": { label: "梦境门", value: 90 },
   "chat-entry": { label: "真实聊天", value: 100 },
 };
 
-function isDemoState(value: unknown): value is DemoFlowState {
-  if (!value || typeof value !== "object") return false;
-  const state = value as Partial<DemoFlowState>;
-  const simulations = state.simulations as Partial<RelationshipSimulation>[] | undefined;
-  return (
-    typeof state.currentPage === "string" &&
-    Array.isArray(state.pageHistory) &&
-    Array.isArray(state.nodes) &&
-    Array.isArray(state.friends) &&
-    Array.isArray(simulations) &&
-    simulations.every((simulation) => Array.isArray(simulation.scenarios)) &&
-    Boolean(state.profile) &&
-    Boolean(state.twin)
-  );
-}
-
-function normalizePersistedState(state: DemoFlowState): DemoFlowState {
-  const inferredTwinSetup =
-    typeof state.hasCompletedTwinSetup === "boolean"
-      ? state.hasCompletedTwinSetup
-      : state.currentPage !== "welcome" && state.currentPage !== "twin-create";
-  const merged = {
-    ...initialDemoFlowState,
-    ...state,
-    hasCompletedTwinSetup: inferredTwinSetup,
-  };
-
-  if (!inferredTwinSetup) return merged;
-
-  return {
-    ...merged,
-    currentPage: "twin-home",
-    pageHistory: [],
-  };
-}
-
-function loadPersistedState(): DemoFlowState {
-  if (typeof window === "undefined") return initialDemoFlowState;
-
-  try {
-    const storageKeys = [DEMO_STORAGE_KEY, ...LEGACY_DEMO_STORAGE_KEYS];
-    const raw = storageKeys.map((key) => window.localStorage.getItem(key)).find(Boolean);
-    if (!raw) return initialDemoFlowState;
-    const parsed = JSON.parse(raw);
-    if (!isDemoState(parsed)) return initialDemoFlowState;
-    return normalizePersistedState(parsed);
-  } catch {
-    return initialDemoFlowState;
-  }
-}
-
 export function App() {
-  const [state, dispatch] = useReducer(demoFlowReducer, initialDemoFlowState, loadPersistedState);
+  const [state, dispatch] = useReducer(demoFlowReducer, initialDemoFlowState, () => loadPersistedState());
 
   const selectedNode = useMemo(
     () => state.nodes.find((node) => node.id === state.selectedNodeId) ?? state.nodes[0],
@@ -95,8 +48,24 @@ export function App() {
     () => state.simulations.find((simulation) => simulation.entryMode === "friend_invite") ?? state.simulations[0],
     [state.simulations],
   );
-  const continueNode = (nodeId: string) => {
+  const friendInviteNode = useMemo(
+    () => state.nodes.find((node) => node.entryMode === "friend_invite") ?? state.nodes[0],
+    [state.nodes],
+  );
+  const selectedLiveResultKey = useMemo(
+    () =>
+      liveSimulationResultKey(
+        selectedNode.id,
+        selectedSimulation.entryMode === "friend_invite" ? state.selectedRoamingSceneId : null,
+      ),
+    [selectedNode.id, selectedSimulation.entryMode, state.selectedRoamingSceneId],
+  );
+  const openNodeFromSurface = (nodeId: string) => {
     const node = state.nodes.find((item) => item.id === nodeId);
+    if (node?.status === "in_chat") {
+      dispatch({ type: "OPEN_CHAT_ENTRY", nodeId });
+      return;
+    }
     if (node?.status === "opened") {
       dispatch({ type: "OPEN_DREAM_GATE", nodeId });
       return;
@@ -105,25 +74,89 @@ export function App() {
       dispatch({ type: "OPEN_WAITING", nodeId });
       return;
     }
+    dispatch({ type: "SELECT_NODE", nodeId });
+  };
+  const continueNode = (nodeId: string) => {
+    const node = state.nodes.find((item) => item.id === nodeId);
+    if (node?.status === "in_chat") {
+      dispatch({ type: "OPEN_CHAT_ENTRY", nodeId });
+      return;
+    }
+    if (node?.status === "opened") {
+      dispatch({ type: "OPEN_DREAM_GATE", nodeId });
+      return;
+    }
+    if (node?.status === "waiting") {
+      dispatch({ type: "OPEN_WAITING", nodeId });
+      return;
+    }
+    if (node?.status === "both_entered") {
+      dispatch({ type: "SIMULATE_COUNTERPART_CONFIRM", nodeId });
+      return;
+    }
     dispatch({ type: "ENTER_DREAM", nodeId });
   };
+  const confirmWaitingNode = (nodeId: string) => {
+    const node = state.nodes.find((item) => item.id === nodeId);
+    if (node?.status === "in_chat") {
+      dispatch({ type: "OPEN_CHAT_ENTRY", nodeId });
+      return;
+    }
+    if (node?.status === "opened") {
+      dispatch({ type: "OPEN_DREAM_GATE", nodeId });
+      return;
+    }
+    if (selectedSimulation.entryMode === "friend_invite") {
+      dispatch({ type: "SIMULATE_FRIEND_ACCEPT", nodeId });
+      return;
+    }
+    dispatch({ type: "SIMULATE_COUNTERPART_CONFIRM", nodeId });
+  };
+  const storeLiveSimulationResult = useCallback((resultKey: string, result: RelationshipSimulationResult) => {
+    dispatch({ type: "STORE_LIVE_SIMULATION_RESULT", resultKey, result });
+  }, []);
 
   const canGoBack = (state.pageHistory ?? []).length > 0;
   const currentProgress = pageProgress[state.currentPage] ?? pageProgress.welcome;
   const progressLabel = `${Math.round(currentProgress.value)}%`;
   const stepLabel = currentProgress.label;
+  const showTabs =
+    state.hasCompletedTwinSetup &&
+    state.currentPage !== "welcome" &&
+    state.currentPage !== "twin-create" &&
+    state.currentPage !== "twin-generating";
+  const activeTab: AppTab =
+    state.currentPage === "messages" || state.currentPage === "chat-entry"
+      ? "messages"
+      : state.currentPage === "friends" || state.currentPage === "friend-invite"
+        ? "friends"
+        : state.currentPage === "twin-home"
+          ? "twin"
+          : state.currentPage === "today"
+            ? "today"
+            : "dream";
+  const navigateTab = (tab: AppTab) => {
+    if (tab === "today") dispatch({ type: "OPEN_TODAY" });
+    if (tab === "dream") dispatch({ type: "OPEN_DREAM_LOG" });
+    if (tab === "messages") dispatch({ type: "OPEN_MESSAGES" });
+    if (tab === "friends") dispatch({ type: "OPEN_FRIENDS" });
+    if (tab === "twin") dispatch({ type: "OPEN_TWIN_HOME" });
+  };
 
   useEffect(() => {
-    window.localStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify(state));
+    persistDemoState(state);
   }, [state]);
 
   return (
     <AppShell
+      activeTab={activeTab}
       canGoBack={canGoBack}
       progressLabel={progressLabel}
       progressValue={currentProgress.value}
+      showTabs={showTabs}
       stepLabel={stepLabel}
       onBack={() => dispatch({ type: "GO_BACK" })}
+      onNavigateTab={navigateTab}
       onReset={() => dispatch({ type: "RESET_DEMO" })}
     >
       {state.currentPage === "welcome" && <WelcomePage onStart={() => dispatch({ type: "START_TWIN_CREATE" })} />}
@@ -134,7 +167,25 @@ export function App() {
         />
       )}
       {state.currentPage === "twin-generating" && (
-        <TwinGeneratingPage twin={state.twin} onComplete={() => dispatch({ type: "COMPLETE_TWIN_GENERATION" })} />
+        <TwinGeneratingPage
+          profile={state.profile}
+          twin={state.twin}
+          onComplete={(twin) => dispatch({ type: "COMPLETE_TWIN_GENERATION", twin })}
+        />
+      )}
+      {state.currentPage === "today" && (
+        <TodayPage
+          dreamInviteStatus={state.dreamInviteStatus}
+          friends={state.friends}
+          nodes={state.nodes}
+          simulations={state.simulations}
+          twin={state.twin}
+          onContinueNode={openNodeFromSurface}
+          onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
+          onOpenFriends={() => dispatch({ type: "OPEN_FRIENDS" })}
+          onOpenMessages={() => dispatch({ type: "OPEN_MESSAGES" })}
+          onOpenTwin={() => dispatch({ type: "OPEN_TWIN_HOME" })}
+        />
       )}
       {state.currentPage === "twin-home" && (
         <TwinHomePage
@@ -151,33 +202,46 @@ export function App() {
           twin={state.twin}
           nodes={state.nodes}
           onOpenFriendInvite={() => dispatch({ type: "OPEN_FRIEND_INVITE" })}
-          onSelectNode={(nodeId) => dispatch({ type: "SELECT_NODE", nodeId })}
+          onSelectNode={openNodeFromSurface}
         />
       )}
-      {state.currentPage === "friend-invite" && (
+      {(state.currentPage === "friends" || state.currentPage === "friend-invite") && (
         <FriendInvitePage
           friends={state.friends}
           inviteStatus={state.dreamInviteStatus}
+          node={friendInviteNode}
           selectedFriendId={state.selectedFriendId}
-          selectedSceneId={state.selectedRoamingSceneId}
           simulation={friendInviteSimulation}
-          onInvite={(friendId, sceneId) => dispatch({ type: "SEND_DREAM_INVITE", friendId, sceneId })}
+          onInvite={(friendId) => dispatch({ type: "SEND_DREAM_INVITE", friendId })}
+          onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
           onSelectFriend={(friendId) => dispatch({ type: "SELECT_FRIEND", friendId })}
-          onSelectScene={(sceneId) => dispatch({ type: "SELECT_ROAMING_SCENE", sceneId })}
+        />
+      )}
+      {state.currentPage === "messages" && (
+        <MessagesPage
+          nodes={state.nodes}
+          simulations={state.simulations}
+          onOpenChat={(nodeId) => dispatch({ type: "OPEN_CHAT_ENTRY", nodeId })}
+          onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
+          onReviewNode={openNodeFromSurface}
         />
       )}
       {state.currentPage === "simulation-detail" && (
         <SimulationDetailPage
           node={selectedNode}
+          profile={state.profile}
+          resultStorageKey={selectedLiveResultKey}
           simulation={selectedSimulation}
           selectedRoamingSceneId={state.selectedRoamingSceneId}
           resumeAtOutcome={
             state.resumeAtOutcomeNodeId === selectedNode.id ||
+            selectedNode.status === "both_entered" ||
             selectedNode.status === "waiting" ||
             selectedNode.status === "opened"
           }
           onBackToLog={() => dispatch({ type: "OPEN_DREAM_LOG" })}
           onContinue={continueNode}
+          onLiveSimulationResult={storeLiveSimulationResult}
           onSelectRoamingScene={(sceneId) => dispatch({ type: "SELECT_ROAMING_SCENE", sceneId })}
         />
       )}
@@ -187,14 +251,10 @@ export function App() {
           simulation={selectedSimulation}
           onBackToSimulation={(nodeId) =>
             selectedSimulation.entryMode === "friend_invite"
-              ? dispatch({ type: "OPEN_FRIEND_INVITE" })
+              ? dispatch({ type: "OPEN_FRIENDS" })
               : dispatch({ type: "OPEN_SIMULATION_RESULT", nodeId })
           }
-          onConfirm={(nodeId) =>
-            selectedSimulation.entryMode === "friend_invite"
-              ? dispatch({ type: "SIMULATE_FRIEND_ACCEPT", nodeId })
-              : dispatch({ type: "SIMULATE_COUNTERPART_CONFIRM", nodeId })
-          }
+          onConfirm={confirmWaitingNode}
           onExplore={() => dispatch({ type: "OPEN_DREAM_LOG" })}
           onWithdraw={(nodeId) => dispatch({ type: "WITHDRAW_DREAM", nodeId })}
         />
@@ -210,6 +270,7 @@ export function App() {
       )}
       {state.currentPage === "chat-entry" && (
         <ChatEntryPage
+          liveSimulationResult={state.liveSimulationResults?.[selectedLiveResultKey]}
           simulation={selectedSimulation}
           selectedRoamingSceneId={state.selectedRoamingSceneId}
           onBackToLog={() => dispatch({ type: "OPEN_DREAM_LOG" })}
