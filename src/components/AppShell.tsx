@@ -1,12 +1,14 @@
 import type { ReactNode } from "react";
-import { ChevronLeft, Compass, Home, MessageCircle, Moon, RotateCcw, UserRound } from "lucide-react";
+import { ChevronLeft, Home, MessageCircle, Moon, RotateCcw, UserRound } from "lucide-react";
+import type { ThemeMode } from "../types/dreamtwin";
 
-export type AppTab = "today" | "plaza" | "dream" | "friends" | "me";
+export type AppTab = "today" | "dream" | "messages" | "me";
 
 interface AppShellProps {
   children: ReactNode;
   activeTab?: AppTab;
   canGoBack: boolean;
+  themeMode?: ThemeMode;
   showDemoChrome?: boolean;
   showTopbar?: boolean;
   showTabs?: boolean;
@@ -20,9 +22,8 @@ interface AppShellProps {
 
 const tabItems: Array<{ id: AppTab; label: string; icon: ReactNode }> = [
   { id: "today", label: "今日", icon: <Home size={19} /> },
-  { id: "plaza", label: "广场", icon: <Compass size={19} /> },
   { id: "dream", label: "梦境", icon: <Moon size={19} /> },
-  { id: "friends", label: "好友", icon: <MessageCircle size={19} /> },
+  { id: "messages", label: "消息", icon: <MessageCircle size={19} /> },
   { id: "me", label: "我的", icon: <UserRound size={19} /> },
 ];
 
@@ -30,6 +31,7 @@ export function AppShell({
   children,
   activeTab,
   canGoBack,
+  themeMode = "day",
   showDemoChrome = false,
   showTopbar = true,
   showTabs = false,
@@ -45,6 +47,7 @@ export function AppShell({
       <div
         className={[
           "phone-shell",
+          themeMode === "night" ? "theme-night" : "theme-day",
           showTabs ? "phone-shell-with-tabs" : "",
           showDemoChrome ? "phone-shell-demo-mode" : "phone-shell-app-mode",
         ]

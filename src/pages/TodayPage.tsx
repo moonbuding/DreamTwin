@@ -1,5 +1,5 @@
 import { Bell, CalendarCheck, ChevronRight, DoorOpen, Hourglass, Sparkles, Users } from "lucide-react";
-import type { DreamInviteStatus, DreamNode, FriendProfile, RelationshipSimulation, TwinProjection } from "../types/dreamtwin";
+import type { DreamInviteStatus, DreamNode, FriendProfile, RelationshipSimulation, ThemeMode, TwinProjection } from "../types/dreamtwin";
 
 interface TodayPageProps {
   dreamInviteStatus: DreamInviteStatus;
@@ -8,6 +8,7 @@ interface TodayPageProps {
   sentFirstMessages?: Record<string, string>;
   simulations: RelationshipSimulation[];
   twin: TwinProjection;
+  themeMode: ThemeMode;
   onContinueNode: (nodeId: string) => void;
   onOpenDreamMap: () => void;
   onOpenFriends: () => void;
@@ -21,12 +22,14 @@ export function TodayPage({
   nodes,
   sentFirstMessages = {},
   twin,
+  themeMode,
   onContinueNode,
   onOpenDreamMap,
   onOpenFriends,
   onOpenMessages,
 }: TodayPageProps) {
   const userName = twin.nickname.replace(/\s*的\s*DreamTwin.*$/, "").trim() || "你";
+  const greeting = themeMode === "day" ? "早安" : "晚安";
   const overnightNodes = nodes.filter((node) => node.entryMode === "overnight_discovery");
   const newCount = overnightNodes.filter((node) => node.status === "unviewed").length || overnightNodes.length;
   const waitingNodes = nodes.filter((node) => node.status === "waiting");
@@ -44,7 +47,7 @@ export function TodayPage({
   const openWaiting = () => (waitingNodes[0] ? onContinueNode(waitingNodes[0].id) : onOpenFriends());
 
   return (
-    <section className="page page-scroll dt-page dt-light today-page">
+    <section className="page page-scroll dt-page today-page">
       <div className="page-content dt-content today-content">
         <header className="dt-head">
           <div className="dt-head-left">
@@ -64,11 +67,11 @@ export function TodayPage({
         </header>
 
         <div className="dt-greeting">
-          <h1>晚安，{userName} ✨</h1>
+          <h1>{greeting}，{userName} ✨</h1>
           <p>这是你今日的关系动态</p>
         </div>
 
-        <button className="dt-card dt-card-feature" onClick={onOpenDreamMap} type="button">
+        <button className="dt-card" onClick={onOpenDreamMap} type="button">
           <span className="dt-card-icon tint-violet">
             <Sparkles size={22} />
           </span>

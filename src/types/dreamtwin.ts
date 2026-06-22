@@ -13,6 +13,8 @@ export type RelationshipEntryMode = "overnight_discovery" | "friend_invite";
 
 export type DreamInviteStatus = "draft" | "sent" | "accepted" | "withdrawn";
 
+export type ThemeMode = "day" | "night";
+
 export type SceneStageVariant = "rain_store" | "starlight" | "undersea" | "sushi" | "cinema" | "badminton";
 
 export type DemoPage =
@@ -223,6 +225,7 @@ export interface RelationshipSimulation {
 export interface DemoFlowState {
   currentPage: DemoPage;
   pageHistory: DemoPage[];
+  themeMode: ThemeMode;
   hasCompletedTwinSetup: boolean;
   selectedNodeId: string | null;
   selectedFriendId: string | null;

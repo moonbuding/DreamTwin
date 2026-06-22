@@ -7,7 +7,6 @@ import { ChatEntryPage } from "./pages/ChatEntryPage";
 import { DreamGatePage } from "./pages/DreamGatePage";
 import { DreamLogPage } from "./pages/DreamLogPage";
 import { FriendsHubPage } from "./pages/FriendsHubPage";
-import { PlazaPage } from "./pages/PlazaPage";
 import { SimulationDetailPage } from "./pages/SimulationDetailPage";
 import { TodayPage } from "./pages/TodayPage";
 import { TwinCreatePage } from "./pages/TwinCreatePage";
@@ -138,6 +137,7 @@ export function App() {
     "friend-invite",
     "twin-home",
     "simulation-detail",
+    "waiting",
   ];
   const showTabs =
     state.hasCompletedTwinSetup &&
@@ -146,23 +146,20 @@ export function App() {
     state.currentPage !== "twin-generating" &&
     state.currentPage !== "simulation-detail";
   const activeTab: AppTab =
-    state.currentPage === "plaza"
-      ? "plaza"
-      : state.currentPage === "messages" ||
-          state.currentPage === "chat-entry" ||
-          state.currentPage === "friends" ||
-          state.currentPage === "friend-invite"
-        ? "friends"
-        : state.currentPage === "twin-home"
-          ? "me"
-          : state.currentPage === "today"
-            ? "today"
-            : "dream";
+    state.currentPage === "messages" ||
+    state.currentPage === "chat-entry" ||
+    state.currentPage === "friends" ||
+    state.currentPage === "friend-invite"
+      ? "messages"
+      : state.currentPage === "twin-home"
+        ? "me"
+        : state.currentPage === "today"
+          ? "today"
+          : "dream";
   const navigateTab = (tab: AppTab) => {
     if (tab === "today") dispatch({ type: "OPEN_TODAY" });
-    if (tab === "plaza") dispatch({ type: "OPEN_PLAZA" });
     if (tab === "dream") dispatch({ type: "OPEN_DREAM_TAB" });
-    if (tab === "friends") dispatch({ type: "OPEN_FRIENDS" });
+    if (tab === "messages") dispatch({ type: "OPEN_MESSAGES" });
     if (tab === "me") dispatch({ type: "OPEN_TWIN_HOME" });
   };
 
@@ -174,6 +171,7 @@ export function App() {
     <AppShell
       activeTab={activeTab}
       canGoBack={canGoBack}
+      themeMode={state.themeMode}
       progressLabel={progressLabel}
       progressValue={currentProgress.value}
       showDemoChrome={showDemoChrome}
@@ -206,6 +204,7 @@ export function App() {
           sentFirstMessages={state.sentFirstMessages}
           simulations={state.simulations}
           twin={state.twin}
+          themeMode={state.themeMode}
           onContinueNode={openNodeFromSurface}
           onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
           onOpenFriends={() => dispatch({ type: "OPEN_FRIENDS" })}
@@ -213,14 +212,13 @@ export function App() {
           onOpenTwin={() => dispatch({ type: "OPEN_TWIN_HOME" })}
         />
       )}
-      {state.currentPage === "plaza" && (
-        <PlazaPage onInviteCoDream={() => dispatch({ type: "OPEN_FRIENDS" })} />
-      )}
       {state.currentPage === "twin-home" && (
         <TwinHomePage
           profile={state.profile}
           twin={state.twin}
           nodes={state.nodes}
+          themeMode={state.themeMode}
+          onSetTheme={(mode) => dispatch({ type: "SET_THEME", mode })}
           onEditTwin={() => dispatch({ type: "EDIT_TWIN" })}
           onBack={() => dispatch({ type: "OPEN_TODAY" })}
         />

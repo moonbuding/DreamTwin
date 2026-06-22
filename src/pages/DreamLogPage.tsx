@@ -43,7 +43,7 @@ export function DreamLogPage({
   };
 
   return (
-    <section className="page page-scroll dt-page dt-light dream-log-page">
+    <section className="page page-scroll dt-page dream-log-page">
       <div className="page-content dt-content dream-log-content">
         <header className="dt-head">
           <div className="dt-head-left" />

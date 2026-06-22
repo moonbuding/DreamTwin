@@ -44,7 +44,7 @@ export function FriendsHubPage({
   const [subTab, setSubTab] = useState<SubTab>(initialSubTab);
 
   return (
-    <section className="page page-scroll dt-page dt-light friends-hub-page">
+    <section className="page page-scroll dt-page friends-hub-page">
       <div className="page-content dt-content friends-hub-content">
         <header className="dt-head">
           <div className="dt-head-left">
@@ -52,7 +52,7 @@ export function FriendsHubPage({
               <ChevronLeft size={18} />
             </button>
           </div>
-          <span className="dt-head-title">好友</span>
+          <span className="dt-head-title">消息</span>
           <div className="dt-head-right">
             <button className="dt-icon-btn" type="button" aria-label="添加">
               <Plus size={18} />

@@ -7,7 +7,7 @@ interface PlazaPageProps {
 
 export function PlazaPage({ onInviteCoDream }: PlazaPageProps) {
   return (
-    <section className="page page-scroll dt-page dt-light plaza-page">
+    <section className="page page-scroll dt-page plaza-page">
       <div className="page-content dt-content plaza-content">
         <header className="dt-head">
           <div className="dt-head-left" />

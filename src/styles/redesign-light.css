@@ -1,211 +1,231 @@
 /* =====================================================================
-   DreamTwin — light theme (Soul-style) layer.
-   Light social surfaces + dark "dream zone" blocks for star map / 3D twin.
-   Re-themes dt- components by overriding the custom properties they read.
+   DreamTwin — dual theme (purple accent).
+   theme-day  = white surfaces, deep-purple accent
+   theme-night = deep-space surfaces + starfield, bright-lavender accent
+   Tokens are set on .phone-shell.theme-* and cascade to every dt- page;
+   base dark component styles live in redesign.css and serve "night".
    ===================================================================== */
 
-:root {
-  --teal: #15c7bd;
-  --teal-strong: #0fb3aa;
-}
-
-/* phone shell becomes a light device on the dark stage */
-.phone-shell {
-  border-color: rgba(20, 24, 43, 0.08);
-  background: #f5f7fb;
+/* ----------------------------------------------------------- DAY tokens */
+.phone-shell.theme-day {
+  border-color: rgba(24, 21, 48, 0.08);
   box-shadow: 0 30px 90px rgba(0, 0, 0, 0.5);
+  color: #181530;
+  /* soft rainbow blur — pastel mesh up top, fading to a warm cream base */
+  background:
+    radial-gradient(58% 42% at 16% 3%, rgba(187, 174, 255, 0.6), transparent 62%),
+    radial-gradient(54% 40% at 75% 1%, rgba(255, 188, 223, 0.55), transparent 62%),
+    radial-gradient(62% 46% at 99% 24%, rgba(255, 212, 176, 0.46), transparent 64%),
+    radial-gradient(56% 44% at 2% 28%, rgba(174, 237, 223, 0.48), transparent 64%),
+    radial-gradient(82% 56% at 50% 70%, rgba(212, 221, 255, 0.3), transparent 72%),
+    linear-gradient(180deg, #f1ecfb 0%, #f6f2ea 56%, #f5f0e6 100%);
+  --text: #181530;
+  --muted: #6f6a86;
+  --line: rgba(24, 21, 48, 0.1);
+  --panel: rgba(255, 255, 255, 0.78);
+  --dt-card-bg: rgba(255, 255, 255, 0.72);
+  --blue: #7a5cff;
+  --accent: #7a5cff;
+  --accent-strong: #6a45f5;
 }
 
-/* ---------------------------------------------------------- light pages */
-.dt-light {
-  --text: #161a2e;
-  --muted: #7a8294;
-  --line: rgba(20, 24, 43, 0.1);
-  --panel: #ffffff;
-  --blue: #2bb6d6;
-  --dt-card-bg: #ffffff;
+/* --------------------------------------------------------- NIGHT tokens */
+.phone-shell.theme-night {
+  border-color: rgba(167, 140, 255, 0.16);
+  /* aurora — teal/violet/blue sheets over deep navy, with a scatter of stars */
+  background:
+    radial-gradient(1.5px 1.5px at 18% 12%, rgba(255, 255, 255, 0.7), transparent),
+    radial-gradient(1.5px 1.5px at 72% 9%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 41% 22%, rgba(205, 215, 255, 0.6), transparent),
+    radial-gradient(1px 1px at 88% 30%, rgba(255, 255, 255, 0.5), transparent),
+    radial-gradient(1.5px 1.5px at 25% 58%, rgba(255, 255, 255, 0.45), transparent),
+    radial-gradient(1px 1px at 63% 70%, rgba(220, 210, 255, 0.5), transparent),
+    radial-gradient(1px 1px at 12% 82%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(1.5px 1.5px at 82% 86%, rgba(255, 255, 255, 0.4), transparent),
+    radial-gradient(130% 50% at 12% 0%, rgba(86, 222, 188, 0.22), transparent 56%),
+    radial-gradient(120% 52% at 88% 2%, rgba(155, 112, 255, 0.32), transparent 56%),
+    radial-gradient(100% 46% at 58% 16%, rgba(96, 165, 255, 0.18), transparent 60%),
+    radial-gradient(78% 42% at 98% 36%, rgba(255, 122, 206, 0.12), transparent 60%),
+    radial-gradient(90% 44% at 30% 30%, rgba(120, 235, 200, 0.1), transparent 62%),
+    linear-gradient(180deg, #080a1c 0%, #06070f 58%, #040409 100%);
+  color: #f1eeff;
+  --text: #f1eeff;
+  --muted: #a39fc4;
+  --line: rgba(167, 140, 255, 0.16);
+  --panel: rgba(22, 20, 42, 0.7);
+  --dt-card-bg: linear-gradient(135deg, rgba(167, 121, 255, 0.09), rgba(120, 150, 255, 0.05)), rgba(255, 255, 255, 0.035);
+  --blue: #b9a3ff;
+  --accent: #b9a3ff;
+  --accent-strong: #c9b8ff;
 }
 
-.dt-page.dt-light,
-.dt-page.dt-light.scene-page {
-  background: #f5f7fb;
+/* ---------------------------------- accent-driven, shared by both themes */
+.dt-card-icon,
+.dt-card-icon.tint-violet,
+.dt-card-icon.tint-pink,
+.dt-card-icon.tint-gold {
+  color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 13%, transparent);
 }
 
-.dt-page.dt-light.scene-page::after {
-  display: none;
+.dt-sec-label,
+.dt-msg-tab-active,
+.app-tab-active span {
+  color: var(--accent-strong, var(--accent));
 }
 
-.dt-light .dt-head {
-  background: linear-gradient(180deg, #f5f7fb 62%, rgba(245, 247, 251, 0));
+.dt-msg-tab-active::after,
+.dt-subtab-active::after {
+  background: var(--accent);
 }
 
-.dt-light .dt-head-title,
-.dt-light .dt-brand,
-.dt-light .dt-greeting h1,
-.dt-light .dt-twin-name h2,
-.dt-light .dt-plaza-intro h2,
-.dt-light .dt-card-body strong,
-.dt-light .dt-panel-title,
-.dt-light .dt-thread-body strong {
-  color: var(--text);
+.dt-quote {
+  border-left-color: var(--accent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
-.dt-light .dt-brand-mark {
-  border-color: var(--teal);
-  box-shadow: 0 0 12px rgba(21, 199, 189, 0.5);
+.dt-brand-mark {
+  border-color: var(--accent);
+  box-shadow: 0 0 12px color-mix(in srgb, var(--accent) 50%, transparent);
 }
 
-.dt-light .dt-icon-btn,
-.dt-light .dt-chip-btn {
-  color: #3a4254;
-  border-color: rgba(20, 24, 43, 0.1);
+.dt-ava,
+.dt-thread .dt-ava {
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 78%, #fff), var(--accent));
+  color: #fff;
+}
+
+/* ------------------------------------------------- DAY component surfaces */
+.theme-day .dt-head {
+  background: linear-gradient(180deg, rgba(247, 243, 236, 0.5), rgba(247, 243, 236, 0));
+  -webkit-backdrop-filter: blur(12px) saturate(1.15);
+  backdrop-filter: blur(12px) saturate(1.15);
+}
+
+.theme-day .dt-icon-btn,
+.theme-day .dt-chip-btn {
+  color: #3a3556;
+  border-color: var(--line);
   background: #ffffff;
-  box-shadow: 0 1px 4px rgba(20, 24, 43, 0.06);
+  box-shadow: 0 1px 4px rgba(24, 21, 48, 0.06);
 }
 
-.dt-light .dt-chip-btn-accent {
-  color: var(--teal-strong);
-  border-color: rgba(21, 199, 189, 0.4);
-  background: rgba(21, 199, 189, 0.1);
+.theme-day .dt-chip-btn-accent {
+  color: var(--accent-strong);
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+  background: color-mix(in srgb, var(--accent) 10%, transparent);
 }
 
-/* cards */
-.dt-light .dt-card,
-.dt-light .dt-panel,
-.dt-light .dt-select-bar {
-  border-color: rgba(20, 24, 43, 0.07);
-  background: #ffffff;
-  box-shadow: 0 2px 12px rgba(20, 24, 43, 0.05);
+.theme-day .dt-card,
+.theme-day .dt-panel,
+.theme-day .dt-select-bar,
+.theme-day .dt-plaza-card {
+  box-shadow: 0 2px 12px rgba(24, 21, 48, 0.05);
 }
 
-.dt-light .dt-card-icon {
-  color: var(--teal-strong);
-  background: rgba(21, 199, 189, 0.12);
+.theme-day .keyword-row span,
+.theme-day .dt-msg-states span {
+  color: #46406a;
+  background: rgba(24, 21, 48, 0.05);
+  border-color: rgba(24, 21, 48, 0.08);
 }
 
-.dt-light .dt-card-feature::after {
-  background: radial-gradient(circle at 80% 24%, rgba(21, 199, 189, 0.22), transparent 42%),
-    radial-gradient(circle at 92% 76%, rgba(167, 121, 255, 0.18), transparent 48%);
+.theme-day .primary-button {
+  color: #ffffff;
+  background: linear-gradient(135deg, #9b7dff, #6d4aff);
+  box-shadow: 0 14px 32px rgba(122, 92, 255, 0.32);
 }
 
-.dt-light .dt-greeting p,
-.dt-light .dt-card-body span,
-.dt-light .dt-plaza-intro p,
-.dt-light .dt-panel p,
-.dt-light .dt-twin-name span,
-.dt-light .dt-thread-body p,
-.dt-light .dt-col-title,
-.dt-light .dt-gauge-label,
-.dt-light .dt-status-line {
-  color: var(--muted);
-}
-
-.dt-light .dt-thread-time {
-  color: #aab0bd;
-}
-
-.dt-light .dt-thread {
-  border-bottom-color: rgba(20, 24, 43, 0.06);
-}
-
-.dt-light .keyword-row span,
-.dt-light .dt-msg-states span {
-  color: #46506a;
-  background: rgba(20, 24, 43, 0.05);
-  border-color: rgba(20, 24, 43, 0.08);
-}
-
-.dt-light .dt-twin-section p {
-  color: #2c3346;
-}
-
-.dt-light .dt-sec-label {
-  color: var(--teal-strong);
-}
-
-.dt-light .dt-note {
-  color: #9aa1b0;
-}
-
-/* primary button → teal */
-.dt-light .primary-button {
-  color: #04312f;
-  background: linear-gradient(135deg, #38e0d2, #14c1cf 60%, #2bb6f0);
-  box-shadow: 0 14px 32px rgba(21, 199, 189, 0.3);
-}
-
-.dt-light .primary-button-secondary {
-  color: #2c3346;
-  border: 1px solid rgba(20, 24, 43, 0.12);
+.theme-day .primary-button-secondary {
+  color: #2c2746;
+  border: 1px solid var(--line);
   background: #ffffff;
   box-shadow: none;
 }
 
-/* friend list / scene tiles on light */
-.dt-light .dt-friend-item {
+.theme-day .dt-friend-item {
   background: #ffffff;
-  box-shadow: 0 1px 6px rgba(20, 24, 43, 0.05);
+  box-shadow: 0 1px 6px rgba(24, 21, 48, 0.05);
 }
 
-.dt-light .dt-friend-item.is-selected {
-  border-color: rgba(21, 199, 189, 0.5);
-  background: rgba(21, 199, 189, 0.08);
+.theme-day .dt-friend-item.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 45%, transparent);
+  background: color-mix(in srgb, var(--accent) 8%, transparent);
 }
 
-.dt-light .dt-friend-meta strong {
-  color: var(--text);
-}
-
-.dt-light .dt-friend-invite {
-  color: var(--teal-strong);
-  border-color: rgba(21, 199, 189, 0.45);
-  background: rgba(21, 199, 189, 0.1);
-}
-
-/* global topbar on light onboarding/flow pages (non-demo shell) */
-.phone-shell-app-mode .app-topbar-app {
-  color: #1e2438;
-  background: linear-gradient(180deg, #f5f7fb 62%, rgba(245, 247, 251, 0));
-}
-
-.phone-shell-app-mode .app-topbar-app .brand-mark {
-  border-color: var(--teal);
-  box-shadow: 0 0 12px rgba(21, 199, 189, 0.5);
-}
-
-.phone-shell-app-mode .app-topbar-app .icon-button-back {
-  color: #3a4254;
-  border-color: rgba(20, 24, 43, 0.12);
-  background: #ffffff;
-}
-
-/* ---------------------------------------------------- bottom nav (light) */
-.app-tabbar {
-  border-top-color: rgba(20, 24, 43, 0.08);
+/* ----------------------------------------------- DAY bottom nav (light) */
+.theme-day .app-tabbar {
+  border-top-color: var(--line);
   background: #ffffff;
   backdrop-filter: none;
 }
 
-.app-tab {
+.theme-day .app-tab,
+.theme-day .app-tab svg {
   color: #9aa1b0;
 }
 
-.app-tab svg {
-  color: #9aa1b0;
-}
-
-.app-tab-active {
+.theme-day .app-tab-active {
   background: transparent;
 }
 
-.app-tab-active,
-.app-tab-active span {
-  color: var(--teal-strong);
+.theme-day .app-tab-active,
+.theme-day .app-tab-active span,
+.theme-day .app-tab-active svg {
+  color: var(--accent-strong);
+  filter: none;
 }
 
-.app-tab-active svg {
-  color: var(--teal-strong);
-  filter: none;
+/* --------------------------------------------- NIGHT accent corrections */
+.theme-night .primary-button {
+  color: #0b0820;
+  background: linear-gradient(135deg, #c4b1ff, #8a72ff);
+  box-shadow: 0 14px 34px rgba(150, 120, 255, 0.32);
+}
+
+/* keep the secondary/ghost variants subtle in night — the rule above (same
+   specificity) would otherwise repaint them with the solid lavender fill. */
+.theme-night .primary-button-secondary,
+.theme-night .primary-button-ghost {
+  color: var(--text);
+  background: rgba(255, 255, 255, 0.07);
+  border: 1px solid var(--line);
+  box-shadow: none;
+}
+
+.theme-night .app-tab-active {
+  background: radial-gradient(circle at 50% 16%, color-mix(in srgb, var(--accent) 24%, transparent), transparent 56%);
+}
+
+.theme-night .app-tab-active,
+.theme-night .app-tab-active span,
+.theme-night .app-tab-active svg {
+  color: var(--accent);
+}
+
+.theme-night .app-tab-active svg {
+  filter: drop-shadow(0 0 8px color-mix(in srgb, var(--accent) 55%, transparent));
+}
+
+/* night header: frosted + nearly transparent so the aurora shows behind it
+   (matches the day header), instead of a heavy dark scrim blocking the top. */
+.theme-night .dt-head {
+  background: linear-gradient(180deg, rgba(7, 7, 18, 0.32), rgba(7, 7, 18, 0));
+  -webkit-backdrop-filter: blur(12px) saturate(1.1);
+  backdrop-filter: blur(12px) saturate(1.1);
+}
+
+.theme-night .dt-friend-item.is-selected {
+  border-color: color-mix(in srgb, var(--accent) 40%, transparent);
+}
+
+/* gauges: track + center follow the theme (base values are dark-only) */
+.theme-day .dt-gauge-ring {
+  background: conic-gradient(var(--g-color) calc(var(--val) * 3.6deg), rgba(20, 18, 40, 0.1) 0);
+}
+
+.theme-day .dt-gauge-ring::before {
+  background: #f5f7fb;
 }
 
 /* ----------------------------------------------------- dark "dream zone" */
@@ -215,13 +235,13 @@
   position: relative;
   overflow: hidden;
   border-radius: 22px;
-  background: radial-gradient(circle at 30% 12%, rgba(111, 211, 255, 0.18), transparent 40%),
-    radial-gradient(circle at 80% 8%, rgba(167, 121, 255, 0.18), transparent 42%),
-    linear-gradient(180deg, #0a0e22 0%, #05060f 100%);
+  background: radial-gradient(circle at 30% 12%, rgba(167, 121, 255, 0.2), transparent 42%),
+    radial-gradient(circle at 80% 8%, rgba(120, 150, 255, 0.16), transparent 42%),
+    linear-gradient(180deg, #0c0a1c 0%, #06060f 100%);
   color: #f5f7ff;
 }
 
-/* sub-tabs (好友 hub: 通讯录 / 聊天) */
+/* --------------------------------------------------------- sub-tabs hub */
 .dt-subtabs {
   display: inline-flex;
   gap: 26px;
@@ -254,10 +274,9 @@
   height: 3px;
   content: "";
   border-radius: 3px;
-  background: var(--teal);
 }
 
-/* search bar (Soul-style) */
+/* ----------------------------------------------------------- search bar */
 .dt-search {
   display: flex;
   gap: 9px;
@@ -267,11 +286,11 @@
   height: 42px;
   border-radius: 999px;
   color: var(--muted);
-  background: rgba(20, 24, 43, 0.05);
+  background: color-mix(in srgb, var(--text) 7%, transparent);
   font-size: 14px;
 }
 
-/* plaza profile grid */
+/* --------------------------------------------------------- plaza grid */
 .dt-plaza-grid {
   display: grid;
   grid-template-columns: 1fr 1fr;
@@ -283,10 +302,9 @@
   justify-items: center;
   gap: 8px;
   padding: 16px 12px 14px;
-  border: 1px solid rgba(20, 24, 43, 0.07);
+  border: 1px solid var(--line);
   border-radius: 18px;
-  background: #ffffff;
-  box-shadow: 0 2px 12px rgba(20, 24, 43, 0.05);
+  background: var(--dt-card-bg);
   text-align: center;
 }
 
@@ -295,7 +313,7 @@
   width: 64px;
   height: 64px;
   border-radius: 50%;
-  box-shadow: 0 8px 22px rgba(20, 24, 43, 0.16);
+  box-shadow: 0 8px 22px rgba(20, 16, 40, 0.3);
 }
 
 .dt-plaza-orb::after {
@@ -323,7 +341,7 @@
   display: inline-flex;
   gap: 5px;
   align-items: center;
-  color: #9aa1b0;
+  color: var(--muted);
   font-size: 11px;
 }
 
@@ -331,7 +349,7 @@
   width: 6px;
   height: 6px;
   border-radius: 50%;
-  background: var(--teal);
+  background: var(--accent);
 }
 
 .dt-plaza-invite {
@@ -340,13 +358,13 @@
   padding: 7px 0;
   border: 0;
   border-radius: 999px;
-  color: #04312f;
-  background: linear-gradient(135deg, #38e0d2, #14c1cf);
+  color: #fff;
+  background: linear-gradient(135deg, color-mix(in srgb, var(--accent) 82%, #fff), var(--accent));
   font-size: 12px;
   font-weight: 600;
 }
 
-/* chat / contacts pane spacing inside hub */
+/* --------------------------------------------- chat / contacts panes */
 .dt-chat-pane,
 .dt-contacts-pane {
   display: grid;
@@ -362,240 +380,30 @@
   text-align: center;
 }
 
-/* =====================================================================
-   Light overrides for legacy (onboarding + flow) pages.
-   These pages keep their original markup; we re-theme their classes.
-   ===================================================================== */
-.dt-page.dt-light {
-  color: #2c3346;
+/* ------------------------------------------------ day/night mode toggle */
+.dt-theme-toggle {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 10px;
 }
 
-.dt-light h1,
-.dt-light h2,
-.dt-light h3 {
-  color: var(--text);
-}
-
-.dt-light .lead,
-.dt-light .helper-copy,
-.dt-light .quiet-proof {
+.dt-theme-toggle button {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  height: 48px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
   color: var(--muted);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  font-size: 14px;
+  font-weight: 600;
 }
 
-.dt-light .bottom-action {
-  background: linear-gradient(180deg, rgba(245, 247, 251, 0), #f5f7fb 26%);
-}
-
-/* legacy cards / panels / strips → white surfaces */
-.dt-light .form-panel,
-.dt-light .story-panel,
-.dt-light .chat-preview,
-.dt-light .profile-signal-panel,
-.dt-light .projection-preview,
-.dt-light .waiting-copy,
-.dt-light .waiting-next-step,
-.dt-light .gate-shared-origin,
-.dt-light .gate-next-step,
-.dt-light .gate-handoff-panel,
-.dt-light .gate-confirmation,
-.dt-light .counterpart-presence,
-.dt-light .chat-shared-origin,
-.dt-light .chat-handoff-panel,
-.dt-light .chat-briefing,
-.dt-light .chat-suggestions,
-.dt-light .message-readiness,
-.dt-light .chat-thread,
-.dt-light .chat-composer {
-  border-color: rgba(20, 24, 43, 0.08) !important;
-  background: #ffffff !important;
-  box-shadow: 0 2px 12px rgba(20, 24, 43, 0.05);
-}
-
-/* legacy small pill rows / meta text → readable on light */
-.dt-light .gate-status span,
-.dt-light .gate-threshold span,
-.dt-light .gate-confirmation span,
-.dt-light .waiting-signal-transfer span,
-.dt-light .waiting-state-grid span,
-.dt-light .waiting-guardrails span,
-.dt-light .demo-control-note span,
-.dt-light .demo-control-note p,
-.dt-light .chat-handoff-panel span,
-.dt-light .gate-handoff-panel span,
-.dt-light .chat-delivery-receipt span,
-.dt-light .composer-label strong,
-.dt-light .signal-list span {
-  color: #46506a;
-}
-
-.dt-light .waiting-copy p,
-.dt-light .waiting-next-step p,
-.dt-light .gate-shared-origin p,
-.dt-light .gate-next-step p,
-.dt-light .counterpart-presence p,
-.dt-light .chat-shared-origin p,
-.dt-light .chat-briefing p,
-.dt-light .message-readiness p,
-.dt-light .projection-preview p,
-.dt-light .profile-signal-panel p:not(.field-label) {
-  color: var(--muted);
-}
-
-.dt-light .waiting-copy h2,
-.dt-light .waiting-next-step strong,
-.dt-light .gate-shared-origin strong,
-.dt-light .gate-next-step strong,
-.dt-light .counterpart-presence strong,
-.dt-light .chat-shared-origin strong,
-.dt-light .projection-preview strong,
-.dt-light .composer-label strong {
-  color: var(--text);
-}
-
-.dt-light .waiting-copy span,
-.dt-light .waiting-next-step span,
-.dt-light .gate-shared-origin span,
-.dt-light .gate-next-step span,
-.dt-light .counterpart-presence span,
-.dt-light .chat-shared-origin span,
-.dt-light .chat-briefing span,
-.dt-light .message-readiness span,
-.dt-light .field-label,
-.dt-light .form-panel label,
-.dt-light .projection-preview span {
-  color: var(--teal-strong);
-}
-
-/* inputs + choice chips */
-.dt-light input,
-.dt-light textarea {
-  border-color: rgba(20, 24, 43, 0.14);
-  background: #f3f5f9;
-  color: var(--text);
-}
-
-.dt-light input::placeholder,
-.dt-light textarea::placeholder {
-  color: #aab0bd;
-}
-
-.dt-light .choice-chip {
-  border-color: rgba(20, 24, 43, 0.14);
-  color: #46506a;
-  background: #f3f5f9;
-}
-
-.dt-light .choice-chip-active {
-  border-color: var(--teal);
-  color: #04312f;
-  background: var(--teal);
-  box-shadow: 0 0 0 1px rgba(21, 199, 189, 0.4);
-}
-
-/* generation progress + status */
-.dt-light .generation-progress {
-  background: rgba(20, 24, 43, 0.08);
-}
-
-.dt-light .generation-progress span {
-  background: linear-gradient(90deg, #38e0d2, #14c1cf);
-}
-
-.dt-light .signal-list span.signal-active {
-  color: var(--text);
-}
-
-.dt-light .api-status {
-  border-color: rgba(20, 24, 43, 0.08);
-  background: #ffffff;
-}
-
-.dt-light .api-status p {
-  color: var(--muted);
-}
-
-/* keep the 3D twin avatar as a dark dream block */
-.dt-light .twin-projection-avatar {
-  --text: #f5f7ff;
-  --muted: #a8b2cf;
-  overflow: hidden;
-  border-radius: 22px !important;
-  background: linear-gradient(180deg, #0a0e22, #05060f) !important;
-  box-shadow: none;
-}
-
-.dt-light .twin-projection-avatar .projection-copy p,
-.dt-light .twin-projection-avatar .avatar-spec-row span,
-.dt-light .twin-projection-avatar .avatar-map-row span,
-.dt-light .twin-projection-avatar .avatar-map-row b {
-  color: #cdd6ef;
-}
-
-/* chat bubble (me) → teal */
-.dt-light .chat-bubble-me {
-  background: rgba(21, 199, 189, 0.12) !important;
-}
-
-.dt-light .chat-bubble-me p {
-  color: var(--text);
-}
-
-.dt-light .chat-bubble-me span {
-  color: var(--teal-strong);
-}
-
-.dt-light .chat-suggestions button {
-  border: 1px solid rgba(20, 24, 43, 0.1);
-  background: #f3f5f9;
-}
-
-.dt-light .chat-suggestions button strong {
-  color: var(--text);
-}
-
-.dt-light .chat-suggestions button small {
-  color: var(--muted);
-}
-
-.dt-light .chat-suggestion-active {
-  border-color: var(--teal) !important;
-  background: rgba(21, 199, 189, 0.12) !important;
-}
-
-.dt-light .chat-suggestion-active strong {
-  color: var(--teal-strong);
-}
-
-.dt-light .message-readiness b {
-  color: var(--teal-strong);
-}
-
-.dt-light .composer-actions button {
-  border: 1px solid rgba(20, 24, 43, 0.12);
-  color: #46506a;
-  background: #f3f5f9;
-}
-
-.dt-light .composer-send-button {
-  color: #04312f !important;
-  background: linear-gradient(135deg, #38e0d2, #14c1cf) !important;
-}
-
-/* simulation gauges on light: white inner disc */
-.dt-light .dt-gauge-ring::before {
-  background: #ffffff;
-}
-
-.dt-light .dt-gauge-ring strong {
-  color: var(--text);
-}
-
-.dt-light .dt-quote {
-  background: rgba(21, 199, 189, 0.08);
-  border-left-color: var(--teal);
-}
-
-/* waiting orbit dots */
-.dt-light .waiting-orbit span {
-  border-color: rgba(21, 199, 189, 0.4);
+.dt-theme-toggle button.is-active {
+  color: var(--accent-strong, var(--accent));
+  border-color: color-mix(in srgb, var(--accent) 45%, var(--line));
+  background: color-mix(in srgb, var(--accent) 12%, transparent);
+  box-shadow: inset 0 0 0 1px color-mix(in srgb, var(--accent) 28%, transparent);
 }

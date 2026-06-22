@@ -1,11 +1,13 @@
-import { ChevronLeft } from "lucide-react";
+import { ChevronLeft, MoonStar, Sun } from "lucide-react";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
-import type { AvatarStyleSpec, DreamNode, TwinProjection as TwinProjectionModel, UserProfile } from "../types/dreamtwin";
+import type { AvatarStyleSpec, DreamNode, ThemeMode, TwinProjection as TwinProjectionModel, UserProfile } from "../types/dreamtwin";
 
 interface TwinHomePageProps {
   profile: UserProfile;
   twin: TwinProjectionModel;
   nodes: DreamNode[];
+  themeMode: ThemeMode;
+  onSetTheme: (mode: ThemeMode) => void;
   onEditTwin: () => void;
   onBack: () => void;
 }
@@ -24,13 +26,13 @@ function resolveAvatarStyle(twin: TwinProjectionModel): AvatarStyleSpec {
   };
 }
 
-export function TwinHomePage({ profile, twin, onEditTwin, onBack }: TwinHomePageProps) {
+export function TwinHomePage({ profile, twin, themeMode, onSetTheme, onEditTwin, onBack }: TwinHomePageProps) {
   const personalityKeywords = profile.personalityKeywords.length ? profile.personalityKeywords : twin.keywords;
   const valuesText = profile.values?.join("、") || twin.summary;
   const communicationText = profile.communicationStyle || "用温和、真实的方式靠近一段关系。";
 
   return (
-    <section className="page page-scroll dt-page dt-light twin-home-page">
+    <section className="page page-scroll dt-page twin-home-page">
       <div className="page-content dt-content twin-home-content">
         <header className="dt-head">
           <div className="dt-head-left">
@@ -79,6 +81,30 @@ export function TwinHomePage({ profile, twin, onEditTwin, onBack }: TwinHomePage
             {profile.interests.map((interest) => (
               <span key={interest}>{interest}</span>
             ))}
+          </div>
+        </div>
+
+        <div className="dt-twin-section">
+          <span className="dt-sec-label">界面模式</span>
+          <div className="dt-theme-toggle" role="group" aria-label="白天与黑夜模式">
+            <button
+              aria-pressed={themeMode === "day"}
+              className={themeMode === "day" ? "is-active" : ""}
+              onClick={() => onSetTheme("day")}
+              type="button"
+            >
+              <Sun size={16} />
+              白天
+            </button>
+            <button
+              aria-pressed={themeMode === "night"}
+              className={themeMode === "night" ? "is-active" : ""}
+              onClick={() => onSetTheme("night")}
+              type="button"
+            >
+              <MoonStar size={16} />
+              黑夜
+            </button>
           </div>
         </div>
 

@@ -14,6 +14,24 @@
   padding-top: 0;
 }
 
+/* override global .phone-shell-app-mode .page-content (specificity 0,2,0)
+   so redesigned pages start their own sticky header flush at the top. */
+.phone-shell-app-mode .dt-content {
+  padding-top: 0;
+}
+
+/* Redesigned pages are transparent so the themed shell shows through
+   (light in day, deep-space starfield in night). This neutralizes the
+   leftover dark per-page backgrounds (e.g. .today-page) from global.css
+   that otherwise bled a dark gradient onto the light day theme. */
+.phone-shell .dt-page {
+  background: transparent;
+}
+
+.phone-shell .dt-page.scene-page::after {
+  display: none;
+}
+
 .dt-content {
   display: grid;
   gap: 14px;
@@ -112,7 +130,16 @@
 }
 
 /* ---------------------------------------------------------- bottom tabbar */
+/* adapt to any tab count (global.css hardcodes 5 columns) so 4 tabs stay
+   evenly spaced and centered as a group, not left-packed into 5 slots. */
+.app-tabbar {
+  display: flex;
+  gap: 0;
+}
+
 .app-tab {
+  flex: 1 1 0;
+  min-width: 0;
   font-weight: 500;
 }
 
@@ -210,28 +237,7 @@
 .dt-card-aside {
   display: inline-flex;
   align-items: center;
-  color: rgba(255, 255, 255, 0.42);
-}
-
-/* feature card (今日梦境) with a scene strip */
-.dt-card-feature {
-  position: relative;
-  overflow: hidden;
-  grid-template-columns: 48px 1fr auto;
-  min-height: 92px;
-}
-
-.dt-card-feature::after {
-  position: absolute;
-  inset: 0 0 0 auto;
-  width: 42%;
-  content: "";
-  pointer-events: none;
-  background: radial-gradient(circle at 78% 20%, rgba(255, 255, 255, 0.16), transparent 38%),
-    radial-gradient(circle at 90% 70%, rgba(111, 211, 255, 0.22), transparent 46%),
-    linear-gradient(120deg, transparent, rgba(167, 121, 255, 0.16));
-  -webkit-mask: linear-gradient(90deg, transparent, #000 60%);
-          mask: linear-gradient(90deg, transparent, #000 60%);
+  color: color-mix(in srgb, var(--text) 42%, transparent);
 }
 
 /* avatars */
@@ -278,7 +284,7 @@
   display: grid;
   gap: 4px;
   padding: 12px 4px 0;
-  color: rgba(255, 255, 255, 0.5);
+  color: color-mix(in srgb, var(--text) 55%, transparent);
   font-size: 12px;
   line-height: 1.5;
   text-align: center;
@@ -587,7 +593,7 @@
 }
 
 .dt-thread-time {
-  color: rgba(255, 255, 255, 0.42);
+  color: color-mix(in srgb, var(--text) 45%, transparent);
   font-size: 11px;
 }
 
@@ -777,6 +783,34 @@
 }
 
 /* ----------------------------------------------------------- twin (分身) */
+.waiting-guards {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 7px;
+  margin-top: 4px;
+}
+
+.waiting-guards span {
+  padding: 5px 10px;
+  border: 1px solid var(--line);
+  border-radius: 999px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  font-size: 11.5px;
+  font-weight: 500;
+}
+
+.waiting-stage {
+  position: relative;
+  height: 268px;
+  margin: 2px -6px 2px;
+}
+
+.waiting-stage .waiting-orbit {
+  height: 100%;
+  margin: 0;
+}
+
 .dt-twin-stage {
   position: relative;
   height: 320px;
@@ -827,7 +861,7 @@
 }
 
 .dt-twin-section p {
-  color: rgba(255, 255, 255, 0.86);
+  color: color-mix(in srgb, var(--text) 88%, transparent);
   font-size: 14px;
   line-height: 1.6;
 }

@@ -12,6 +12,7 @@ import type {
   DemoPage,
   DreamNodeStatus,
   RelationshipSimulationResult,
+  ThemeMode,
   TwinProjection,
   UserProfile,
 } from "../types/dreamtwin";
@@ -45,12 +46,14 @@ export type DemoFlowAction =
   | { type: "WITHDRAW_DREAM"; nodeId: string }
   | { type: "OPEN_CHAT_ENTRY"; nodeId: string }
   | { type: "MARK_CHAT_SENT"; nodeId: string; text?: string }
+  | { type: "SET_THEME"; mode: ThemeMode }
   | { type: "GO_BACK" }
   | { type: "RESET_DEMO" };
 
 export const initialDemoFlowState: DemoFlowState = {
   currentPage: "welcome",
   pageHistory: [],
+  themeMode: "night",
   hasCompletedTwinSetup: false,
   selectedNodeId: null,
   selectedFriendId: demoFriends[0]?.id ?? null,
@@ -247,6 +250,8 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
         pageHistory: pageHistory.slice(0, -1),
       };
     }
+    case "SET_THEME":
+      return { ...state, themeMode: action.mode };
     case "RESET_DEMO":
       return initialDemoFlowState;
     default:
