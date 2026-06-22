@@ -127,11 +127,22 @@ export function App() {
   const currentProgress = pageProgress[state.currentPage] ?? pageProgress.welcome;
   const progressLabel = `${Math.round(currentProgress.value)}%`;
   const stepLabel = currentProgress.label;
+  // Redesigned pages render their own in-page header, so the global topbar is hidden for them.
+  const ownHeaderPages: DemoPage[] = [
+    "today",
+    "dream-log",
+    "messages",
+    "friends",
+    "friend-invite",
+    "twin-home",
+    "simulation-detail",
+  ];
   const showTabs =
     state.hasCompletedTwinSetup &&
     state.currentPage !== "welcome" &&
     state.currentPage !== "twin-create" &&
-    state.currentPage !== "twin-generating";
+    state.currentPage !== "twin-generating" &&
+    state.currentPage !== "simulation-detail";
   const activeTab: AppTab =
     state.currentPage === "messages" || state.currentPage === "chat-entry"
       ? "messages"
@@ -161,6 +172,7 @@ export function App() {
       progressLabel={progressLabel}
       progressValue={currentProgress.value}
       showDemoChrome={showDemoChrome}
+      showTopbar={showDemoChrome || !ownHeaderPages.includes(state.currentPage)}
       showTabs={showTabs}
       stepLabel={stepLabel}
       onBack={() => dispatch({ type: "GO_BACK" })}
@@ -202,6 +214,7 @@ export function App() {
           twin={state.twin}
           nodes={state.nodes}
           onEditTwin={() => dispatch({ type: "EDIT_TWIN" })}
+          onBack={() => dispatch({ type: "OPEN_TODAY" })}
         />
       )}
       {state.currentPage === "dream-log" && (
@@ -225,6 +238,7 @@ export function App() {
           onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
           onOpenWaiting={(nodeId) => dispatch({ type: "OPEN_WAITING", nodeId })}
           onSelectFriend={(friendId) => dispatch({ type: "SELECT_FRIEND", friendId })}
+          onBack={() => dispatch({ type: "OPEN_TODAY" })}
         />
       )}
       {state.currentPage === "messages" && (

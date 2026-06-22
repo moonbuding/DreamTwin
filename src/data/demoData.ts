@@ -355,8 +355,29 @@ export const demoFriends: FriendProfile[] = [
     id: "friend-mika",
     name: "Mika",
     relationLabel: "认识很久但还没真正聊深的好友",
-    presence: "她很会接住玩笑，也会在认真时突然安静下来。",
+    presence: "在线",
     keywords: ["慢热", "行动派", "喜欢运动", "重视边界"],
+  },
+  {
+    id: "friend-ajie",
+    name: "阿杰",
+    relationLabel: "一起运动的朋友",
+    presence: "1h前",
+    keywords: ["直接", "爱开玩笑", "行动派"],
+  },
+  {
+    id: "friend-xiaoyu",
+    name: "小雨",
+    relationLabel: "偶尔深聊的旧友",
+    presence: "2h前",
+    keywords: ["细腻", "安静", "观察者"],
+  },
+  {
+    id: "friend-leo",
+    name: "Leo",
+    relationLabel: "同好社群认识的朋友",
+    presence: "离线",
+    keywords: ["好奇", "理性", "喜欢科技"],
   },
 ];
 

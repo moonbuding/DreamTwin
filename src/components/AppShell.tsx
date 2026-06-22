@@ -8,6 +8,7 @@ interface AppShellProps {
   activeTab?: AppTab;
   canGoBack: boolean;
   showDemoChrome?: boolean;
+  showTopbar?: boolean;
   showTabs?: boolean;
   progressLabel: string;
   progressValue: number;
@@ -30,6 +31,7 @@ export function AppShell({
   activeTab,
   canGoBack,
   showDemoChrome = false,
+  showTopbar = true,
   showTabs = false,
   progressLabel,
   progressValue,
@@ -49,6 +51,7 @@ export function AppShell({
           .filter(Boolean)
           .join(" ")}
       >
+        {showTopbar ? (
         <header className={showDemoChrome ? "app-topbar app-topbar-demo" : "app-topbar app-topbar-app"}>
           <div className="topbar-left">
             {canGoBack ? (
@@ -76,6 +79,7 @@ export function AppShell({
             </>
           ) : null}
         </header>
+        ) : null}
         {children}
         {showTabs && onNavigateTab ? (
           <nav className="app-tabbar" aria-label="DreamTwin 主导航">
