@@ -1774,6 +1774,13 @@ textarea {
   gap: 12px;
 }
 
+.twin-home-hero-top {
+  display: grid;
+  grid-template-columns: 1fr auto;
+  gap: 12px;
+  align-items: start;
+}
+
 .twin-home-hero h1 {
   font-size: 36px;
 }
@@ -1784,6 +1791,37 @@ textarea {
   font-size: 14px;
   font-weight: 760;
   line-height: 1.54;
+}
+
+.twin-mode-toggle {
+  display: inline-grid;
+  grid-template-columns: auto auto;
+  gap: 6px;
+  align-items: center;
+  min-width: 108px;
+  min-height: 40px;
+  justify-content: center;
+  padding: 0 12px;
+  border: 1px solid rgba(255, 255, 255, 0.09);
+  color: rgba(255, 255, 255, 0.82);
+  background:
+    radial-gradient(circle at 18% 0%, rgba(111, 211, 255, 0.16), transparent 42%),
+    rgba(5, 7, 19, 0.5);
+  box-shadow:
+    inset 0 1px 0 rgba(255, 255, 255, 0.06),
+    0 12px 28px rgba(5, 7, 19, 0.18);
+  backdrop-filter: blur(16px);
+  cursor: pointer;
+}
+
+.twin-mode-toggle svg {
+  color: var(--blue);
+}
+
+.twin-mode-toggle span {
+  font-size: 11px;
+  font-weight: 950;
+  line-height: 1;
 }
 
 .twin-home-page .twin-projection {
@@ -2015,6 +2053,159 @@ textarea {
   font-size: 13px;
   font-weight: 740;
   line-height: 1.48;
+}
+
+.twin-profile-home {
+  display: grid;
+  gap: 14px;
+}
+
+.twin-profile-hero-card {
+  position: relative;
+  display: grid;
+  min-height: 330px;
+  align-items: end;
+  overflow: hidden;
+  padding: 18px;
+  border: 1px solid rgba(111, 211, 255, 0.13);
+  background:
+    radial-gradient(circle at 50% 18%, rgba(111, 211, 255, 0.18), transparent 34%),
+    radial-gradient(circle at 72% 28%, rgba(255, 114, 210, 0.17), transparent 32%),
+    linear-gradient(180deg, rgba(255, 255, 255, 0.04), rgba(255, 255, 255, 0.018));
+  backdrop-filter: blur(18px);
+}
+
+.twin-profile-orbit {
+  position: absolute;
+  inset: 22px 20px 116px;
+  display: grid;
+  place-items: center;
+  pointer-events: none;
+}
+
+.twin-profile-orbit::before,
+.twin-profile-orbit::after {
+  position: absolute;
+  width: 172px;
+  height: 172px;
+  border: 1px solid rgba(111, 211, 255, 0.2);
+  border-radius: 999px;
+  content: "";
+  transform: rotate(-16deg) skewX(-18deg);
+}
+
+.twin-profile-orbit::after {
+  width: 116px;
+  height: 116px;
+  border-color: rgba(255, 114, 210, 0.22);
+  transform: rotate(22deg) skewX(14deg);
+}
+
+.twin-profile-orbit span {
+  width: 86px;
+  height: 132px;
+  border-radius: 999px 999px 42px 42px;
+  background:
+    radial-gradient(circle at 50% 18%, rgba(255, 255, 255, 0.92), rgba(111, 211, 255, 0.25) 36%, transparent 64%),
+    linear-gradient(180deg, rgba(111, 211, 255, 0.58), rgba(255, 114, 210, 0.26));
+  box-shadow:
+    0 0 34px rgba(111, 211, 255, 0.26),
+    0 0 54px rgba(255, 114, 210, 0.16);
+  opacity: 0.88;
+}
+
+.twin-profile-copy {
+  position: relative;
+  z-index: 1;
+  display: grid;
+  gap: 10px;
+}
+
+.twin-profile-copy > span,
+.twin-profile-section .section-heading-inline span {
+  color: rgba(111, 211, 255, 0.92);
+}
+
+.twin-profile-copy h2 {
+  color: rgba(255, 255, 255, 0.96);
+  font-size: 32px;
+  line-height: 1;
+}
+
+.twin-profile-copy p,
+.twin-profile-intro,
+.twin-profile-icebreaker {
+  color: rgba(255, 255, 255, 0.72);
+  font-size: 13px;
+  font-weight: 760;
+  line-height: 1.5;
+}
+
+.twin-profile-section {
+  display: grid;
+  gap: 10px;
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(111, 211, 255, 0.12);
+}
+
+.twin-profile-fit-list {
+  display: grid;
+  gap: 8px;
+}
+
+.twin-profile-fit-list div {
+  display: grid;
+  grid-template-columns: auto 1fr;
+  gap: 8px;
+  align-items: center;
+  min-height: 44px;
+  padding: 10px 11px;
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  background: rgba(255, 255, 255, 0.035);
+}
+
+.twin-profile-fit-list svg {
+  color: var(--pink);
+}
+
+.twin-profile-fit-list strong {
+  color: rgba(255, 255, 255, 0.84);
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+.twin-profile-cta-preview {
+  display: grid;
+  gap: 8px;
+  padding: 14px 0 0;
+  border-top: 1px solid rgba(255, 114, 210, 0.12);
+}
+
+.twin-profile-cta-preview .primary-button {
+  min-height: 50px;
+}
+
+.twin-profile-cta-preview p {
+  margin: 0;
+  color: rgba(255, 255, 255, 0.58);
+  font-size: 11px;
+  font-weight: 760;
+  line-height: 1.45;
+  text-align: center;
+}
+
+.twin-profile-boundary {
+  margin-top: 2px;
+}
+
+@media (width <= 420px) {
+  .twin-home-hero-top {
+    grid-template-columns: 1fr;
+  }
+
+  .twin-mode-toggle {
+    justify-self: start;
+  }
 }
 
 .star-map {
