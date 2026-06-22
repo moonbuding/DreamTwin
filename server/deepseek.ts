@@ -8,8 +8,8 @@ import type {
   UserProfile,
 } from "./types.js";
 
-const deepSeekEndpoint = "https://api.deepseek.com/chat/completions";
-const deepSeekModel = "deepseek-chat";
+const deepSeekEndpoint = process.env.DEEPSEEK_BASE_URL ?? "https://api.deepseek.com/chat/completions";
+const deepSeekModel = process.env.DEEPSEEK_MODEL ?? "deepseek-v4-flash";
 
 export class MissingApiKeyError extends Error {
   constructor() {

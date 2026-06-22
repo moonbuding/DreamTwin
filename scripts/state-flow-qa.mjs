@@ -71,6 +71,10 @@ function makeResult(label) {
 
 function completeTwinSetup() {
   let state = initialDemoFlowState;
+  assert(state.currentPage === "auth", "Initial state should require login/register first.");
+  state = reduce(state, { type: "AUTH_SUCCESS", token: "test-token", phone: "13800138000", hasTwin: false });
+  assert(state.authToken === "test-token", "AUTH_SUCCESS should store the auth token.");
+  assert(state.currentPage === "twin-create", "Registering a new account should open twin-create.");
   state = reduce(state, { type: "START_TWIN_CREATE" });
   assert(state.currentPage === "twin-create", "START_TWIN_CREATE should open twin-create.");
   state = reduce(state, { type: "SUBMIT_TWIN_PROFILE", profile: demoProfile });
@@ -253,7 +257,8 @@ function assertWithdrawAndReset() {
     result: makeResult("海底"),
   });
   state = reduce(state, { type: "RESET_DEMO" });
-  assert(state.currentPage === "welcome", "RESET_DEMO should return to welcome.");
+  assert(state.currentPage === "auth", "RESET_DEMO should return to the auth gate.");
+  assert(state.authToken === null, "RESET_DEMO should clear the auth token.");
   assert(!state.hasCompletedTwinSetup, "RESET_DEMO should clear completed twin setup.");
   assert(Object.keys(state.liveSimulationResults).length === 0, "RESET_DEMO should clear live results.");
   assert(Object.keys(state.sentFirstMessages).length === 0, "RESET_DEMO should clear sent first messages.");
@@ -338,8 +343,9 @@ function assertPersistedStateRecovery() {
 
   const unfinished = normalizePersistedState({
     ...initialDemoFlowState,
+    authToken: "test-token",
     currentPage: "twin-create",
-    pageHistory: ["welcome"],
+    pageHistory: [],
     hasCompletedTwinSetup: false,
   });
   assert(unfinished.currentPage === "twin-create", "Reload before setup completion should keep the current creation page.");
@@ -368,7 +374,7 @@ function assertPersistedStateRecovery() {
   const invalidStorage = createMemoryStorage();
   invalidStorage.setItem(DEMO_STORAGE_KEY, JSON.stringify({ currentPage: "chat-entry" }));
   const invalidLoaded = loadPersistedState(invalidStorage);
-  assert(invalidLoaded.currentPage === "welcome", "Invalid persisted payloads should fall back to the initial welcome state.");
+  assert(invalidLoaded.currentPage === "auth", "Invalid persisted payloads should fall back to the initial auth gate.");
 }
 
 function assertTodayPrimaryNodePriority() {

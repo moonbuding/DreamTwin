@@ -1,3 +1,8 @@
+export interface AuthUser {
+  id: string;
+  phone: string;
+}
+
 export interface UserProfile {
   id: string;
   nickname: string;

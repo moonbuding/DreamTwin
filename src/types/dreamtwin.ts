@@ -18,6 +18,7 @@ export type ThemeMode = "day" | "night";
 export type SceneStageVariant = "rain_store" | "starlight" | "undersea" | "sushi" | "cinema" | "badminton";
 
 export type DemoPage =
+  | "auth"
   | "welcome"
   | "twin-create"
   | "twin-generating"
@@ -226,6 +227,8 @@ export interface DemoFlowState {
   currentPage: DemoPage;
   pageHistory: DemoPage[];
   themeMode: ThemeMode;
+  authToken: string | null;
+  userPhone: string | null;
   hasCompletedTwinSetup: boolean;
   selectedNodeId: string | null;
   selectedFriendId: string | null;

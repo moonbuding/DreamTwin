@@ -47,13 +47,18 @@ export type DemoFlowAction =
   | { type: "OPEN_CHAT_ENTRY"; nodeId: string }
   | { type: "MARK_CHAT_SENT"; nodeId: string; text?: string }
   | { type: "SET_THEME"; mode: ThemeMode }
+  | { type: "AUTH_SUCCESS"; token: string; phone: string; hasTwin: boolean }
+  | { type: "HYDRATE_PROFILE"; profile: UserProfile; twin: TwinProjection | null }
+  | { type: "LOGOUT" }
   | { type: "GO_BACK" }
   | { type: "RESET_DEMO" };
 
 export const initialDemoFlowState: DemoFlowState = {
-  currentPage: "welcome",
+  currentPage: "auth",
   pageHistory: [],
   themeMode: "night",
+  authToken: null,
+  userPhone: null,
   hasCompletedTwinSetup: false,
   selectedNodeId: null,
   selectedFriendId: demoFriends[0]?.id ?? null,
@@ -252,6 +257,35 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
     }
     case "SET_THEME":
       return { ...state, themeMode: action.mode };
+    case "AUTH_SUCCESS":
+      if (!action.hasTwin) {
+        // New account (or no twin yet) → start a clean creation flow.
+        return {
+          ...initialDemoFlowState,
+          themeMode: state.themeMode,
+          authToken: action.token,
+          userPhone: action.phone,
+          currentPage: "twin-create",
+        };
+      }
+      return {
+        ...state,
+        authToken: action.token,
+        userPhone: action.phone,
+        hasCompletedTwinSetup: true,
+        currentPage: "today",
+        pageHistory: [],
+      };
+    case "HYDRATE_PROFILE":
+      return {
+        ...state,
+        profile: action.profile,
+        twin: action.twin ?? state.twin,
+        simulations: createSimulationsForProfile(action.profile),
+        hasCompletedTwinSetup: action.twin ? true : state.hasCompletedTwinSetup,
+      };
+    case "LOGOUT":
+      return { ...initialDemoFlowState, themeMode: state.themeMode };
     case "RESET_DEMO":
       return initialDemoFlowState;
     default:

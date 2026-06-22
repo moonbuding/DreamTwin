@@ -48,8 +48,15 @@ export class DreamTwinApiError extends Error {
   }
 }
 
-function apiBaseUrl(): string {
+export function apiBaseUrl(): string {
   return import.meta.env.VITE_DREAMTWIN_API_URL?.trim() || DEFAULT_API_URL;
+}
+
+let authToken: string | null = null;
+
+/** Set (or clear) the bearer token attached to every authenticated request. */
+export function setAuthToken(token: string | null): void {
+  authToken = token;
 }
 
 export function isDreamTwinApiEnabled(): boolean {
@@ -75,6 +82,7 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
       ...init,
       headers: {
         "Content-Type": "application/json",
+        ...(authToken ? { Authorization: `Bearer ${authToken}` } : {}),
         ...init?.headers,
       },
       signal: controller.signal,
@@ -137,6 +145,14 @@ function cachedRequest<T>(cache: Map<string, Promise<T>>, key: string, factory: 
 
 export function getHealth(): Promise<DreamTwinHealth> {
   return requestJson<DreamTwinHealth>("/api/health");
+}
+
+/** Persist the final twin for the signed-in user (covers the local-fallback path). */
+export function saveTwin(twin: TwinProjection): Promise<{ twin: TwinProjection }> {
+  return requestJson<{ twin: TwinProjection }>("/api/me/twin", {
+    method: "PUT",
+    body: JSON.stringify(twin),
+  });
 }
 
 export function generateTwinSummary(profile: UserProfile): Promise<{ job: GenerationJob; twin: TwinProjection }> {

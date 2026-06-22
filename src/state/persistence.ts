@@ -42,13 +42,15 @@ export function normalizePersistedState(state: DemoFlowState): DemoFlowState {
     sentFirstMessages: state.sentFirstMessages ?? {},
   };
 
-  if (!inferredTwinSetup) return merged;
-
-  return {
-    ...merged,
-    currentPage: "today",
-    pageHistory: [],
-  };
+  // Boot routing is driven by auth: no token → login/register; token but no
+  // twin yet → finish creating the twin; otherwise → today.
+  if (!merged.authToken) {
+    return { ...merged, authToken: null, userPhone: null, currentPage: "auth", pageHistory: [] };
+  }
+  if (!inferredTwinSetup) {
+    return { ...merged, currentPage: "twin-create", pageHistory: [] };
+  }
+  return { ...merged, currentPage: "today", pageHistory: [] };
 }
 
 function getBrowserStorage(): Storage | undefined {

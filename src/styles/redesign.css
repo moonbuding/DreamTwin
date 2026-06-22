@@ -44,6 +44,96 @@
   background: linear-gradient(180deg, rgba(5, 7, 19, 0.28) 0%, rgba(5, 7, 19, 0.05) 40%, rgba(5, 7, 19, 0.82) 100%);
 }
 
+/* ------------------------------------------------------------ auth page */
+.auth-content {
+  gap: 18px;
+  padding-top: 56px;
+}
+
+.auth-brand {
+  display: inline-flex;
+  gap: 9px;
+  align-items: center;
+  color: var(--text);
+  font-size: 16px;
+  font-weight: 600;
+}
+
+.auth-hero {
+  display: grid;
+  gap: 8px;
+  padding: 8px 2px 2px;
+}
+
+.auth-hero h1 {
+  max-width: none;
+  font-size: 27px;
+  font-weight: 600;
+  line-height: 1.18;
+}
+
+.auth-hero p {
+  color: var(--muted);
+  font-size: 14px;
+  line-height: 1.5;
+}
+
+.auth-form {
+  display: grid;
+  gap: 14px;
+  margin-top: 4px;
+}
+
+.auth-field {
+  display: grid;
+  gap: 7px;
+}
+
+.auth-field span {
+  color: var(--text);
+  font-size: 13px;
+  font-weight: 600;
+}
+
+.auth-field input {
+  width: 100%;
+  height: 50px;
+  padding: 0 15px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--text);
+  background: color-mix(in srgb, var(--text) 5%, transparent);
+  font-size: 15px;
+  outline: none;
+}
+
+.auth-field input:focus {
+  border-color: color-mix(in srgb, var(--accent) 55%, var(--line));
+  box-shadow: 0 0 0 3px color-mix(in srgb, var(--accent) 16%, transparent);
+}
+
+.auth-error {
+  margin: -2px 2px;
+  color: var(--danger, #ff8fb8);
+  font-size: 13px;
+}
+
+.auth-switch {
+  justify-self: center;
+  margin-top: 2px;
+  padding: 6px;
+  border: 0;
+  background: transparent;
+  color: var(--accent-strong, var(--accent));
+  font-size: 13.5px;
+  font-weight: 600;
+}
+
+.auth-note {
+  margin-top: auto;
+  text-align: center;
+}
+
 /* ---------------------------------------------------------------- header */
 .dt-head {
   position: sticky;
@@ -868,4 +958,19 @@
 
 .dt-twin-section .keyword-row span {
   background: rgba(255, 255, 255, 0.07);
+}
+
+.dt-logout {
+  display: inline-flex;
+  gap: 8px;
+  align-items: center;
+  justify-content: center;
+  width: 100%;
+  height: 46px;
+  border: 1px solid var(--line);
+  border-radius: 14px;
+  color: var(--muted);
+  background: color-mix(in srgb, var(--text) 4%, transparent);
+  font-size: 14px;
+  font-weight: 600;
 }

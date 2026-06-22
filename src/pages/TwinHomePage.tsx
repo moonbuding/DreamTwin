@@ -1,4 +1,4 @@
-import { ChevronLeft, MoonStar, Sun } from "lucide-react";
+import { ChevronLeft, LogOut, MoonStar, Sun } from "lucide-react";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import type { AvatarStyleSpec, DreamNode, ThemeMode, TwinProjection as TwinProjectionModel, UserProfile } from "../types/dreamtwin";
 
@@ -9,6 +9,7 @@ interface TwinHomePageProps {
   themeMode: ThemeMode;
   onSetTheme: (mode: ThemeMode) => void;
   onEditTwin: () => void;
+  onLogout: () => void;
   onBack: () => void;
 }
 
@@ -26,7 +27,7 @@ function resolveAvatarStyle(twin: TwinProjectionModel): AvatarStyleSpec {
   };
 }
 
-export function TwinHomePage({ profile, twin, themeMode, onSetTheme, onEditTwin, onBack }: TwinHomePageProps) {
+export function TwinHomePage({ profile, twin, themeMode, onSetTheme, onEditTwin, onLogout, onBack }: TwinHomePageProps) {
   const personalityKeywords = profile.personalityKeywords.length ? profile.personalityKeywords : twin.keywords;
   const valuesText = profile.values?.join("、") || twin.summary;
   const communicationText = profile.communicationStyle || "用温和、真实的方式靠近一段关系。";
@@ -106,6 +107,13 @@ export function TwinHomePage({ profile, twin, themeMode, onSetTheme, onEditTwin,
               黑夜
             </button>
           </div>
+        </div>
+
+        <div className="dt-twin-section">
+          <button className="dt-logout" onClick={onLogout} type="button">
+            <LogOut size={16} />
+            退出登录
+          </button>
         </div>
 
         <div className="dt-note">

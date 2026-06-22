@@ -3,6 +3,9 @@ import { AppShell, type AppTab } from "./components/AppShell";
 import { demoFlowReducer, initialDemoFlowState } from "./state/demoFlow";
 import { liveSimulationResultKey } from "./state/liveSimulationKey";
 import { loadPersistedState, persistDemoState } from "./state/persistence";
+import { AuthApiError, fetchMe } from "./api/authApi";
+import { saveTwin as saveTwinToBackend, setAuthToken } from "./api/dreamTwinApi";
+import { AuthPage } from "./pages/AuthPage";
 import { ChatEntryPage } from "./pages/ChatEntryPage";
 import { DreamGatePage } from "./pages/DreamGatePage";
 import { DreamLogPage } from "./pages/DreamLogPage";
@@ -17,6 +20,7 @@ import { WelcomePage } from "./pages/WelcomePage";
 import type { DemoPage, RelationshipSimulationResult } from "./types/dreamtwin";
 
 const pageProgress: Record<DemoPage, { label: string; value: number }> = {
+  auth: { label: "登录注册", value: 4 },
   welcome: { label: "产品解释", value: 8 },
   "twin-create": { label: "创建分身", value: 20 },
   "twin-generating": { label: "生成投影", value: 34 },
@@ -138,6 +142,7 @@ export function App() {
     "twin-home",
     "simulation-detail",
     "waiting",
+    "auth",
   ];
   const showTabs =
     state.hasCompletedTwinSetup &&
@@ -167,6 +172,26 @@ export function App() {
     persistDemoState(state);
   }, [state]);
 
+  // Keep the API client's bearer token in sync, and refresh the signed-in
+  // user's profile/twin from the server (logging out on an invalid token).
+  useEffect(() => {
+    setAuthToken(state.authToken);
+    if (!state.authToken) return;
+    let cancelled = false;
+    fetchMe(state.authToken)
+      .then((me) => {
+        if (!cancelled) dispatch({ type: "HYDRATE_PROFILE", profile: me.profile, twin: me.twin });
+      })
+      .catch((error) => {
+        if (!cancelled && error instanceof AuthApiError && error.status === 401) {
+          dispatch({ type: "LOGOUT" });
+        }
+      });
+    return () => {
+      cancelled = true;
+    };
+  }, [state.authToken]);
+
   return (
     <AppShell
       activeTab={activeTab}
@@ -182,6 +207,13 @@ export function App() {
       onNavigateTab={navigateTab}
       onReset={() => dispatch({ type: "RESET_DEMO" })}
     >
+      {state.currentPage === "auth" && (
+        <AuthPage
+          onAuthed={(result) =>
+            dispatch({ type: "AUTH_SUCCESS", token: result.token, phone: result.user.phone, hasTwin: result.hasTwin })
+          }
+        />
+      )}
       {state.currentPage === "welcome" && <WelcomePage onStart={() => dispatch({ type: "START_TWIN_CREATE" })} />}
       {state.currentPage === "twin-create" && (
         <TwinCreatePage
@@ -193,7 +225,10 @@ export function App() {
         <TwinGeneratingPage
           profile={state.profile}
           twin={state.twin}
-          onComplete={(twin) => dispatch({ type: "COMPLETE_TWIN_GENERATION", twin })}
+          onComplete={(twin) => {
+            if (state.authToken && twin) void saveTwinToBackend(twin).catch(() => undefined);
+            dispatch({ type: "COMPLETE_TWIN_GENERATION", twin });
+          }}
         />
       )}
       {state.currentPage === "today" && (
@@ -220,6 +255,7 @@ export function App() {
           themeMode={state.themeMode}
           onSetTheme={(mode) => dispatch({ type: "SET_THEME", mode })}
           onEditTwin={() => dispatch({ type: "EDIT_TWIN" })}
+          onLogout={() => dispatch({ type: "LOGOUT" })}
           onBack={() => dispatch({ type: "OPEN_TODAY" })}
         />
       )}
