@@ -6,8 +6,8 @@ import { loadPersistedState, persistDemoState } from "./state/persistence";
 import { ChatEntryPage } from "./pages/ChatEntryPage";
 import { DreamGatePage } from "./pages/DreamGatePage";
 import { DreamLogPage } from "./pages/DreamLogPage";
-import { FriendInvitePage } from "./pages/FriendInvitePage";
-import { MessagesPage } from "./pages/MessagesPage";
+import { FriendsHubPage } from "./pages/FriendsHubPage";
+import { PlazaPage } from "./pages/PlazaPage";
 import { SimulationDetailPage } from "./pages/SimulationDetailPage";
 import { TodayPage } from "./pages/TodayPage";
 import { TwinCreatePage } from "./pages/TwinCreatePage";
@@ -22,7 +22,8 @@ const pageProgress: Record<DemoPage, { label: string; value: number }> = {
   "twin-create": { label: "创建分身", value: 20 },
   "twin-generating": { label: "生成投影", value: 34 },
   today: { label: "今日首页", value: 42 },
-  "twin-home": { label: "分身", value: 48 },
+  plaza: { label: "广场", value: 46 },
+  "twin-home": { label: "我的", value: 48 },
   "dream-log": { label: "梦境地图", value: 56 },
   messages: { label: "消息", value: 60 },
   friends: { label: "好友", value: 60 },
@@ -130,6 +131,7 @@ export function App() {
   // Redesigned pages render their own in-page header, so the global topbar is hidden for them.
   const ownHeaderPages: DemoPage[] = [
     "today",
+    "plaza",
     "dream-log",
     "messages",
     "friends",
@@ -144,21 +146,24 @@ export function App() {
     state.currentPage !== "twin-generating" &&
     state.currentPage !== "simulation-detail";
   const activeTab: AppTab =
-    state.currentPage === "messages" || state.currentPage === "chat-entry"
-      ? "messages"
-      : state.currentPage === "friends" || state.currentPage === "friend-invite"
+    state.currentPage === "plaza"
+      ? "plaza"
+      : state.currentPage === "messages" ||
+          state.currentPage === "chat-entry" ||
+          state.currentPage === "friends" ||
+          state.currentPage === "friend-invite"
         ? "friends"
         : state.currentPage === "twin-home"
-          ? "twin"
+          ? "me"
           : state.currentPage === "today"
             ? "today"
             : "dream";
   const navigateTab = (tab: AppTab) => {
     if (tab === "today") dispatch({ type: "OPEN_TODAY" });
+    if (tab === "plaza") dispatch({ type: "OPEN_PLAZA" });
     if (tab === "dream") dispatch({ type: "OPEN_DREAM_TAB" });
-    if (tab === "messages") dispatch({ type: "OPEN_MESSAGES" });
     if (tab === "friends") dispatch({ type: "OPEN_FRIENDS" });
-    if (tab === "twin") dispatch({ type: "OPEN_TWIN_HOME" });
+    if (tab === "me") dispatch({ type: "OPEN_TWIN_HOME" });
   };
 
   useEffect(() => {
@@ -208,6 +213,9 @@ export function App() {
           onOpenTwin={() => dispatch({ type: "OPEN_TWIN_HOME" })}
         />
       )}
+      {state.currentPage === "plaza" && (
+        <PlazaPage onInviteCoDream={() => dispatch({ type: "OPEN_FRIENDS" })} />
+      )}
       {state.currentPage === "twin-home" && (
         <TwinHomePage
           profile={state.profile}
@@ -228,27 +236,23 @@ export function App() {
           onSelectNode={openNodeFromSurface}
         />
       )}
-      {(state.currentPage === "friends" || state.currentPage === "friend-invite") && (
-        <FriendInvitePage
+      {(state.currentPage === "friends" || state.currentPage === "friend-invite" || state.currentPage === "messages") && (
+        <FriendsHubPage
+          initialSubTab={state.currentPage === "messages" ? "chat" : "contacts"}
           friends={state.friends}
           inviteStatus={state.dreamInviteStatus}
           node={friendInviteNode}
           selectedFriendId={state.selectedFriendId}
-          onInvite={(friendId) => dispatch({ type: "SEND_DREAM_INVITE", friendId })}
-          onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
-          onOpenWaiting={(nodeId) => dispatch({ type: "OPEN_WAITING", nodeId })}
-          onSelectFriend={(friendId) => dispatch({ type: "SELECT_FRIEND", friendId })}
-          onBack={() => dispatch({ type: "OPEN_TODAY" })}
-        />
-      )}
-      {state.currentPage === "messages" && (
-        <MessagesPage
           nodes={state.nodes}
           sentFirstMessages={state.sentFirstMessages}
           simulations={state.simulations}
+          onInvite={(friendId) => dispatch({ type: "SEND_DREAM_INVITE", friendId })}
           onOpenChat={(nodeId) => dispatch({ type: "OPEN_CHAT_ENTRY", nodeId })}
           onOpenDreamMap={() => dispatch({ type: "OPEN_DREAM_LOG" })}
+          onOpenWaiting={(nodeId) => dispatch({ type: "OPEN_WAITING", nodeId })}
+          onSelectFriend={(friendId) => dispatch({ type: "SELECT_FRIEND", friendId })}
           onReviewNode={openNodeFromSurface}
+          onBack={() => dispatch({ type: "OPEN_TODAY" })}
         />
       )}
       {state.currentPage === "simulation-detail" && (

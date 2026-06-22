@@ -2,7 +2,6 @@ import { Check, Info } from "lucide-react";
 import type { DreamNode, RelationshipSimulation } from "../types/dreamtwin";
 import { DreamStarMap } from "../components/DreamStarMap";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
 
 interface DreamLogPageProps {
   nodes: DreamNode[];
@@ -44,8 +43,7 @@ export function DreamLogPage({
   };
 
   return (
-    <section className="page page-scroll scene-page dt-page dream-log-page">
-      <ThreeDreamScene variant="ambient" className="page-scene dream-log-scene" />
+    <section className="page page-scroll dt-page dt-light dream-log-page">
       <div className="page-content dt-content dream-log-content">
         <header className="dt-head">
           <div className="dt-head-left" />
@@ -63,7 +61,7 @@ export function DreamLogPage({
           <p>基于你的分身画像生成</p>
         </div>
 
-        <div className="dt-starfield">
+        <div className="dt-starfield dt-zone-dark">
           <DreamStarMap nodes={mapNodes} onSelectNode={selectMapNode} />
         </div>
 

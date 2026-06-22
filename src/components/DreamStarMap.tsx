@@ -22,6 +22,12 @@ export function DreamStarMap({ nodes, onSelectNode }: DreamStarMapProps) {
   return (
     <section className="star-map">
       <ThreeDreamScene variant="star-map" />
+      <div className="star-map-orbits" aria-hidden="true">
+        <span />
+        <span />
+        <span />
+        <i />
+      </div>
       <div className="star-map-overlay">
         {nodes.map((node) => (
           <button

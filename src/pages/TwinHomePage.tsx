@@ -30,8 +30,7 @@ export function TwinHomePage({ profile, twin, onEditTwin, onBack }: TwinHomePage
   const communicationText = profile.communicationStyle || "用温和、真实的方式靠近一段关系。";
 
   return (
-    <section className="page page-scroll scene-page dt-page twin-home-page">
-      <ThreeDreamScene variant="ambient" className="page-scene twin-home-scene" />
+    <section className="page page-scroll dt-page dt-light twin-home-page">
       <div className="page-content dt-content twin-home-content">
         <header className="dt-head">
           <div className="dt-head-left">
@@ -45,7 +44,7 @@ export function TwinHomePage({ profile, twin, onEditTwin, onBack }: TwinHomePage
           </div>
         </header>
 
-        <div className="dt-twin-stage">
+        <div className="dt-twin-stage dt-zone-dark">
           <ThreeDreamScene variant="avatar" avatarStyleSpec={resolveAvatarStyle(twin)} />
           <span className="dt-twin-base" aria-hidden="true" />
         </div>

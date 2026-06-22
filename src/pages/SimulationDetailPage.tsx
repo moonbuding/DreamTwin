@@ -7,7 +7,6 @@ import {
   type DreamTwinApiMode,
 } from "../api/dreamTwinApi";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import type {
   DreamNode,
   RelationshipScenario,
@@ -254,8 +253,7 @@ export function SimulationDetailPage({
   ];
 
   return (
-    <section className="page page-scroll scene-page dt-page simulation-page">
-      <ThreeDreamScene variant="ambient" className="page-scene simulation-scene" />
+    <section className="page page-scroll dt-page dt-light simulation-page">
       <div className="page-content dt-content simulation-content">
         <header className="dt-head">
           <div className="dt-head-left">

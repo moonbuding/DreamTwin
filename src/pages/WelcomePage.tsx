@@ -1,11 +1,9 @@
 import { ArrowRight, Sparkles } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
 
 export function WelcomePage({ onStart }: { onStart: () => void }) {
   return (
-    <section className="page welcome-page">
-      <ThreeDreamScene variant="ambient" className="hero-scene" />
+    <section className="page dt-page dt-light welcome-page">
       <div className="page-content page-content-bottom">
         <p className="label">AI 双人关系预演社交</p>
         <h1>先梦见一种可能，再决定是否亲自进入。</h1>

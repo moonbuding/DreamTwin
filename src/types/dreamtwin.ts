@@ -20,6 +20,7 @@ export type DemoPage =
   | "twin-create"
   | "twin-generating"
   | "today"
+  | "plaza"
   | "messages"
   | "friends"
   | "twin-home"
@@ -29,6 +30,15 @@ export type DemoPage =
   | "waiting"
   | "dream-gate"
   | "chat-entry";
+
+export interface PlazaProfile {
+  id: string;
+  name: string;
+  tagline: string;
+  keywords: string[];
+  colorPalette: string[];
+  presence: string;
+}
 
 export interface UserProfile {
   id: string;

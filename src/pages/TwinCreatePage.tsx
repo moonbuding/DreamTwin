@@ -61,7 +61,7 @@ export function TwinCreatePage({ profile, onSubmit }: TwinCreatePageProps) {
   };
 
   return (
-    <section className="page page-scroll">
+    <section className="page page-scroll dt-page dt-light">
       <div className="page-content">
         <p className="label">Step 01</p>
         <h1>让分身理解你如何靠近一段关系。</h1>

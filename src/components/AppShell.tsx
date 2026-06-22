@@ -1,7 +1,7 @@
 import type { ReactNode } from "react";
-import { ChevronLeft, Compass, Home, MessageCircle, RotateCcw, UserRound, Users } from "lucide-react";
+import { ChevronLeft, Compass, Home, MessageCircle, Moon, RotateCcw, UserRound } from "lucide-react";
 
-export type AppTab = "today" | "dream" | "messages" | "friends" | "twin";
+export type AppTab = "today" | "plaza" | "dream" | "friends" | "me";
 
 interface AppShellProps {
   children: ReactNode;
@@ -20,10 +20,10 @@ interface AppShellProps {
 
 const tabItems: Array<{ id: AppTab; label: string; icon: ReactNode }> = [
   { id: "today", label: "今日", icon: <Home size={19} /> },
-  { id: "dream", label: "梦境", icon: <Compass size={19} /> },
-  { id: "messages", label: "消息", icon: <MessageCircle size={19} /> },
-  { id: "friends", label: "好友", icon: <Users size={19} /> },
-  { id: "twin", label: "分身", icon: <UserRound size={19} /> },
+  { id: "plaza", label: "广场", icon: <Compass size={19} /> },
+  { id: "dream", label: "梦境", icon: <Moon size={19} /> },
+  { id: "friends", label: "好友", icon: <MessageCircle size={19} /> },
+  { id: "me", label: "我的", icon: <UserRound size={19} /> },
 ];
 
 export function AppShell({

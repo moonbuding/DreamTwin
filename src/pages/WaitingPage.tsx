@@ -1,7 +1,6 @@
 import { ArrowLeft, Compass, DoorOpen, FastForward, RotateCcw, Sparkles } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { StatusPill } from "../components/StatusPill";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import type { DreamNode, RelationshipSimulation } from "../types/dreamtwin";
 
 interface WaitingPageProps {
@@ -37,8 +36,7 @@ export function WaitingPage({
     : ["对方确认前不打开聊天", "不会替你发送真实消息", "可以随时撤回这次入梦"];
 
   return (
-    <section className="page waiting-page scene-page">
-      <ThreeDreamScene variant="ambient" className="page-scene waiting-scene" />
+    <section className="page page-scroll dt-page dt-light waiting-page">
       <div className="page-content waiting-content">
         <p className="label">{isOpened ? "梦境门已打开" : waitingLabel}</p>
         <h1>{isOpened ? acceptedTitle : sentTitle}</h1>

@@ -1,7 +1,6 @@
 import { ArrowLeft, Compass, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { StatusPill } from "../components/StatusPill";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import type { DreamNode, RelationshipSimulation } from "../types/dreamtwin";
 
 interface DreamGatePageProps {
@@ -21,8 +20,7 @@ export function DreamGatePage({ node, selectedRoamingSceneId, simulation, onBack
   const firstLinePreview = activeRoamingScene?.possibleFirstLine ?? simulation.possibleFirstLine;
 
   return (
-    <section className="page gate-page">
-      <ThreeDreamScene variant="gate" className="gate-scene" />
+    <section className="page page-scroll dt-page dt-light gate-page">
       <div className="page-content page-content-bottom">
         <p className="label">梦境门打开</p>
         <h1>{isFriendInvite ? `${simulation.counterpartName} 确认了这段共同梦境。` : `${simulation.counterpartName} 也选择进入。`}</h1>

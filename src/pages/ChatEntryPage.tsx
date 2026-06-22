@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
 import { ArrowLeft, CheckCircle2, Compass, MessageCircle, RefreshCw, Send, ShieldCheck } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import type { RelationshipSimulation, RelationshipSimulationResult } from "../types/dreamtwin";
 import { adaptFriendInviteMoveAfterAcceptance } from "../utils/relationshipCopy";
 
@@ -93,8 +92,7 @@ export function ChatEntryPage({
   };
 
   return (
-    <section className="page page-scroll scene-page chat-entry-page">
-      <ThreeDreamScene variant="ambient" className="page-scene chat-scene" />
+    <section className="page page-scroll dt-page dt-light chat-entry-page">
       <div className="page-content chat-entry-content">
         <p className="label">真实聊天入口</p>
         <h1>{hasSentFirstMessage ? "第一句话已经发出。" : "现在由你开始。"}</h1>

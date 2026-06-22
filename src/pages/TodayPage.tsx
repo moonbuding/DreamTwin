@@ -1,5 +1,4 @@
 import { Bell, CalendarCheck, ChevronRight, DoorOpen, Hourglass, Sparkles, Users } from "lucide-react";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import type { DreamInviteStatus, DreamNode, FriendProfile, RelationshipSimulation, TwinProjection } from "../types/dreamtwin";
 
 interface TodayPageProps {
@@ -45,8 +44,7 @@ export function TodayPage({
   const openWaiting = () => (waitingNodes[0] ? onContinueNode(waitingNodes[0].id) : onOpenFriends());
 
   return (
-    <section className="page page-scroll scene-page dt-page today-page">
-      <ThreeDreamScene variant="ambient" className="page-scene today-scene" />
+    <section className="page page-scroll dt-page dt-light today-page">
       <div className="page-content dt-content today-content">
         <header className="dt-head">
           <div className="dt-head-left">

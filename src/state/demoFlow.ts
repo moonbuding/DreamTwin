@@ -21,6 +21,7 @@ export type DemoFlowAction =
   | { type: "SUBMIT_TWIN_PROFILE"; profile: UserProfile }
   | { type: "COMPLETE_TWIN_GENERATION"; twin?: TwinProjection }
   | { type: "OPEN_TODAY" }
+  | { type: "OPEN_PLAZA" }
   | { type: "OPEN_MESSAGES" }
   | { type: "OPEN_FRIENDS" }
   | { type: "OPEN_TWIN_HOME" }
@@ -142,6 +143,8 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
       };
     case "OPEN_TODAY":
       return openAppTab(state, "today");
+    case "OPEN_PLAZA":
+      return openAppTab(state, "plaza");
     case "OPEN_MESSAGES":
       return openAppTab(state, "messages");
     case "OPEN_FRIENDS":
