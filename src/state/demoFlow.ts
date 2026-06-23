@@ -7,20 +7,33 @@ import {
   demoSimulations,
   demoTwin,
 } from "../data/demoData";
-import type { DemoFlowState, DemoPage, DreamNodeStatus, UserProfile } from "../types/dreamtwin";
+import type {
+  DemoFlowState,
+  DemoPage,
+  DreamNodeStatus,
+  RelationshipSimulationResult,
+  ThemeMode,
+  TwinProjection,
+  UserProfile,
+} from "../types/dreamtwin";
 
 export type DemoFlowAction =
   | { type: "START_TWIN_CREATE" }
   | { type: "SUBMIT_TWIN_PROFILE"; profile: UserProfile }
-  | { type: "COMPLETE_TWIN_GENERATION" }
+  | { type: "COMPLETE_TWIN_GENERATION"; twin?: TwinProjection }
+  | { type: "OPEN_TODAY" }
+  | { type: "OPEN_PLAZA" }
+  | { type: "OPEN_MESSAGES" }
+  | { type: "OPEN_FRIENDS" }
   | { type: "OPEN_TWIN_HOME" }
   | { type: "EDIT_TWIN" }
   | { type: "ENTER_DREAM_PLAZA" }
+  | { type: "OPEN_DREAM_TAB" }
   | { type: "OPEN_DREAM_LOG" }
   | { type: "OPEN_FRIEND_INVITE" }
   | { type: "SELECT_FRIEND"; friendId: string }
   | { type: "SELECT_ROAMING_SCENE"; sceneId: string }
-  | { type: "SEND_DREAM_INVITE"; friendId: string; sceneId: string }
+  | { type: "SEND_DREAM_INVITE"; friendId: string }
   | { type: "SELECT_NODE"; nodeId: string }
   | { type: "OPEN_SIMULATION_RESULT"; nodeId: string }
   | { type: "ENTER_DREAM"; nodeId: string }
@@ -29,20 +42,31 @@ export type DemoFlowAction =
   | { type: "SIMULATE_COUNTERPART_CONFIRM"; nodeId: string }
   | { type: "SIMULATE_FRIEND_ACCEPT"; nodeId: string }
   | { type: "OPEN_ROAMING_SIMULATION"; nodeId: string }
+  | { type: "STORE_LIVE_SIMULATION_RESULT"; resultKey: string; result: RelationshipSimulationResult }
   | { type: "WITHDRAW_DREAM"; nodeId: string }
   | { type: "OPEN_CHAT_ENTRY"; nodeId: string }
+  | { type: "MARK_CHAT_SENT"; nodeId: string; text?: string }
+  | { type: "SET_THEME"; mode: ThemeMode }
+  | { type: "AUTH_SUCCESS"; token: string; phone: string; hasTwin: boolean }
+  | { type: "HYDRATE_PROFILE"; profile: UserProfile; twin: TwinProjection | null }
+  | { type: "LOGOUT" }
   | { type: "GO_BACK" }
   | { type: "RESET_DEMO" };
 
 export const initialDemoFlowState: DemoFlowState = {
-  currentPage: "welcome",
+  currentPage: "auth",
   pageHistory: [],
+  themeMode: "night",
+  authToken: null,
+  userPhone: null,
   hasCompletedTwinSetup: false,
   selectedNodeId: null,
   selectedFriendId: demoFriends[0]?.id ?? null,
   selectedRoamingSceneId: "undersea",
   dreamInviteStatus: "draft",
   resumeAtOutcomeNodeId: null,
+  liveSimulationResults: {},
+  sentFirstMessages: {},
   profile: demoProfile,
   twin: demoTwin,
   friends: demoFriends,
@@ -62,7 +86,15 @@ function openDreamLog(state: DemoFlowState): DemoFlowState {
   return {
     ...state,
     currentPage: "dream-log",
-    pageHistory: state.hasCompletedTwinSetup ? ["twin-home"] : [],
+    pageHistory: state.hasCompletedTwinSetup ? ["today"] : [],
+  };
+}
+
+function openAppTab(state: DemoFlowState, currentPage: DemoPage): DemoFlowState {
+  return {
+    ...state,
+    currentPage,
+    pageHistory: [],
   };
 }
 
@@ -104,32 +136,45 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
           selectedRoamingSceneId: "undersea",
           dreamInviteStatus: "draft",
           resumeAtOutcomeNodeId: null,
+          liveSimulationResults: {},
+          sentFirstMessages: {},
         },
         "twin-generating",
       );
     case "COMPLETE_TWIN_GENERATION":
       return {
         ...state,
+        twin: action.twin ?? state.twin,
         hasCompletedTwinSetup: true,
-        currentPage: "twin-home",
+        currentPage: "today",
         pageHistory: [],
       };
+    case "OPEN_TODAY":
+      return openAppTab(state, "today");
+    case "OPEN_PLAZA":
+      return openAppTab(state, "plaza");
+    case "OPEN_MESSAGES":
+      return openAppTab(state, "messages");
+    case "OPEN_FRIENDS":
+      return openAppTab(state, "friends");
     case "OPEN_TWIN_HOME":
-      return goToPage(state, "twin-home");
+      return openAppTab(state, "twin-home");
     case "EDIT_TWIN":
       return goToPage(state, "twin-create");
+    case "OPEN_DREAM_TAB":
+      return openAppTab(state, "dream-log");
     case "ENTER_DREAM_PLAZA":
     case "OPEN_DREAM_LOG":
       return openDreamLog(state);
     case "OPEN_FRIEND_INVITE":
-      return goToPage(
+      return openAppTab(
         {
           ...state,
           selectedFriendId: state.selectedFriendId ?? state.friends[0]?.id ?? null,
           selectedRoamingSceneId: state.selectedRoamingSceneId ?? "undersea",
-          dreamInviteStatus: state.dreamInviteStatus === "accepted" ? "draft" : state.dreamInviteStatus,
+          dreamInviteStatus: state.dreamInviteStatus,
         },
-        "friend-invite",
+        "friends",
       );
     case "SELECT_FRIEND":
       return { ...state, selectedFriendId: action.friendId };
@@ -140,7 +185,6 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
         {
           ...setNodeStatus(state, "node-friend-mika", "waiting"),
           selectedFriendId: action.friendId,
-          selectedRoamingSceneId: action.sceneId,
           dreamInviteStatus: "sent",
           resumeAtOutcomeNodeId: null,
         },
@@ -156,19 +200,32 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
       return goToPage({ ...state, selectedNodeId: action.nodeId, resumeAtOutcomeNodeId: action.nodeId }, "waiting");
     case "OPEN_DREAM_GATE":
       return goToPage({ ...state, selectedNodeId: action.nodeId, resumeAtOutcomeNodeId: action.nodeId }, "dream-gate");
-    case "SIMULATE_COUNTERPART_CONFIRM":
-      return goToPage({ ...setNodeStatus(state, action.nodeId, "opened"), resumeAtOutcomeNodeId: action.nodeId }, "dream-gate");
+    case "SIMULATE_COUNTERPART_CONFIRM": {
+      const node = state.nodes.find((item) => item.id === action.nodeId);
+      if (node?.entryMode === "friend_invite") {
+        return goToPage({ ...setNodeStatus(state, action.nodeId, "opened"), resumeAtOutcomeNodeId: action.nodeId }, "dream-gate");
+      }
+      return goToPage({ ...setNodeStatus(state, action.nodeId, "both_entered"), resumeAtOutcomeNodeId: action.nodeId }, "chat-entry");
+    }
     case "SIMULATE_FRIEND_ACCEPT":
       return goToPage(
         {
-          ...setNodeStatus(state, action.nodeId, "opened"),
+          ...setNodeStatus(state, action.nodeId, "both_entered"),
           dreamInviteStatus: "accepted",
           resumeAtOutcomeNodeId: action.nodeId,
         },
-        "simulation-detail",
+        "dream-log",
       );
     case "OPEN_ROAMING_SIMULATION":
       return goToPage({ ...state, selectedNodeId: action.nodeId, resumeAtOutcomeNodeId: action.nodeId }, "simulation-detail");
+    case "STORE_LIVE_SIMULATION_RESULT":
+      return {
+        ...state,
+        liveSimulationResults: {
+          ...(state.liveSimulationResults ?? {}),
+          [action.resultKey]: action.result,
+        },
+      };
     case "WITHDRAW_DREAM":
       if (state.nodes.find((node) => node.id === action.nodeId)?.entryMode === "friend_invite") {
         return goToPage(
@@ -177,12 +234,22 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
             dreamInviteStatus: "withdrawn",
             resumeAtOutcomeNodeId: null,
           },
-          "friend-invite",
+          "friends",
         );
       }
       return goToPage({ ...setNodeStatus(state, action.nodeId, "viewed"), resumeAtOutcomeNodeId: action.nodeId }, "simulation-detail");
     case "OPEN_CHAT_ENTRY":
       return goToPage({ ...state, selectedNodeId: action.nodeId }, "chat-entry");
+    case "MARK_CHAT_SENT":
+      return {
+        ...setNodeStatus(state, action.nodeId, "in_chat"),
+        sentFirstMessages: action.text?.trim()
+          ? {
+              ...(state.sentFirstMessages ?? {}),
+              [action.nodeId]: action.text.trim(),
+            }
+          : state.sentFirstMessages ?? {},
+      };
     case "GO_BACK": {
       const pageHistory = state.pageHistory ?? [];
       const previousPage = pageHistory[pageHistory.length - 1];
@@ -193,6 +260,37 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
         pageHistory: pageHistory.slice(0, -1),
       };
     }
+    case "SET_THEME":
+      return { ...state, themeMode: action.mode };
+    case "AUTH_SUCCESS":
+      if (!action.hasTwin) {
+        // New account (or no twin yet) → start a clean creation flow.
+        return {
+          ...initialDemoFlowState,
+          themeMode: state.themeMode,
+          authToken: action.token,
+          userPhone: action.phone,
+          currentPage: "twin-create",
+        };
+      }
+      return {
+        ...state,
+        authToken: action.token,
+        userPhone: action.phone,
+        hasCompletedTwinSetup: true,
+        currentPage: "today",
+        pageHistory: [],
+      };
+    case "HYDRATE_PROFILE":
+      return {
+        ...state,
+        profile: action.profile,
+        twin: action.twin ?? state.twin,
+        simulations: createSimulationsForProfile(action.profile),
+        hasCompletedTwinSetup: action.twin ? true : state.hasCompletedTwinSetup,
+      };
+    case "LOGOUT":
+      return { ...initialDemoFlowState, themeMode: state.themeMode };
     case "RESET_DEMO":
       return initialDemoFlowState;
     default:

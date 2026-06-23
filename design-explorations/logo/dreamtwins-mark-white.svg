@@ -1,0 +1,12 @@
+<svg width="512" height="512" viewBox="0 0 512 512" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">DreamTwins mark</title>
+  <desc id="desc">A white interlocking twin-orbit mark representing two AI twins meeting through a dream portal.</desc>
+  <g stroke="#fff" stroke-linecap="round" stroke-linejoin="round">
+    <path d="M227 64C133 89 71 156 65 241C59 335 132 408 231 399C331 390 394 306 381 214C368 123 305 49 227 64Z" stroke-width="30"/>
+    <path d="M285 64C379 89 441 156 447 241C453 335 380 408 281 399C181 390 118 306 131 214C144 123 207 49 285 64Z" stroke-width="30" opacity=".74"/>
+    <path d="M132 285C182 216 248 168 333 138" stroke-width="12" opacity=".72"/>
+    <path d="M380 285C330 216 264 168 179 138" stroke-width="12" opacity=".72"/>
+    <circle cx="256" cy="242" r="16" fill="#fff" stroke="none"/>
+    <circle cx="256" cy="242" r="48" stroke-width="8" opacity=".28"/>
+  </g>
+</svg>

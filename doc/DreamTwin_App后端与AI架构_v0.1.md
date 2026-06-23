@@ -1,14 +1,14 @@
-# DreamTwin App 后端与 AI 架构 v0.1
+# DreamTwins App 后端与 AI 架构 v0.1
 
 > 文档状态：真实 App 后端与 AI 架构基准版
-> 当前定位：静态移动端 Web Demo 之后的 App 落地方案
+> 当前定位：当前 Node API / MySQL / Live AI 基线之后的真实 App 落地方案
 > 上游文档：`doc/DreamTwin_产品说明书_v0.1.md`、`doc/DreamTwin_PRD_v0.1.md`、`doc/DreamTwin_需求池_v0.1.md`、`doc/DreamTwin_技术方案_v0.1.md`
 
 ## 1. 架构目标
 
-本方案把 DreamTwin 从“纯前端静态 Demo”推进到“真实 App 可落地架构”。
+本方案把 DreamTwins 从“静态前端 Demo + 最小 Node API”推进到“真实 App 可落地架构”。
 
-下一阶段不急着部署公开 Demo，也不直接接大模型 API，而是先设计真实 App 需要的后端、数据、AI 生成和关系边界。
+当前分支已具备手机号密码登录、JWT、MySQL 持久化、DeepSeek 服务端调用和 Live AI adapter。下一阶段重点不是重新证明后端可行，而是把好友邀请、梦境门、聊天边界、关系状态和内容安全继续产品化。
 
 真实 App 的核心闭环是：
 
@@ -26,6 +26,17 @@
 - 好友关系必须先邀请、再共同预演，不支持用户单方面偷偷分析好友。
 - 梦境门是双向确认边界，未确认前不能打开真实聊天。
 - 当前前端 Demo 保留为体验基准，后续逐步替换静态数据。
+
+### 1.1 v0.2 架构补充
+
+下一阶段后端与 AI 架构需要支持 **风格化全身 3D AI 分身、引导式 3D 梦境场景、双方画像驱动的关系模拟**。
+
+关键变化：
+
+- AI 分身不仅保存摘要和关键词，也保存可渲染的 `AvatarStyleSpec`，用于前端生成风格化 3D 分身。
+- 用户画像允许包含 MBTI、血型、星座、玄学标签等自愿填写的叙事信号，但不作为科学预测或命运判断。
+- 关系预演生成必须读取双方分身画像、当前梦境场景事件和关系目标。
+- 3D 梦境场景只保存场景类型与引导事件，不保存可走地图、关卡或任务系统。
 
 ## 2. 后端模块
 
@@ -65,6 +76,7 @@ AI 分身应包含：
 - 表达风格。
 - 关系偏好。
 - 可视化投影参数。
+- 风格化 3D 分身展示参数。
 - 生成版本。
 
 边界：
@@ -72,6 +84,7 @@ AI 分身应包含：
 - AI 分身不是 AI 伴侣。
 - AI 分身不主动聊天。
 - AI 分身不代表用户向真人发送消息。
+- AI 分身不是换装或养成资产。
 
 ### 2.3 关系预演生成任务
 
@@ -89,6 +102,9 @@ AI 分身应包含：
 
 - 关系假设。
 - 梦境场景。
+- 引导式场景事件。
+- 双方分身画像快照。
+- 关系目标。
 - 可能对话。
 - 可能行为。
 - 关系走势。
@@ -103,6 +119,7 @@ AI 分身应包含：
 - 不生成操控、PUA、骚扰、越界表达。
 - 不替用户写成已发送消息。
 - 不把关系预演包装成心理诊断或命运判断。
+- 不把 MBTI、血型、星座或玄学标签包装成确定性结论。
 
 ### 2.4 梦境广场与梦境节点
 
@@ -121,7 +138,7 @@ AI 分身应包含：
 
 - 梦境广场不是真实地图。
 - 不做附近的人。
-- 不做可走地图或游戏关卡。
+- 不做自由可走地图、地图拖拽、地图缩放或游戏关卡。
 - 梦境节点服务关系预演入口，不服务玩法探索。
 
 ### 2.5 好友邀请与共同梦境漫游
@@ -243,6 +260,12 @@ interface UserProfile {
   expressionStyle: string;
   socialPace: string;
   optionalSignals: string[];
+  mbti?: string;
+  bloodType?: string;
+  zodiac?: string;
+  mysticTags?: string[];
+  communicationStyle?: string[];
+  values?: string[];
   updatedAt: string;
 }
 ```
@@ -260,8 +283,21 @@ interface TwinProjection {
   keywords: string[];
   colorPalette: string[];
   lightShape: "halo" | "mist" | "pulse" | "orbit";
+  avatarStyleSpec?: AvatarStyleSpec;
   generatedBy: string;
   createdAt: string;
+}
+```
+
+### 3.3.1 AvatarStyleSpec
+
+```ts
+interface AvatarStyleSpec {
+  silhouette: "soft-human" | "crystal-human" | "shadow-human" | "light-human";
+  materialTone: "mist" | "glass" | "stardust" | "neon";
+  motionStyle: "calm-breath" | "curious-turn" | "warm-idle";
+  auraColor: string[];
+  boundaryTags: Array<"no-real-face" | "no-outfit-swap" | "no-leveling" | "no-companion-mode">;
 }
 ```
 
@@ -276,7 +312,27 @@ interface DreamNode {
   title: string;
   status: "unviewed" | "viewed" | "waiting" | "opened" | "closed";
   visualTone: string;
+  sceneStageVariant?: SceneStageVariant;
   createdAt: string;
+}
+```
+
+### 3.4.1 GuidedSceneEvent
+
+```ts
+type SceneStageVariant =
+  | "rain_store"
+  | "starlight"
+  | "undersea"
+  | "sushi"
+  | "cinema"
+  | "badminton";
+
+interface GuidedSceneEvent {
+  id: string;
+  label: string;
+  prompt: string;
+  hotspot: "foreground" | "midground" | "background" | "gate";
 }
 ```
 
@@ -302,6 +358,10 @@ interface RelationshipSimulation {
   badOutcomeScenario: string;
   suggestedMove: string;
   possibleFirstLine: string;
+  selfProfileSnapshot?: UserProfile;
+  counterpartProfileSnapshot?: UserProfile;
+  guidedSceneEvents?: GuidedSceneEvent[];
+  relationshipGoal?: string;
   safetyStatus: "passed" | "limited" | "blocked";
   createdAt: string;
 }
@@ -418,7 +478,7 @@ AI 生成只允许从后端触发：
 - 不把 API key 写入前端代码。
 - 不把 API key 写入仓库、文档、提交记录或构建产物。
 - 不通过浏览器请求直接调用 DeepSeek。
-- 后端对外只暴露 DreamTwin 业务接口，不暴露 provider 原始接口。
+- 后端对外只暴露 DreamTwins 业务接口，不暴露 provider 原始接口。
 
 后续如需切换模型，应通过 provider adapter 完成，不影响前端页面和核心数据结构。
 
@@ -529,7 +589,7 @@ type GenerationJobStatus =
 第一版后端实现完成后必须跑通：
 
 1. 用户登录后创建并保存 AI 分身。
-2. 用户刷新后仍能看到自己的 AI 分身主页。
+2. 用户刷新后默认进入今日首页，并可在我的 Tab 查看自己的 AI 分身。
 3. 用户获取至少一条 AI 生成的梦境节点。
 4. 用户查看一条关系预演模拟。
 5. 用户创建好友梦境漫游邀请。
@@ -539,7 +599,7 @@ type GenerationJobStatus =
 
 ## 9. 结论
 
-DreamTwin 下一阶段不应急着部署，也不应直接把 API key 接进前端。
+DreamTwins 下一阶段不应急着部署，也不应直接把 API key 接进前端。
 
 正确路线是：先把真实 App 的后端、AI 生成、邀请确认和聊天边界设计清楚，再把当前静态 Demo 逐步迁移为真实数据驱动的 App。
 

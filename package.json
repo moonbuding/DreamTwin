@@ -4,20 +4,32 @@
   "version": "0.1.0",
   "type": "module",
   "scripts": {
+    "check": "npm run qa && npm run build",
+    "db:up": "docker compose up -d mysql",
+    "db:down": "docker compose down",
     "dev": "vite --host 127.0.0.1",
     "build": "tsc -b && vite build && npm run server:build",
+    "qa": "npm run qa:state && npm run qa:safety",
+    "qa:safety": "node scripts/product-safety-qa.mjs",
+    "qa:state": "tsc -p tsconfig.qa.json && node scripts/state-flow-qa.mjs",
     "preview": "vite preview --host 127.0.0.1",
     "server:build": "tsc -p tsconfig.server.json",
     "server:dev": "npm run server:build && node dist-server/server/index.js",
     "server:start": "node dist-server/server/index.js"
   },
   "dependencies": {
+    "bcryptjs": "^3.0.3",
+    "dotenv": "^17.4.2",
+    "jsonwebtoken": "^9.0.3",
     "lucide-react": "^0.468.0",
+    "mysql2": "^3.22.5",
     "react": "^18.3.1",
     "react-dom": "^18.3.1",
     "three": "^0.165.0"
   },
   "devDependencies": {
+    "@types/bcryptjs": "^2.4.6",
+    "@types/jsonwebtoken": "^9.0.10",
     "@types/node": "^25.9.3",
     "@types/react": "^18.3.31",
     "@types/react-dom": "^18.3.7",

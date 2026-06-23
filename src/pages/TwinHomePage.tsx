@@ -1,90 +1,125 @@
-import { ArrowRight, Pencil, Send, Sparkles } from "lucide-react";
-import { PrimaryButton } from "../components/PrimaryButton";
+import { ChevronLeft, LogOut, MoonStar, Sun } from "lucide-react";
 import { ThreeDreamScene } from "../components/ThreeDreamScene";
-import { TwinProjection } from "../components/TwinProjection";
-import type { DreamNode, TwinProjection as TwinProjectionModel, UserProfile } from "../types/dreamtwin";
+import type { AvatarStyleSpec, DreamNode, ThemeMode, TwinProjection as TwinProjectionModel, UserProfile } from "../types/dreamtwin";
 
 interface TwinHomePageProps {
   profile: UserProfile;
   twin: TwinProjectionModel;
   nodes: DreamNode[];
+  themeMode: ThemeMode;
+  onSetTheme: (mode: ThemeMode) => void;
   onEditTwin: () => void;
-  onEnterDreamPlaza: () => void;
-  onInviteFriend: () => void;
+  onLogout: () => void;
+  onBack: () => void;
 }
 
-export function TwinHomePage({
-  profile,
-  twin,
-  nodes,
-  onEditTwin,
-  onEnterDreamPlaza,
-  onInviteFriend,
-}: TwinHomePageProps) {
-  const overnightCount = nodes.filter((node) => node.entryMode === "overnight_discovery").length;
-  const openedCount = nodes.filter((node) => node.status === "opened").length;
-  const waitingCount = nodes.filter((node) => node.status === "waiting").length;
+function resolveAvatarStyle(twin: TwinProjectionModel): AvatarStyleSpec {
+  if (twin.avatarStyleSpec) return twin.avatarStyleSpec;
+  return {
+    silhouette: "full_body_luminous",
+    posture: "reserved",
+    material: "mist-light",
+    auraColor: twin.colorPalette[0] || "#6fd3ff",
+    secondaryColor: twin.colorPalette[1] || "#a779ff",
+    accentColor: twin.colorPalette[2] || "#ff72d2",
+    motionSignature: "slow_orbit",
+    keywords: twin.keywords.slice(0, 4),
+  };
+}
+
+export function TwinHomePage({ profile, twin, themeMode, onSetTheme, onEditTwin, onLogout, onBack }: TwinHomePageProps) {
+  const personalityKeywords = profile.personalityKeywords.length ? profile.personalityKeywords : twin.keywords;
+  const valuesText = profile.values?.join("、") || twin.summary;
+  const communicationText = profile.communicationStyle || "用温和、真实的方式靠近一段关系。";
 
   return (
-    <section className="page page-scroll scene-page twin-home-page">
-      <ThreeDreamScene variant="ambient" className="page-scene twin-home-scene" />
-      <div className="page-content twin-home-content">
-        <header className="twin-home-hero">
-          <p className="label">AI 分身主页</p>
-          <h1>{twin.nickname} 已经保存。</h1>
-          <p>
-            这里是你的长期入口。带着分身进入梦境广场，或邀请好友一起完成一次低压关系预演。
-          </p>
+    <section className="page page-scroll dt-page twin-home-page">
+      <div className="page-content dt-content twin-home-content">
+        <header className="dt-head">
+          <div className="dt-head-left">
+            <button className="dt-icon-btn" onClick={onBack} type="button" aria-label="返回">
+              <ChevronLeft size={18} />
+            </button>
+          </div>
+          <span className="dt-head-title">我的分身</span>
+          <div className="dt-head-right">
+            <button className="dt-chip-btn" onClick={onEditTwin} type="button">编辑资料</button>
+          </div>
         </header>
 
-        <TwinProjection twin={twin} />
+        <div className="dt-twin-stage dt-zone-dark">
+          <ThreeDreamScene variant="avatar" avatarStyleSpec={resolveAvatarStyle(twin)} />
+          <span className="dt-twin-base" aria-hidden="true" />
+        </div>
 
-        <section className="twin-home-status" aria-label="分身状态">
-          <div>
-            <span>分身状态</span>
-            <strong>已保存</strong>
-          </div>
-          <div>
-            <span>昨夜入口</span>
-            <strong>{overnightCount} 个梦境</strong>
-          </div>
-          <div>
-            <span>关系进度</span>
-            <strong>{openedCount > 0 ? `${openedCount} 个已打开` : waitingCount > 0 ? `${waitingCount} 个等待中` : "可开始"}</strong>
-          </div>
-        </section>
+        <div className="dt-twin-name">
+          <h2>{profile.nickname}</h2>
+          <span>网络世界里的你</span>
+        </div>
 
-        <section className="twin-home-route" aria-label="路演推荐路径">
-          <span>路演推荐</span>
-          <strong>先走梦境广场，再补好友入梦。</strong>
-          <p>3-5 分钟内展示完整闭环：AI 分身预演关系，双方确认后才进入真实聊天。</p>
-        </section>
-
-        <section className="twin-home-actions" aria-label="下一步玩法">
-          <PrimaryButton icon={<ArrowRight size={18} />} onClick={onEnterDreamPlaza}>
-            进入梦境广场
-          </PrimaryButton>
-          <PrimaryButton icon={<Send size={18} />} variant="secondary" onClick={onInviteFriend}>
-            邀请好友梦境漫游
-          </PrimaryButton>
-          <button className="text-button twin-edit-button" onClick={onEditTwin} type="button">
-            <Pencil size={15} />
-            修改分身
-          </button>
-        </section>
-
-        <section className="twin-home-guidance" aria-label="当前 Demo 状态说明">
-          <div>
-            <Sparkles size={16} />
-            <span>分身负责预演关系，不替你聊天，也不是陪伴角色。</span>
-          </div>
-          <p>{profile.relationshipIntention}</p>
+        <div className="dt-twin-section">
+          <span className="dt-sec-label">性格关键词</span>
           <div className="keyword-row">
-            {profile.personalityKeywords.slice(0, 4).map((keyword) => (
+            {personalityKeywords.map((keyword) => (
               <span key={keyword}>{keyword}</span>
             ))}
           </div>
-        </section>
+        </div>
+
+        <div className="dt-twin-section">
+          <span className="dt-sec-label">沟通风格</span>
+          <p>{communicationText}</p>
+        </div>
+
+        <div className="dt-twin-section">
+          <span className="dt-sec-label">价值观</span>
+          <p>{valuesText}</p>
+        </div>
+
+        <div className="dt-twin-section">
+          <span className="dt-sec-label">兴趣标签</span>
+          <div className="keyword-row">
+            {profile.interests.map((interest) => (
+              <span key={interest}>{interest}</span>
+            ))}
+          </div>
+        </div>
+
+        <div className="dt-twin-section">
+          <span className="dt-sec-label">界面模式</span>
+          <div className="dt-theme-toggle" role="group" aria-label="白天与黑夜模式">
+            <button
+              aria-pressed={themeMode === "day"}
+              className={themeMode === "day" ? "is-active" : ""}
+              onClick={() => onSetTheme("day")}
+              type="button"
+            >
+              <Sun size={16} />
+              白天
+            </button>
+            <button
+              aria-pressed={themeMode === "night"}
+              className={themeMode === "night" ? "is-active" : ""}
+              onClick={() => onSetTheme("night")}
+              type="button"
+            >
+              <MoonStar size={16} />
+              黑夜
+            </button>
+          </div>
+        </div>
+
+        <div className="dt-twin-section">
+          <button className="dt-logout" onClick={onLogout} type="button">
+            <LogOut size={16} />
+            退出登录
+          </button>
+        </div>
+
+        <div className="dt-note">
+          <span>AI 会基于你的画像进行关系预演与建议</span>
+          <span>不会代替你聊天或做决定</span>
+        </div>
       </div>
     </section>
   );

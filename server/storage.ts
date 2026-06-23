@@ -1,39 +1,49 @@
-import { mkdir, readFile, writeFile } from "node:fs/promises";
-import { dirname, resolve } from "node:path";
-import type { DreamTwinDb, TwinProjection, UserProfile } from "./types.js";
-import { defaultDb } from "./defaults.js";
+import type { RowDataPacket } from "mysql2";
+import { getPool, parseJsonColumn } from "./db.js";
+import { createDefaultTwin, defaultProfile } from "./defaults.js";
+import type { TwinProjection, UserProfile } from "./types.js";
 
-const dbPath = resolve(process.cwd(), ".dreamtwin-local", "db.json");
-
-async function ensureDbDir() {
-  await mkdir(dirname(dbPath), { recursive: true });
+function seedProfile(userId: string): UserProfile {
+  // A fresh account starts from the default shape but owns its own id; the
+  // real values are written when the user submits the twin-create form.
+  return { ...defaultProfile, id: userId };
 }
 
-export async function readDb(): Promise<DreamTwinDb> {
-  try {
-    const raw = await readFile(dbPath, "utf8");
-    return { ...defaultDb, ...JSON.parse(raw) } as DreamTwinDb;
-  } catch {
-    await writeDb(defaultDb);
-    return defaultDb;
-  }
+export async function getProfile(userId: string): Promise<UserProfile> {
+  const [rows] = await getPool().query<RowDataPacket[]>("SELECT data FROM profiles WHERE user_id = ?", [userId]);
+  const row = rows[0];
+  if (row) return parseJsonColumn<UserProfile>(row.data);
+
+  const profile = seedProfile(userId);
+  await getPool().query("INSERT INTO profiles (user_id, data) VALUES (?, ?)", [userId, JSON.stringify(profile)]);
+  return profile;
 }
 
-export async function writeDb(db: DreamTwinDb): Promise<DreamTwinDb> {
-  await ensureDbDir();
-  await writeFile(dbPath, `${JSON.stringify(db, null, 2)}\n`, "utf8");
-  return db;
+export async function updateProfile(userId: string, patch: Partial<UserProfile>): Promise<UserProfile> {
+  const current = await getProfile(userId);
+  const next: UserProfile = { ...current, ...patch, id: userId };
+  await getPool().query(
+    "INSERT INTO profiles (user_id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)",
+    [userId, JSON.stringify(next)],
+  );
+  return next;
 }
 
-export async function updateProfile(profile: Partial<UserProfile>): Promise<UserProfile> {
-  const db = await readDb();
-  const nextProfile = { ...db.profile, ...profile, id: db.profile.id };
-  await writeDb({ ...db, profile: nextProfile });
-  return nextProfile;
+export async function getTwin(userId: string): Promise<TwinProjection | null> {
+  const [rows] = await getPool().query<RowDataPacket[]>("SELECT data FROM twins WHERE user_id = ?", [userId]);
+  const row = rows[0];
+  return row ? parseJsonColumn<TwinProjection>(row.data) : null;
 }
 
-export async function saveTwin(twin: TwinProjection): Promise<TwinProjection> {
-  const db = await readDb();
-  await writeDb({ ...db, twin });
+export async function saveTwin(userId: string, twin: TwinProjection): Promise<TwinProjection> {
+  await getPool().query(
+    "INSERT INTO twins (user_id, data) VALUES (?, ?) ON DUPLICATE KEY UPDATE data = VALUES(data)",
+    [userId, JSON.stringify(twin)],
+  );
   return twin;
+}
+
+export async function createDefaultTwinForUser(userId: string): Promise<TwinProjection> {
+  const profile = await getProfile(userId);
+  return saveTwin(userId, createDefaultTwin(profile));
 }

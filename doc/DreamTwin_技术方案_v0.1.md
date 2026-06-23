@@ -1,4 +1,4 @@
-# DreamTwin 技术方案 v0.1
+# DreamTwins 技术方案 v0.1
 
 > 文档状态：移动端 Web MVP / Demo 技术方案基准版
 > 技术路线：React + Vite + TypeScript
@@ -7,7 +7,7 @@
 
 ## 1. 技术方案目标
 
-本技术方案把 DreamTwin 需求池转成第一版移动端 Web MVP / Demo 的工程实现方案。
+本技术方案把 DreamTwins 需求池转成第一版移动端 Web MVP / Demo 的工程实现方案。
 
 第一版目标是：
 
@@ -19,24 +19,39 @@
 
 第一版不是临时报名材料，也不是完整商业产品。
 
-第一版采用纯前端静态 Demo：
+当前真实开发基线已经推进到移动端 Web + Node API：
 
-- 不接真实后端。
-- 不接真实匹配。
-- 不接 AI 实时生成。
-- 不做真实聊天服务。
-- 不做账号系统。
-- 不做审核后台。
+- 已有手机号密码注册 / 登录、JWT 和 MySQL 持久化。
+- 已有用户 Profile、AI 分身保存、DeepSeek 服务端调用和 Live AI adapter。
+- 仍不接真实用户关系发现。
+- 仍不做真实好友邀请触达、真实多人聊天服务、实时消息和审核后台。
+- 静态 Demo 数据继续作为无后端或 AI 失败时的保底体验。
+
+默认运行前端时保持静态稳定模式，不主动探测本地后端，避免无后端时出现失败请求或控制台噪声。需要验证真实 AI 能力时，再通过 `VITE_DREAMTWIN_ENABLE_LIVE_AI=true` 或显式 `VITE_DREAMTWIN_API_URL` 开启 Live AI adapter。
 
 技术方案要优先保证：
 
 - 移动端 Web 体验像 App。
 - 静态 Demo 数据稳定。
 - 梦境星图可交互。
-- AI 分身抽象投影有存在感。
+- AI 分身人格投影有存在感，并为 v0.2 风格化 3D 分身验证预留空间。
 - 状态流转连续。
 - 完整路径可以从头跑到真实聊天入口。
 - Three.js 先作为 3D 视觉验证候选方案，不承担核心交互和状态逻辑。
+
+### 1.1 v0.2 技术方向补充
+
+在当前移动端 Web Demo 和 Live AI adapter 基础上，v0.2 技术验证方向升级为：
+
+- 风格化全身 3D AI 分身：使用 Three.js / WebGL 展示人格分身，当前抽象投影作为 fallback。
+- 引导式 3D 梦境场景：使用不可自由行走的 3D 场景舞台、镜头推进和热点事件承载关系预演。
+- 双方画像驱动的 AI 模拟：前端提交双方分身画像、场景事件和关系目标，后端返回结构化模拟结果。
+
+技术边界：
+
+- 3D 分身不做写实数字人、换装系统、骨骼复杂战斗动作、等级或养成属性。
+- 3D 场景不做自由漫游、地图拖拽、地图缩放、游戏关卡、副本或奖励系统。
+- Three.js 继续异步加载，不进入首屏主包；CSS / 抽象投影 / 静态场景继续作为 fallback。
 
 ## 2. 技术栈
 
@@ -67,7 +82,7 @@
 
 ### 2.2 技术选择理由
 
-React + Vite + TypeScript 适合第一版 DreamTwin：
+React + Vite + TypeScript 适合第一版 DreamTwins：
 
 - 启动快。
 - 适合单页 Demo。
@@ -203,6 +218,12 @@ export interface UserProfile {
   relationshipIntention: string;
   interests: string[];
   optionalSignals: string[];
+  mbti?: string;
+  bloodType?: string;
+  zodiac?: string;
+  mysticTags?: string[];
+  communicationStyle?: string[];
+  values?: string[];
 }
 ```
 
@@ -222,24 +243,43 @@ export interface TwinProjection {
   colorPalette: string[];
   lightShape: "halo" | "mist" | "pulse" | "orbit";
   keywords: string[];
+  avatarStyleSpec?: AvatarStyleSpec;
 }
 ```
 
 用途：
 
 - 支撑 AI 分身生成页。
-- 支撑 AI 分身主页。
+- 支撑我的 Tab 管理页。
 - 支撑梦境广场 / 昨夜梦境日志页。
 - 支撑抽象投影视觉。
+- v0.2 支撑风格化全身 3D 分身候选。
 
 边界：
 
-- 不包含五官。
-- 不包含身体。
-- 不包含服装。
+- 不包含写实真人脸。
+- 不包含可替换服装。
 - 不包含换装。
 - 不包含等级。
 - 不包含养成属性。
+
+### 4.4.1 AvatarStyleSpec
+
+```ts
+export interface AvatarStyleSpec {
+  silhouette: "soft-human" | "crystal-human" | "shadow-human" | "light-human";
+  materialTone: "mist" | "glass" | "stardust" | "neon";
+  motionStyle: "calm-breath" | "curious-turn" | "warm-idle";
+  auraColor: string[];
+  boundaryTags: Array<"no-real-face" | "no-outfit-swap" | "no-leveling" | "no-companion-mode">;
+}
+```
+
+用途：
+
+- 将用户画像映射为风格化 3D 分身表现。
+- 只服务人格表达和关系预演入口。
+- 不承载换装、养成或虚拟伴侣能力。
 
 ### 4.5 DreamNode
 
@@ -253,6 +293,7 @@ export interface DreamNode {
   x: number;
   y: number;
   intensity: number;
+  sceneStageVariant?: SceneStageVariant;
 }
 ```
 
@@ -269,6 +310,31 @@ export interface DreamNode {
 - 不表示真实地图位置。
 - 不表示附近的人。
 - 不表示可探索地图路径。
+
+### 4.5.1 SceneStageVariant 与 GuidedSceneEvent
+
+```ts
+export type SceneStageVariant =
+  | "rain_store"
+  | "starlight"
+  | "undersea"
+  | "sushi"
+  | "cinema"
+  | "badminton";
+
+export interface GuidedSceneEvent {
+  id: string;
+  label: string;
+  prompt: string;
+  hotspot: "foreground" | "midground" | "background" | "gate";
+}
+```
+
+用途：
+
+- 支撑引导式 3D 梦境场景。
+- 将场景热点转换为关系模拟输入。
+- 不表示可走地图路径、地图坐标或游戏关卡。
 
 ### 4.6 FriendProfile 与 DreamRoamingScene
 
@@ -334,6 +400,10 @@ export interface RelationshipSimulation {
   possibleFirstLine: string;
   matchReasons: string[];
   roamingScenes?: DreamRoamingScene[];
+  selfProfileSnapshot?: UserProfile;
+  counterpartProfileSnapshot?: UserProfile;
+  guidedSceneEvents?: GuidedSceneEvent[];
+  relationshipGoal?: string;
 }
 ```
 
@@ -384,13 +454,14 @@ export interface DemoFlowState {
 用途：
 
 - 支撑单页 App 内部页面状态。
-- 支撑 AI 分身主页作为长期入口。
+- 支撑 `今日 / 梦境 / 消息 / 我的` 四 Tab App 骨架。
 - 支撑 Demo 分身保存与刷新恢复。
 - 支撑好友邀请梦境漫游路径。
 - 支撑节点状态流转。
+- 支撑跨页面关系状态对象：AI 已预演、等待对方入梦、双方已入梦、梦境门打开、等待真人回应。
 - 支撑完整演示路径。
 
-第一版使用 `localStorage` 模拟 Demo 分身保存。刷新后如果 `hasCompletedTwinSetup` 为 `true`，默认回到 AI 分身主页；点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
+第一版使用 `localStorage` 模拟 Demo 分身保存。当前实现中，如果 `hasCompletedTwinSetup` 为 `true`，刷新或后续打开默认进入 `今日`，并将原 AI 分身主页能力收敛为 `我的` Tab 内的管理页。Demo 控件通过 URL 参数显示，点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
 
 ## 5. 状态与路由方案
 
@@ -403,8 +474,10 @@ export interface DemoFlowState {
 - `welcome`
 - `twin-create`
 - `twin-generating`
+- `today`
 - `twin-home`
 - `dream-log`
+- `messages`
 - `friend-invite`
 - `simulation-detail`
 - `waiting`
@@ -413,10 +486,10 @@ export interface DemoFlowState {
 
 这样做的原因：
 
-- 第一版是演示闭环，但 AI 分身主页需要承接两个主入口。
+- 第一版已从单流程演示切到四 Tab App 骨架，`今日` 是默认首页。
 - 可以减少路由依赖。
 - 演示状态更容易控制。
-- 后续接真实 App 时再迁移到正式路由。
+- 后续接真实 App 时再迁移到正式路由或路由库。
 
 ### 5.2 状态管理
 
@@ -451,7 +524,7 @@ type DemoFlowAction =
 welcome
   -> twin-create
   -> twin-generating
-  -> twin-home
+  -> today
   -> dream-log
   -> simulation-detail
   -> waiting
@@ -462,15 +535,16 @@ welcome
 好友邀请路径：
 
 ```text
-twin-home
+today / friends
   -> friend-invite
   -> waiting
+  -> dream-log
   -> simulation-detail
   -> dream-gate
   -> chat-entry
 ```
 
-> 说明：好友接受后可以先进入共同梦境漫游预演，再进入梦境门与真实聊天入口。第一版可复用 `simulation-detail`、`waiting`、`dream-gate` 和 `chat-entry` 页面，只通过 `entryMode` 区分文案和数据。
+> 说明：好友接受后应回到统一梦境地图，由双方在同一套场景库中选择共同梦境，再进入共同梦境漫游预演、梦境门与真实聊天入口。第一版可复用 `dream-log`、`simulation-detail`、`waiting`、`dream-gate` 和 `chat-entry` 页面，只通过 `entryMode` 区分文案和数据。
 
 节点状态流转：
 
@@ -488,7 +562,7 @@ unviewed
 - 用户点击梦境节点，节点进入 `viewed`。
 - 用户点击“想进入这个梦境”，节点进入 `waiting`。
 - 等待页可以提供一个路演用推进操作，模拟对方也确认。
-- 好友邀请页可以提供一个路演用推进操作，模拟好友接受邀请。
+- 消息-通讯录邀请页可以提供一个路演用推进操作，模拟好友接受邀请。
 - 对方确认后节点进入 `opened`。
 - 梦境门打开页进入真实聊天入口。
 
@@ -505,7 +579,7 @@ unviewed
 
 职责：
 
-- 解释 DreamTwin 是 AI 关系预演社交。
+- 解释 DreamTwins 是 AI 关系预演社交。
 - 建立梦境空间的第一印象。
 - 引导用户开始创建 AI 分身。
 
@@ -562,7 +636,7 @@ unviewed
 职责：
 
 - 展示 AI 分身生成过程。
-- 展示抽象投影、人格摘要和关键词。
+- 展示人格摘要、关键词和人格投影。
 
 主要组件：
 
@@ -572,15 +646,15 @@ unviewed
 
 主操作：
 
-- 点击“进入 AI 分身主页”触发 `COMPLETE_TWIN_GENERATION`。
+- 点击“进入今日”触发 `COMPLETE_TWIN_GENERATION`。
 
 实现建议：
 
 - 生成过程使用静态 Demo 数据。
 - 可以用 1 到 2 秒视觉过渡制造生成感。
-- 抽象投影先用 CSS / Canvas 2D 保底实现。
-- 如果 Three.js 视觉小样效果明显更好，再接入 3D 光团、轮廓和环绕粒子。
-- 不接 AI 实时生成。
+- 抽象投影继续作为 CSS / Canvas 2D / Three.js fallback。
+- v0.2 验证风格化全身 3D 分身，但只做人格表达，不做换装或养成。
+- 默认使用静态分身摘要；Live AI adapter 需要显式开启，可用于生成分身摘要。生产级账号和分身持久化仍放到后端阶段。
 
 ### 6.4 TwinHomePage
 
@@ -592,8 +666,8 @@ unviewed
 职责：
 
 - 展示已保存 AI 分身。
-- 作为用户后续打开 App 的默认入口。
-- 提供进入梦境广场、邀请好友梦境漫游和修改分身。
+- 作为 `我的` Tab 内的管理页。
+- 提供修改分身和分身边界说明。
 
 主要组件：
 
@@ -603,14 +677,12 @@ unviewed
 
 主操作：
 
-- 点击“进入梦境广场”触发 `ENTER_DREAM_PLAZA`。
-- 点击“邀请好友梦境漫游”触发 `OPEN_FRIEND_INVITE`。
 - 点击“修改分身”触发 `EDIT_TWIN`。
 
 实现建议：
 
 - 进入该页时应展示 `hasCompletedTwinSetup` 对应的已保存状态。
-- 刷新时如果本地 Demo 状态显示分身已创建，应回到该页。
+- 刷新时如果本地 Demo 状态显示分身已创建，应回到 `今日`，用户可从底部导航进入该页。
 - 该页不是 AI 陪伴页，也不是角色养成页，不展示亲密度、等级或养成任务。
 
 ### 6.5 DreamLogPage
@@ -654,7 +726,7 @@ unviewed
 
 职责：
 
-- 支撑用户选择静态好友和梦境漫游场景。
+- 支撑用户选择静态好友、发起入梦邀请和查看邀请状态。
 - 展示邀请预览和产品边界。
 - 发出 Demo 邀请后进入等待好友入梦状态。
 
@@ -662,17 +734,19 @@ unviewed
 
 - `PrimaryButton`
 - 好友选择卡片
-- 梦境场景选择卡片
+- 邀请状态说明
+- 进入统一梦境地图的入口
 
 主操作：
 
 - 选择好友触发 `SELECT_FRIEND`。
-- 选择梦境场景触发 `SELECT_ROAMING_SCENE`。
 - 点击“邀请好友入梦”触发 `SEND_DREAM_INVITE`。
+- 好友接受后点击进入梦境地图，后续场景选择由统一梦境地图承接。
 
 验收重点：
 
 - 不能表现为偷偷分析好友。
+- 不能在消息-通讯录页直接用场景卡片选择梦境。
 - 不能接真实通讯录、真实邀请链接或真实消息发送。
 - 必须说明好友接受后才共同预演。
 
@@ -695,7 +769,7 @@ unviewed
 - 相遇场景。
 - 关系张力。
 - 可能的第一句话。
-- 匹配依据。
+- 关系模拟依据。
 - 当前节点状态。
 
 主操作：
@@ -857,7 +931,7 @@ prototype/
 
 验证目标：
 
-- 判断 Three.js 是否能明显提升 DreamTwin 的第一眼沉浸感。
+- 判断 Three.js 是否能明显提升 DreamTwins 的第一眼沉浸感。
 - 比较 Canvas 2D 星尘背景与 Three.js 景深星场的差异。
 
 Canvas 2D baseline：
@@ -950,35 +1024,64 @@ Three.js scene：
 - 视觉不会让用户误解为游戏关卡。
 - 移动端性能稳定。
 
+### 7.6.1 GuidedDreamStage
+
+对应需求：
+
+- `DT-P1-010`
+- `DT-P1-011`
+
+实现方式：
+
+- 使用 Three.js 渲染不可自由行走的 3D 梦境舞台。
+- 使用 `SceneStageVariant` 决定场景：雨夜便利店、星空、海底、日料店、电影院、羽毛球场。
+- 使用 `GuidedSceneEvent` 定义热点事件，热点触发关系模拟内容更新。
+- HTML / React 层继续承载结论、指标、CTA、返回和详情展开。
+
+交互规则：
+
+- 用户点击热点或问题，不控制角色移动。
+- 场景可以有镜头推进、光效、人物站位暗示和事件焦点。
+- 首屏仍然优先展示关系结论、三项指标、建议第一步和主 CTA。
+
+边界：
+
+- 不做第一人称或第三人称移动。
+- 不做地图拖拽、缩放或路径导航。
+- 不做任务、关卡、副本、奖励或战斗。
+- 不把场景热点命名为任务。
+
 ### 7.7 TwinProjection
 
 对应需求：
 
 - `DT-P0-005`
 - `DT-P1-002`
+- `DT-P1-009`
 
 实现方式：
 
-- 第一版先用 CSS / Canvas 2D 表达抽象投影。
-- 在背景、星图、梦境门验证后，再决定是否追加 Three.js 分身小样。
-- Three.js 可验证人格光团、抽象轮廓、缓慢旋转结构和环绕粒子。
+- 当前抽象投影继续保留为 fallback。
+- v0.2 新增风格化全身 3D AI 分身候选。
+- 使用 `AvatarStyleSpec` 将用户画像映射为轮廓、材质、动作和人格色彩。
+- Three.js 只负责分身展示，不承担画像计算和主流程状态。
 
 视觉规则：
 
-- 使用颜色、光影、轮廓和关键词表达分身。
-- 不使用五官。
-- 不使用服装。
-- 不使用身体。
+- 使用风格化全身人形、颜色、光影、轮廓和关键词表达分身。
+- 不使用写实真人脸。
+- 不使用可替换服装。
 - 不使用换装。
 - 不使用等级条。
-- 不使用角色骨骼或角色模型。
+- 不使用养成属性。
+- 不使用复杂骨骼动画或游戏动作。
 
 优先级：
 
-- 先验证背景梦境空间。
-- 再验证梦境星图。
+- 先验证风格化全身 3D AI 分身。
+- 再验证引导式 3D 梦境场景。
 - 再验证梦境门打开。
-- 最后再验证 AI 分身抽象投影。
+- 最后回归移动端性能和内容可读性。
 
 ### 7.8 Canvas 与 Three.js 性能要求
 
@@ -1053,7 +1156,7 @@ Three.js scene：
 - 3 个梦境节点。
 - 3 条新关系预演模拟。
 - 至少 1 个静态好友。
-- 至少 6 个好友梦境漫游场景。
+- 至少 6 个统一梦境地图场景，并可被好友共同入梦路径复用。
 
 ### 9.2 数据文件
 
@@ -1089,7 +1192,8 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 
 - 提供隐藏或低优先级的“重新开始”操作。
 - 使用 `localStorage` 模拟分身保存和 Demo 状态恢复。
-- 刷新页面时，如果已有已完成的分身状态，默认回到 AI 分身主页。
+- 当前实现中，刷新页面时如果已有已完成的分身状态，默认进入今日首页。
+- 默认真实 App 模式隐藏顶部进度和重置；`?demo=1` / `?demo=true` / `?ux-profile-qa=...` 显示 Demo 控件。
 - 点击“重新开始”清空本地 Demo 状态并回到欢迎页。
 - 不持久化状态到后端，正式阶段再接账号级存储。
 
@@ -1102,8 +1206,8 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 | `DT-P0-003` | `WelcomePage` |
 | `DT-P0-004` | `TwinCreatePage` |
 | `DT-P0-005` | `TwinGeneratingPage`、`TwinProjection` |
-| `DT-P0-014` | `TwinHomePage`、`localStorage` Demo 保存 |
-| `DT-P0-015` | `TwinHomePage` 双入口、`ENTER_DREAM_PLAZA`、`OPEN_FRIEND_INVITE` |
+| `DT-P0-014` | `TwinHomePage`、`localStorage` Demo 保存、我的 Tab 管理 |
+| `DT-P0-015` | `AppShell` 四 Tab 导航、`ENTER_DREAM_PLAZA`、`OPEN_FRIEND_INVITE` |
 | `DT-P0-006` | `DreamLogPage` |
 | `DT-P0-007` | `DreamStarMap`、`DreamNodeBadge` |
 | `DT-P0-016` | `FriendInvitePage`、`SEND_DREAM_INVITE`、`SIMULATE_FRIEND_ACCEPT` |
@@ -1117,10 +1221,11 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 P0 完成标准：
 
 - 从欢迎页能跑到聊天入口页。
-- 生成分身后能进入 AI 分身主页。
-- 刷新后已创建分身的用户能回到 AI 分身主页。
-- AI 分身主页能进入梦境广场和好友邀请梦境漫游。
+- 生成分身后能进入今日首页。
+- 刷新后已创建分身的用户能回到今日首页。
+- `今日 / 梦境 / 消息 / 我的` 四 Tab 能切换并承接对应路径。
 - 梦境节点状态能从 `unviewed` 到 `opened`。
+- 关系状态能跨今日、梦境、消息流转。
 - 好友邀请路径能完成等待、接受、共同预演和聊天入口。
 - Demo 不依赖真实接口。
 - 视觉不能像静态文档。
@@ -1137,6 +1242,9 @@ P0 完成标准：
 | `DT-P1-006` | 默认 Demo 数据、重置演示 |
 | `DT-P1-007` | `WelcomePage` 首屏视觉 |
 | `DT-P1-008` | 触控反馈、加载状态、移动端滚动 |
+| `DT-P1-009` | `TwinProjection` 风格化全身 3D 分身候选；抽象投影 fallback |
+| `DT-P1-010` | `GuidedDreamStage` 引导式 3D 场景舞台和热点事件 |
+| `DT-P1-011` | 前端 API adapter + 后端 AI provider；双方画像和场景事件驱动模拟 |
 
 P1 实现原则：
 
@@ -1149,13 +1257,13 @@ P1 实现原则：
 
 以下内容不进入第一版技术实现：
 
-- 登录注册。
-- 真实用户匹配。
+- 生产级账号体系与第三方登录。
+- 真实用户关系发现系统。
 - 真实好友系统。
 - 通讯录导入。
 - 真实邀请链接或真实消息触达。
-- 后端分身持久化。
-- AI 实时生成。
+- 生产级分身版本管理。
+- 生产级 AI 实时生成。
 - 聊天后端。
 - 推送通知。
 - 审核举报。
@@ -1163,11 +1271,11 @@ P1 实现原则：
 - Native App。
 - 地图 SDK。
 - 真实地理位置。
-- 可走地图。
+- 自由可走地图。
 - 附近的人。
 - 游戏关卡。
-- 复杂 3D 世界。
-- 角色身体。
+- 复杂自由 3D 世界。
+- 写实数字人身体。
 - 角色养成。
 - 换装。
 - AI 伴侣聊天。
@@ -1189,17 +1297,18 @@ P1 实现原则：
 9. 实现欢迎页。
 10. 实现 AI 分身创建页。
 11. 实现 AI 分身生成页和抽象投影。
-12. 实现 AI 分身主页和 `localStorage` Demo 保存。
-13. 实现梦境广场 / 昨夜梦境日志页。
-14. 实现梦境星图与节点点击。
-15. 实现好友邀请梦境漫游页。
-16. 实现关系预演模拟详情页。
-17. 实现等待对方入梦 / 等待好友入梦页。
-18. 实现梦境门打开页。
-19. 实现真实聊天入口页。
-20. 根据视觉验证结果补齐 Three.js 或 Canvas 2D 核心动效。
-21. 做移动端浏览器验收。
-22. 做路演路径录屏检查。
+12. 实现今日首页和四 Tab 底部导航。
+13. 实现我的 Tab 管理页和 `localStorage` Demo 保存。
+14. 实现梦境广场 / 昨夜梦境日志页。
+15. 实现梦境星图与节点点击。
+16. 实现好友邀请梦境漫游页。
+17. 实现消息页边界和真实聊天入口页。
+18. 实现关系预演模拟详情页。
+19. 实现等待对方入梦 / 等待好友入梦页。
+20. 实现梦境门打开页。
+21. 根据视觉验证结果补齐 Three.js 或 Canvas 2D 核心动效。
+22. 做移动端浏览器验收。
+23. 做路演路径录屏检查。
 
 开发原则：
 
@@ -1236,9 +1345,9 @@ npm run build
 1. 打开欢迎页。
 2. 进入 AI 分身创建页。
 3. 使用默认 Demo 信息生成 AI 分身。
-4. 进入 AI 分身主页。
-5. 刷新页面后仍回到 AI 分身主页。
-6. 从 AI 分身主页进入梦境广场 / 昨夜梦境日志。
+4. 进入今日首页。
+5. 刷新页面后仍回到今日首页。
+6. 从今日或梦境 Tab 进入梦境广场 / 昨夜梦境日志。
 7. 点击梦境星图中的一个节点。
 8. 查看关系预演模拟详情。
 9. 点击想进入这个梦境。
@@ -1246,12 +1355,13 @@ npm run build
 11. 模拟对方确认。
 12. 进入梦境门打开页。
 13. 进入真实聊天入口页。
-14. 回到 AI 分身主页，进入邀请好友梦境漫游。
-15. 选择好友和梦境场景。
+14. 回到消息-通讯录，进入邀请好友梦境漫游。
+15. 选择好友并发送一起入梦邀请。
 16. 发出 Demo 邀请并进入等待好友入梦页。
 17. 模拟好友接受邀请。
-18. 进入共同梦境漫游预演。
-19. 进入梦境门和真实聊天入口。
+18. 回到统一梦境地图选择共同场景。
+19. 进入共同梦境漫游预演。
+20. 进入梦境门和真实聊天入口。
 
 ### 14.3 视觉验收
 
@@ -1275,19 +1385,19 @@ npm run build
 - 没有真实地图表达。
 - 没有附近的人表达。
 - 没有可走地图表达。
-- 没有复杂 3D 世界表达。
+- 没有复杂自由 3D 世界表达。
 - 没有游戏关卡表达。
 - 没有角色养成表达。
-- 没有角色身体表达。
+- 没有写实数字人身体、换装身体资产或养成身体资产表达。
 - 没有换装表达。
 - 没有 AI 代聊表达。
-- 没有真实匹配已完成的暗示。
+- 没有真实用户关系发现已完成的暗示。
 - 没有偷偷推演好友的表达。
 - 没有真实通讯录、真实邀请链接或真实消息发送。
 
 ## 15. 当前结论
 
-DreamTwin 第一版技术实现应该是一个 React + Vite + TypeScript 的移动端 Web App-grade Demo，并在开发前通过 Three.js / WebGL Canvas 小样验证 3D 视觉是否值得正式采用。
+DreamTwins 第一版技术实现应该是一个 React + Vite + TypeScript 的移动端 Web App-grade Demo，并在开发前通过 Three.js / WebGL Canvas 小样验证 3D 视觉是否值得正式采用。
 
 它不是静态介绍页，而是一个可交互、可演示、可录屏、可继续开发成真实 App 的产品雏形。
 

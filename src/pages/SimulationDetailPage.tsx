@@ -1,433 +1,373 @@
-import { useEffect, useMemo, useRef, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
+import { ChevronLeft, MessageCircle, RefreshCw, Route } from "lucide-react";
 import {
-  AlertTriangle,
-  ArrowRight,
-  Compass,
-  DoorOpen,
-  Heart,
-  MessageCircle,
-  Route,
-  Sparkles,
-} from "lucide-react";
+  describeDreamTwinApiError,
+  generateRelationshipSimulation,
+  isDreamTwinApiEnabled,
+  type DreamTwinApiMode,
+} from "../api/dreamTwinApi";
 import { PrimaryButton } from "../components/PrimaryButton";
-import { StatusPill } from "../components/StatusPill";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
 import type {
   DreamNode,
-  DreamRoamingScene,
   RelationshipScenario,
   RelationshipSimulation,
+  RelationshipSimulationResult,
   SimulationScenarioMode,
+  UserProfile,
 } from "../types/dreamtwin";
+import { adaptFriendInviteMoveAfterAcceptance } from "../utils/relationshipCopy";
 
 interface SimulationDetailPageProps {
   node: DreamNode;
+  profile: UserProfile;
   simulation: RelationshipSimulation;
+  resultStorageKey: string;
   resumeAtOutcome: boolean;
   selectedRoamingSceneId: string | null;
   onBackToLog: () => void;
   onContinue: (nodeId: string) => void;
+  onLiveSimulationResult: (resultKey: string, result: RelationshipSimulationResult) => void;
   onSelectRoamingScene: (sceneId: string) => void;
 }
 
-type DetailMode = "overview" | "dialogue" | "behavior" | "risk";
-type ActiveExperience = {
-  label: string;
-  premise: string;
-  relationshipOutcome: string;
-  likelyDialogue: string[];
-  behaviorPreview: string[];
-  romanceSignal: string;
-  riskSignal: string;
-  suggestedMove: string;
-  possibleFirstLine: string;
-  className: string;
-  insight: {
-    attraction: number;
-    pace: number;
-    paceLabel: string;
-    risk: number;
-    riskLabel: string;
-    verdict: string;
-  };
+interface Insight {
+  attraction: number;
+  pace: number;
+  risk: number;
+  verdict: string;
+}
+
+const SCENARIO_INSIGHT: Record<SimulationScenarioMode, Insight> = {
+  first_meet: { attraction: 76, pace: 68, risk: 32, verdict: "慢热可进入" },
+  shared_event: { attraction: 74, pace: 66, risk: 46, verdict: "协作会升温" },
+  romance: { attraction: 82, pace: 72, risk: 56, verdict: "有亲密潜力" },
+  conflict: { attraction: 48, pace: 36, risk: 78, verdict: "需要校准" },
 };
+
+function softenRelationshipCopy(text: string): string {
+  return text
+    .replace(/一定|必然|肯定/g, "可能")
+    .replace(/注定/g, "有机会");
+}
+
+function looksLikeInventedMemory(line: string): boolean {
+  return /上次|昨天|昨晚|前天|那天|之前|刚刚|刚才|记得你|我知道你/.test(line.replace(/\s/g, ""));
+}
+
+function joinBasis(items: string[] | undefined, fallback = "资料有限"): string {
+  const values = items?.map((item) => item.trim()).filter(Boolean) ?? [];
+  return values.length ? values.join("、") : fallback;
+}
 
 export function SimulationDetailPage({
   node,
+  profile,
+  resultStorageKey,
   simulation,
   selectedRoamingSceneId,
   onBackToLog,
   onContinue,
+  onLiveSimulationResult,
   onSelectRoamingScene,
 }: SimulationDetailPageProps) {
-  const [activeScenarioMode, setActiveScenarioMode] = useState<SimulationScenarioMode>("first_meet");
-  const [showDetails, setShowDetails] = useState(false);
-  const [detailMode, setDetailMode] = useState<DetailMode>("overview");
-  const scenarioRef = useRef<HTMLElement | null>(null);
-  const detailsRef = useRef<HTMLElement | null>(null);
   const isFriendInvite = simulation.entryMode === "friend_invite";
   const roamingScenes = simulation.roamingScenes ?? [];
-
-  const activeScenario = useMemo(
-    () => simulation.scenarios.find((scenario) => scenario.mode === activeScenarioMode) ?? simulation.scenarios[0],
-    [activeScenarioMode, simulation.scenarios],
+  const [activeScenarioMode, setActiveScenarioMode] = useState<SimulationScenarioMode>(
+    simulation.scenarios[0]?.mode ?? "first_meet",
   );
-  const scenarioInsight = useMemo(() => {
-    const insightMap = {
-      first_meet: {
-        verdict: "慢热可进入",
-        attraction: 68,
-        risk: 38,
-        pace: 54,
-        paceLabel: "低压试探",
-        riskLabel: "误读慢热",
-      },
-      shared_event: {
-        verdict: "协作会升温",
-        attraction: 74,
-        risk: 46,
-        pace: 66,
-        paceLabel: "共同经历",
-        riskLabel: "主动边界",
-      },
-      romance: {
-        verdict: "有亲密潜力",
-        attraction: 82,
-        risk: 56,
-        pace: 72,
-        paceLabel: "慢速升温",
-        riskLabel: "过早定义",
-      },
-      conflict: {
-        verdict: "需要校准",
-        attraction: 48,
-        risk: 78,
-        pace: 36,
-        paceLabel: "暂停确认",
-        riskLabel: "压力后退",
-      },
-    } satisfies Record<SimulationScenarioMode, {
-      attraction: number;
-      pace: number;
-      paceLabel: string;
-      risk: number;
-      riskLabel: string;
-      verdict: string;
-    }>;
+  const [showDetails, setShowDetails] = useState(false);
+  const [liveSimulation, setLiveSimulation] = useState<RelationshipSimulationResult | null>(null);
+  const [apiMode, setApiMode] = useState<DreamTwinApiMode>("static");
+  const [generationError, setGenerationError] = useState<string | null>(null);
 
-    return insightMap[activeScenario?.mode ?? "first_meet"];
-  }, [activeScenario?.mode]);
   const activeRoamingScene = useMemo(
     () => roamingScenes.find((scene) => scene.id === selectedRoamingSceneId) ?? roamingScenes[0],
     [roamingScenes, selectedRoamingSceneId],
   );
-  const activeExperience: ActiveExperience = useMemo(() => {
+  const activeScenario = useMemo(
+    () => simulation.scenarios.find((scenario) => scenario.mode === activeScenarioMode) ?? simulation.scenarios[0],
+    [activeScenarioMode, simulation.scenarios],
+  );
+
+  const baseExperience = useMemo(() => {
     if (isFriendInvite && activeRoamingScene) {
       return {
-        label: activeRoamingScene.label,
-        premise: activeRoamingScene.premise,
-        relationshipOutcome: activeRoamingScene.relationshipOutcome,
+        subtitle: activeRoamingScene.premise,
+        conclusion: activeRoamingScene.relationshipOutcome,
         likelyDialogue: activeRoamingScene.likelyDialogue,
         behaviorPreview: activeRoamingScene.behaviorPreview,
-        romanceSignal: activeRoamingScene.romanceSignal,
         riskSignal: activeRoamingScene.riskSignal,
         suggestedMove: activeRoamingScene.suggestedMove,
         possibleFirstLine: activeRoamingScene.possibleFirstLine,
-        className: `friend-roaming friend-roaming-${activeRoamingScene.id}`,
         insight: {
           attraction: activeRoamingScene.attraction,
           pace: activeRoamingScene.pace,
-          paceLabel: activeRoamingScene.paceLabel,
           risk: activeRoamingScene.risk,
-          riskLabel: activeRoamingScene.riskLabel,
           verdict: activeRoamingScene.verdict,
-        },
+        } as Insight,
       };
     }
 
     const scenario = activeScenario as RelationshipScenario;
-
     return {
-      label: scenario.label,
-      premise: scenario.premise,
-      relationshipOutcome: scenario.relationshipOutcome,
-      likelyDialogue: scenario.likelyDialogue,
-      behaviorPreview: scenario.behaviorPreview,
-      romanceSignal: scenario.romanceSignal,
-      riskSignal: scenario.riskSignal,
-      suggestedMove: scenario.suggestedMove,
+      subtitle: simulation.relationshipHypothesis,
+      conclusion: scenario?.relationshipOutcome ?? simulation.rehearsalOutcome,
+      likelyDialogue: scenario?.likelyDialogue ?? simulation.conversationPreview,
+      behaviorPreview: scenario?.behaviorPreview ?? simulation.relationshipTrajectory,
+      riskSignal: scenario?.riskSignal ?? simulation.conflictRisk,
+      suggestedMove: scenario?.suggestedMove ?? simulation.recommendedMove,
       possibleFirstLine: simulation.possibleFirstLine,
-      className: scenario.mode,
-      insight: scenarioInsight,
+      insight: SCENARIO_INSIGHT[activeScenario?.mode ?? "first_meet"],
     };
-  }, [activeRoamingScene, activeScenario, isFriendInvite, scenarioInsight, simulation.possibleFirstLine]);
+  }, [activeRoamingScene, activeScenario, isFriendInvite, simulation]);
 
-  const actionLabel =
-    isFriendInvite && node.status === "opened"
-      ? "进入梦境门"
-      : isFriendInvite && node.status === "waiting"
-        ? "回到等待好友入梦"
-        : node.status === "opened"
-          ? "进入已打开的梦境门"
-          : node.status === "waiting"
-            ? "回到等待状态"
-            : "想进入这个梦境";
-  const reportMetrics = [
-    { label: "吸引", value: activeExperience.insight.attraction, tone: "blue" },
-    { label: "推进", value: activeExperience.insight.pace, tone: "violet" },
-    { label: "风险", value: activeExperience.insight.risk, tone: "gold" },
-  ];
-  const detailSections: Array<{ id: DetailMode; icon: JSX.Element; label: string }> = [
-    { id: "overview", icon: <Sparkles size={14} />, label: "推演过程" },
-    { id: "dialogue", icon: <MessageCircle size={14} />, label: "会聊什么" },
-    { id: "behavior", icon: <Route size={14} />, label: "会做什么" },
-    { id: "risk", icon: <AlertTriangle size={14} />, label: "风险走向" },
-  ];
+  const experience = useMemo(() => {
+    if (!liveSimulation) return baseExperience;
+    return {
+      ...baseExperience,
+      conclusion: liveSimulation.conclusion,
+      likelyDialogue: liveSimulation.likelyDialogue,
+      behaviorPreview: liveSimulation.behaviorPreview,
+      riskSignal: `${liveSimulation.conflictRisk} ${liveSimulation.badOutcomeScenario}`,
+      suggestedMove: liveSimulation.suggestedMove,
+      possibleFirstLine: liveSimulation.possibleFirstLine,
+      insight: {
+        attraction: liveSimulation.attractionScore,
+        pace: liveSimulation.paceScore,
+        risk: liveSimulation.riskScore,
+        verdict: "AI 实时预演",
+      } as Insight,
+    };
+  }, [baseExperience, liveSimulation]);
+
+  const counterpartProfile = useMemo(() => {
+    if (simulation.counterpartProfileSnapshot) return simulation.counterpartProfileSnapshot;
+    if (simulation.friendProfile) {
+      return {
+        name: simulation.friendProfile.name,
+        relationLabel: simulation.friendProfile.relationLabel,
+        personalityKeywords: simulation.friendProfile.keywords,
+        interests: [],
+        communicationStyle: simulation.friendProfile.presence,
+        values: ["边界感", "共同经历"],
+        optionalSignals: [simulation.friendProfile.presence],
+      };
+    }
+    return {
+      name: simulation.counterpartName,
+      relationLabel: isFriendInvite ? "好友梦境漫游对象" : "梦境广场预演对象",
+      personalityKeywords: [simulation.counterpartProjection],
+      interests: [],
+      communicationStyle: simulation.counterpartProjection,
+      values: ["关系可能性", "真实互动"],
+      optionalSignals: simulation.matchReasons,
+    };
+  }, [isFriendInvite, simulation]);
+
+  const relationshipGoal =
+    simulation.relationshipGoal ||
+    (isFriendInvite ? `判断和 ${simulation.counterpartName} 的好友关系能否自然推进。` : profile.relationshipIntention);
+  const scenePrompt =
+    isFriendInvite && activeRoamingScene
+      ? `${simulation.title} / ${activeRoamingScene.label}：${activeRoamingScene.premise}`
+      : `${simulation.title} / ${activeScenario?.label ?? "关系预演"}：${activeScenario?.premise ?? simulation.scene}`;
+  const previewBasis = useMemo(
+    () => [
+      { label: "你的性格", value: joinBasis(profile.personalityKeywords) },
+      { label: "你的兴趣", value: joinBasis(profile.interests) },
+      { label: "你的沟通", value: profile.communicationStyle?.trim() || "资料有限" },
+      { label: "你的外貌标签", value: joinBasis(profile.appearanceTags) },
+      { label: "你的学历", value: profile.education?.trim() || "资料有限" },
+      { label: `${counterpartProfile.name} 性格`, value: joinBasis(counterpartProfile.personalityKeywords) },
+      { label: `${counterpartProfile.name} 兴趣`, value: joinBasis(counterpartProfile.interests) },
+      { label: `${counterpartProfile.name} 沟通`, value: counterpartProfile.communicationStyle?.trim() || "资料有限" },
+      { label: `${counterpartProfile.name} 外貌标签`, value: joinBasis(counterpartProfile.appearanceTags) },
+      { label: `${counterpartProfile.name} 学历`, value: counterpartProfile.education?.trim() || "资料有限" },
+    ],
+    [counterpartProfile, profile],
+  );
 
   useEffect(() => {
-    setActiveScenarioMode(simulation.scenarios[0]?.mode ?? "first_meet");
+    let isCurrent = true;
+    setLiveSimulation(null);
+    setGenerationError(null);
+    setApiMode("static");
+
+    if (!isDreamTwinApiEnabled()) return undefined;
+
+    generateRelationshipSimulation({
+      profile,
+      counterpartName: simulation.counterpartName,
+      counterpartProfile,
+      scene: scenePrompt,
+      sceneStageSpec: activeRoamingScene?.sceneStageSpec ?? simulation.sceneStageSpec,
+      guidedSceneEvents: activeRoamingScene?.guidedSceneEvents ?? simulation.guidedSceneEvents,
+      relationshipGoal,
+    })
+      .then((result) => {
+        if (!isCurrent) return;
+        const safeFirstLine = looksLikeInventedMemory(result.simulation.possibleFirstLine)
+          ? baseExperience.possibleFirstLine
+          : softenRelationshipCopy(result.simulation.possibleFirstLine);
+        const normalized: RelationshipSimulationResult = {
+          ...result.simulation,
+          conclusion: softenRelationshipCopy(result.simulation.conclusion),
+          suggestedMove: softenRelationshipCopy(result.simulation.suggestedMove),
+          possibleFirstLine: safeFirstLine,
+        };
+        setLiveSimulation(normalized);
+        setApiMode("live");
+        onLiveSimulationResult(resultStorageKey, normalized);
+      })
+      .catch((error) => {
+        if (!isCurrent) return;
+        setGenerationError(describeDreamTwinApiError(error));
+        setApiMode("fallback");
+      });
+
+    return () => {
+      isCurrent = false;
+    };
+  }, [
+    activeRoamingScene,
+    baseExperience.possibleFirstLine,
+    counterpartProfile,
+    onLiveSimulationResult,
+    profile,
+    relationshipGoal,
+    resultStorageKey,
+    scenePrompt,
+    simulation,
+  ]);
+
+  const insight = experience.insight;
+  const suggestedMoveLabel = isFriendInvite && node.status === "opened" ? "建议下一步" : "建议第一步";
+  const displaySuggestedMove = adaptFriendInviteMoveAfterAcceptance(experience.suggestedMove, isFriendInvite);
+  const enterLabel =
+    node.status === "opened"
+      ? "进入梦境门"
+      : node.status === "waiting"
+        ? "回到等待状态"
+        : node.status === "both_entered"
+          ? "进入正常聊天"
+        : isFriendInvite
+          ? "进入这段共同梦境"
+          : "未来可期 续写梦境";
+
+  const cycleAlternative = () => {
     setShowDetails(false);
-    setDetailMode("overview");
-  }, [simulation.id, simulation.scenarios]);
-
-  const selectScenario = (mode: SimulationScenarioMode) => {
-    setActiveScenarioMode(mode);
-    setShowDetails(false);
-    setDetailMode("overview");
-  };
-  const selectRoamingScene = (sceneId: string) => {
-    onSelectRoamingScene(sceneId);
-    setShowDetails(false);
-    setDetailMode("overview");
-  };
-
-  const scrollIntoView = (element: HTMLElement | null) => {
-    window.requestAnimationFrame(() => element?.scrollIntoView({ block: "start", behavior: "smooth" }));
-  };
-
-  const openDetails = (mode: DetailMode = "overview") => {
-    setDetailMode(mode);
-    setShowDetails(true);
-    scrollIntoView(detailsRef.current);
-  };
-
-  const toggleDetails = () => {
-    if (showDetails) {
-      setShowDetails(false);
+    if (isFriendInvite && roamingScenes.length > 1 && activeRoamingScene) {
+      const index = roamingScenes.findIndex((scene) => scene.id === activeRoamingScene.id);
+      onSelectRoamingScene(roamingScenes[(index + 1) % roamingScenes.length].id);
       return;
     }
-    openDetails("overview");
+    const modes = simulation.scenarios.map((scenario) => scenario.mode);
+    if (modes.length > 1) {
+      const index = modes.indexOf(activeScenarioMode);
+      setActiveScenarioMode(modes[(index + 1) % modes.length]);
+    }
   };
 
-  return (
-    <section className={`page page-scroll scene-page simulation-page simulation-scenario-${activeExperience.className}`}>
-      <ThreeDreamScene variant="ambient" className="page-scene simulation-scene" />
-      <div className="page-content simulation-content">
-        <div className="simulation-hero simulation-hero-compact">
-          <div>
-            <p className="label">{isFriendInvite ? "共同梦境预演" : "先看关系结论"}</p>
-            <h1>{simulation.title}</h1>
-            <p className="simulation-subtitle">
-              {isFriendInvite
-                ? `你和 ${simulation.counterpartName} 选择了「${activeExperience.label}」，先看关系会被怎样推动。`
-                : `AI 已模拟你和 ${simulation.counterpartName} 的第一段关系走向。`}
-            </p>
-          </div>
-          <StatusPill status={node.status} />
-        </div>
-        <button className="text-button simulation-log-link" onClick={onBackToLog} type="button">
-          <Compass size={15} />
-          回到梦境星图
-        </button>
+  const gauges = [
+    { label: "吸引", value: insight.attraction, color: "#6fd3ff" },
+    { label: "推进", value: insight.pace, color: "#a779ff" },
+    { label: "风险", value: insight.risk, color: "#ffbe74" },
+  ];
 
-        <section className="simulation-decision" aria-label="关系预演结论">
-          <div className="decision-kicker">
-            <span>{isFriendInvite ? "AI 漫游结论" : "AI 关系结论"}</span>
-            <strong>你 × {simulation.counterpartName}</strong>
+  return (
+    <section className="page page-scroll dt-page dt-light simulation-page">
+      <div className="page-content dt-content simulation-content">
+        <header className="dt-head">
+          <div className="dt-head-left">
+            <button className="dt-icon-btn" onClick={onBackToLog} type="button" aria-label="返回">
+              <ChevronLeft size={18} />
+            </button>
           </div>
-          <div className="decision-steps" aria-label="关系预演决策节奏">
-            <span>先看结论</span>
-            <span>再看原因</span>
-            <span>最后决定</span>
+          <span className="dt-head-title">AI 未来预告片</span>
+          <div className="dt-head-right">
+            <button className="dt-chip-btn" onClick={onBackToLog} type="button">
+              <RefreshCw size={14} />
+              换个梦境
+            </button>
           </div>
-          <div className="decision-verdict">
-            <strong>{activeExperience.insight.verdict}</strong>
-            <p>{activeExperience.relationshipOutcome}</p>
-          </div>
-          <div className="report-meter-row decision-meter-row" aria-label="关系预演指标">
-            {reportMetrics.map((metric) => (
-              <div className={`report-meter report-meter-${metric.tone}`} key={metric.label}>
-                <span>{metric.label}</span>
-                <strong>{metric.value}</strong>
-                <div>
-                  <i style={{ width: `${metric.value}%` }} />
-                </div>
+        </header>
+
+        <div className="dt-sim-headline">
+          <h1>{experience.conclusion}</h1>
+          <p>{experience.subtitle}</p>
+        </div>
+
+        {isFriendInvite ? (
+          <p className="dt-status-line">共同梦境确认后进入正常聊天，真实对话仍由你亲自开始。</p>
+        ) : null}
+
+        <div className="dt-panel">
+          <span className="dt-panel-title">预演依据</span>
+          <p>AI 只根据双方分身画像、用户标签和当前梦境场景预演未来走向，资料不足的地方不会当成事实补全。</p>
+          <div className="simulation-basis" aria-label="AI 未来预告片依据">
+            {previewBasis.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
               </div>
             ))}
           </div>
-          <div className="recommended-move decision-move">
-            <span>建议第一步</span>
-            <strong>{activeExperience.suggestedMove}</strong>
-            <blockquote className="simulation-quote">{activeExperience.possibleFirstLine}</blockquote>
-          </div>
-        </section>
+        </div>
 
-        <section className="scenario-switcher scenario-switcher-compact" ref={scenarioRef} aria-label="换个问题看看">
-          <div className="scenario-switcher-heading">
-            <span>{isFriendInvite ? "换个共同经历" : "换个关系问题"}</span>
-            <strong>{isFriendInvite ? "同一个好友，不同梦境。" : "轻量切换，不打断决策。"}</strong>
-          </div>
-          <div className="scenario-tabs" role="tablist" aria-label="关系预演场景">
-            {isFriendInvite
-              ? roamingScenes.map((scene) => (
-                  <button
-                    aria-selected={scene.id === activeRoamingScene?.id}
-                    className={scene.id === activeRoamingScene?.id ? "scenario-tab-active" : ""}
-                    key={scene.id}
-                    onClick={() => selectRoamingScene(scene.id)}
-                    role="tab"
-                    type="button"
-                  >
-                    {scene.label}
-                  </button>
-                ))
-              : simulation.scenarios.map((scenario) => (
-                  <button
-                    aria-selected={scenario.mode === activeScenarioMode}
-                    className={scenario.mode === activeScenarioMode ? "scenario-tab-active" : ""}
-                    key={scenario.mode}
-                    onClick={() => selectScenario(scenario.mode)}
-                    role="tab"
-                    type="button"
-                  >
-                    {scenario.label}
-                  </button>
-                ))}
-          </div>
-          <p>{activeExperience.premise}</p>
-        </section>
-
-        <section className={`simulation-details ${showDetails ? "simulation-details-open" : ""}`} ref={detailsRef}>
-          <div className="detail-summary-row">
-            <span>想看原因和片段再展开</span>
-            <button onClick={toggleDetails} type="button">
-              {showDetails ? "收起详细推演" : "看详细推演"}
-            </button>
-          </div>
-          {showDetails ? (
-            <>
-              <div className="detail-mode-tabs" role="tablist" aria-label="详细推演分段">
-                {detailSections.map((section) => (
-                  <button
-                    aria-selected={section.id === detailMode}
-                    className={section.id === detailMode ? "detail-mode-active" : ""}
-                    key={section.id}
-                    onClick={() => setDetailMode(section.id)}
-                    role="tab"
-                    type="button"
-                  >
-                    {section.icon}
-                    <span>{section.label}</span>
-                  </button>
-                ))}
+        <div className="dt-gauges">
+          {gauges.map((gauge) => (
+            <div className="dt-gauge" key={gauge.label}>
+              <div
+                className="dt-gauge-ring"
+                style={{ ["--val" as string]: gauge.value, ["--g-color" as string]: gauge.color }}
+              >
+                <strong>{gauge.value}</strong>
               </div>
+              <span className="dt-gauge-label">{gauge.label}</span>
+            </div>
+          ))}
+        </div>
 
-              {detailMode === "overview" ? (
-                <section className="detail-panel" aria-label="关系推演过程">
-                  <section className="relationship-animation relationship-animation-compact relationship-animation-4">
-                    <div className="relation-depth-grid" />
-                    <div className="relation-field-label relation-field-label-self">你的分身</div>
-                    <div className="relation-field-label relation-field-label-other">{simulation.counterpartName}</div>
-                    <div className="relation-signal-board" aria-label="关系预演信号">
-                      <div>
-                      <span>SELF</span>
-                      <strong>{simulation.approachSignal}</strong>
-                      </div>
-                      <div>
-                        <span>OTHER</span>
-                        <strong>{simulation.replySignal}</strong>
-                      </div>
-                      <div>
-                        <span>SYSTEM</span>
-                        <strong>{simulation.outcomeSignal}</strong>
-                      </div>
-                    </div>
-                    <div className="relation-orb relation-orb-self" />
-                    <div className="relation-orb relation-orb-other" />
-                    <div className="relation-trace relation-trace-primary" />
-                    <div className="relation-trace relation-trace-reply" />
-                    <div className="relation-gate-pulse" />
-                    <div className="relation-contact-point" />
-                    <div className="relation-signal-readout">
-                      <span>关系推演</span>
-                      <p>{simulation.tension}</p>
-                    </div>
-                  </section>
-                  <div className="simulation-detail-summary">
-                    <span>为什么是这个结论</span>
-                    <p>{simulation.relationshipHypothesis}</p>
-                  </div>
-                </section>
-              ) : null}
+        <div className="dt-panel">
+          <span className="dt-panel-title">{suggestedMoveLabel}</span>
+          <p>{displaySuggestedMove}</p>
+          <blockquote className="dt-quote">“{experience.possibleFirstLine}”</blockquote>
+        </div>
 
-              {detailMode === "dialogue" ? (
-                <section className="detail-panel relationship-script" aria-label="可能对话回放">
-                  {activeExperience.likelyDialogue.map((line, index) => (
-                    <div className={index % 2 === 0 ? "script-line script-line-self" : "script-line script-line-other"} key={line}>
-                      <span>{index % 2 === 0 ? "你的分身" : simulation.counterpartName}</span>
-                      <p>{line}</p>
-                    </div>
-                  ))}
-                </section>
-              ) : null}
+        {showDetails ? (
+          <div className="dt-panel">
+            <span className="dt-panel-title">
+              <MessageCircle size={14} style={{ verticalAlign: "-2px", marginRight: 6 }} />
+              可能会聊什么
+            </span>
+            {experience.likelyDialogue.slice(0, 4).map((line, index) => (
+              <p key={index}>· {line}</p>
+            ))}
+            <span className="dt-panel-title" style={{ marginTop: 6 }}>
+              <Route size={14} style={{ verticalAlign: "-2px", marginRight: 6 }} />
+              关系可能怎么走
+            </span>
+            {experience.behaviorPreview.slice(0, 3).map((line, index) => (
+              <p key={index}>· {line}</p>
+            ))}
+            <p style={{ color: "var(--gold)" }}>风险：{experience.riskSignal}</p>
+          </div>
+        ) : null}
 
-              {detailMode === "behavior" ? (
-                <section className="detail-panel relationship-trajectory" aria-label="可能行为轨迹">
-                  {activeExperience.behaviorPreview.map((step, index) => (
-                    <div className="trajectory-step" key={step}>
-                      <b>{String(index + 1).padStart(2, "0")}</b>
-                      <p>{step}</p>
-                    </div>
-                  ))}
-                </section>
-              ) : null}
+        {apiMode === "fallback" && generationError ? (
+          <p className="dt-status-line">{generationError}</p>
+        ) : null}
 
-              {detailMode === "risk" ? (
-                <section className="detail-panel relationship-outcome-panel" aria-label="恋爱可能和不好走向">
-                  <article>
-                    <Heart size={15} />
-                    <span>恋爱可能性</span>
-                    <strong>{activeExperience.insight.paceLabel}</strong>
-                    <p>{activeExperience.romanceSignal}</p>
-                  </article>
-                  <article>
-                    <AlertTriangle size={15} />
-                    <span>风险与不好走向</span>
-                    <strong>{activeExperience.insight.riskLabel}</strong>
-                    <p>{activeExperience.riskSignal}</p>
-                  </article>
-                </section>
-              ) : null}
-            </>
-          ) : null}
-        </section>
-      </div>
-
-      <div className="bottom-action simulation-bottom-action">
-        <PrimaryButton icon={<DoorOpen size={18} />} onClick={() => onContinue(node.id)}>
-          {actionLabel}
-        </PrimaryButton>
-        <div className="action-row">
-          <PrimaryButton
-            variant="secondary"
-            icon={<ArrowRight size={17} />}
-            onClick={() => scrollIntoView(scenarioRef.current)}
-          >
-            {isFriendInvite ? "换个场景看看" : "换个问题看看"}
-          </PrimaryButton>
-          <PrimaryButton variant="ghost" icon={<MessageCircle size={17} />} onClick={() => openDetails("dialogue")}>
-            看详细推演
-          </PrimaryButton>
+        <div className="dt-actions">
+          <PrimaryButton onClick={() => onContinue(node.id)}>{enterLabel}</PrimaryButton>
+          <div className="dt-actions dt-actions-split">
+            <PrimaryButton variant="secondary" onClick={() => setShowDetails((value) => !value)}>
+              {showDetails ? "收起推演" : "看详细推演"}
+            </PrimaryButton>
+            <PrimaryButton variant="secondary" onClick={cycleAlternative}>
+              换个问题
+            </PrimaryButton>
+          </div>
         </div>
       </div>
     </section>

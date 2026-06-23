@@ -1,29 +1,61 @@
 import type { ReactNode } from "react";
-import { ChevronLeft, RotateCcw } from "lucide-react";
+import { ChevronLeft, Home, MessageCircle, Moon, RotateCcw, UserRound } from "lucide-react";
+import type { ThemeMode } from "../types/dreamtwin";
+
+export type AppTab = "today" | "dream" | "messages" | "me";
 
 interface AppShellProps {
   children: ReactNode;
+  activeTab?: AppTab;
   canGoBack: boolean;
+  themeMode?: ThemeMode;
+  showDemoChrome?: boolean;
+  showTopbar?: boolean;
+  showTabs?: boolean;
   progressLabel: string;
   progressValue: number;
   stepLabel: string;
   onBack: () => void;
+  onNavigateTab?: (tab: AppTab) => void;
   onReset: () => void;
 }
 
+const tabItems: Array<{ id: AppTab; label: string; icon: ReactNode }> = [
+  { id: "today", label: "今日", icon: <Home size={19} /> },
+  { id: "dream", label: "梦境", icon: <Moon size={19} /> },
+  { id: "messages", label: "消息", icon: <MessageCircle size={19} /> },
+  { id: "me", label: "我的", icon: <UserRound size={19} /> },
+];
+
 export function AppShell({
   children,
+  activeTab,
   canGoBack,
+  themeMode = "day",
+  showDemoChrome = false,
+  showTopbar = true,
+  showTabs = false,
   progressLabel,
   progressValue,
   stepLabel,
   onBack,
+  onNavigateTab,
   onReset,
 }: AppShellProps) {
   return (
     <main className="app-stage">
-      <div className="phone-shell">
-        <header className="app-topbar">
+      <div
+        className={[
+          "phone-shell",
+          themeMode === "night" ? "theme-night" : "theme-day",
+          showTabs ? "phone-shell-with-tabs" : "",
+          showDemoChrome ? "phone-shell-demo-mode" : "phone-shell-app-mode",
+        ]
+          .filter(Boolean)
+          .join(" ")}
+      >
+        {showTopbar ? (
+        <header className={showDemoChrome ? "app-topbar app-topbar-demo" : "app-topbar app-topbar-app"}>
           <div className="topbar-left">
             {canGoBack ? (
               <button className="icon-button icon-button-back" onClick={onBack} type="button" aria-label="返回上一步">
@@ -32,21 +64,42 @@ export function AppShell({
               </button>
             ) : null}
             <span className="brand-mark" />
-            <span>DreamTwin</span>
+            <span>DreamTwins</span>
           </div>
-          <button className="icon-button icon-button-reset" onClick={onReset} type="button" aria-label="重新开始演示">
-            <RotateCcw size={17} />
-            <span>重置演示</span>
-          </button>
-          <div className="demo-progress" aria-label="演示进度">
-            <span>路演路径 · {stepLabel}</span>
-            <strong>{progressLabel}</strong>
-            <div className="demo-progress-track">
-              <i style={{ width: `${progressValue}%` }} />
-            </div>
-          </div>
+          {showDemoChrome ? (
+            <>
+              <button className="icon-button icon-button-reset" onClick={onReset} type="button" aria-label="重新开始体验">
+                <RotateCcw size={17} />
+                <span>重置体验</span>
+              </button>
+              <div className="demo-progress" aria-label="体验进度">
+                <span>预演路径 · {stepLabel}</span>
+                <strong>{progressLabel}</strong>
+                <div className="demo-progress-track">
+                  <i style={{ width: `${progressValue}%` }} />
+                </div>
+              </div>
+            </>
+          ) : null}
         </header>
+        ) : null}
         {children}
+        {showTabs && onNavigateTab ? (
+          <nav className="app-tabbar" aria-label="DreamTwins 主导航">
+            {tabItems.map((item) => (
+              <button
+                aria-current={activeTab === item.id ? "page" : undefined}
+                className={activeTab === item.id ? "app-tab app-tab-active" : "app-tab"}
+                key={item.id}
+                onClick={() => onNavigateTab(item.id)}
+                type="button"
+              >
+                {item.icon}
+                <span>{item.label}</span>
+              </button>
+            ))}
+          </nav>
+        ) : null}
       </div>
     </main>
   );

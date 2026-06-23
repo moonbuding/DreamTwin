@@ -1,11 +1,17 @@
 .DS_Store
 node_modules/
+.env
+.env.local
 dist/
 dist-server/
 output/
 .dreamtwin-local/
+.qa-build/
 .playwright-cli/
 *.tsbuildinfo
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+
+# Local-only large design covers (not pushed)
+design-explorations/assets/
