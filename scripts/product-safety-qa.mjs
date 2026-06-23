@@ -55,7 +55,7 @@ function isAllowedDemoModeLine(rel, line) {
     return /showDemoChrome|phone-shell-demo-mode|app-topbar-demo/.test(line);
   }
   if (rel === "src/pages/WaitingPage.tsx") {
-    return /showDemoControls|responsePreviewLabel|demo-control-note|Demo 控制|演示：模拟|下面的模拟按钮/.test(line);
+    return /showDemoControls|responsePreviewLabel|systemReminder|对方收到的系统提醒|真实 App 会等待/.test(line);
   }
   return false;
 }
@@ -151,15 +151,15 @@ if (!twinGeneratingPage.includes("if (!isDreamTwinApiEnabled())")) {
 if (!simulationDetailPage.includes("if (!isDreamTwinApiEnabled())")) {
   fail("Simulation detail page must not call the backend unless Live AI is explicitly enabled.");
 }
-for (const requiredMessageState of ["待写第一句", "等真人回应", "未开门"]) {
+for (const requiredMessageState of ["待写第一句", "等真人回应", "待入梦"]) {
   if (!messagesPage.includes(requiredMessageState)) {
     fail(`Messages page must preserve the DreamTwin message state: ${requiredMessageState}.`);
   }
 }
-if (!messagesPage.includes("AI 不再推进")) {
-  fail("Messages page must clearly state that AI stops after the first line is sent.");
+if (!messagesPage.includes("AI 只带入预演摘要")) {
+  fail("Messages page must clearly state that AI only carries preview context into chat.");
 }
-for (const requiredMessageAction of ["当前行动", "先写第一句话", "去梦境地图开启关系"]) {
+for (const requiredMessageAction of ["当前行动", "等对方入梦", "进入正常聊天", "去梦境地图开启关系"]) {
   if (!messagesPage.includes(requiredMessageAction)) {
     fail(`Messages page must lead with the next relationship action: ${requiredMessageAction}.`);
   }
@@ -198,7 +198,7 @@ for (const requiredSharedMapCopy of ["共同选择梦境场景", "同一张梦�
 if (!dreamLogPage.includes("onOpenFriendScene(activeSharedScene.id, nodeId)")) {
   fail("Clicking the accepted friend map node must enter the selected shared scene preview.");
 }
-for (const requiredSharedSimulationCopy of ["确认后梦境门打开", "共同梦境确认", "共同梦境来源"]) {
+for (const requiredSharedSimulationCopy of ["共同梦境确认", "共同梦境来源", "进入正常聊天"]) {
   if (
     !simulationDetailPage.includes(requiredSharedSimulationCopy) &&
     !dreamGatePage.includes(requiredSharedSimulationCopy) &&

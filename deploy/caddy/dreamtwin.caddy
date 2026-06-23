@@ -1,0 +1,19 @@
+# DreamTwin site config. Symlink to /etc/caddy/sites/dreamtwin.caddy.
+
+dreamtwin.hipaql.cn {
+	encode gzip zstd
+
+	reverse_proxy localhost:3100 {
+		header_up X-Real-IP {remote_host}
+		header_up X-Forwarded-For {remote_host}
+		header_up X-Forwarded-Proto {scheme}
+	}
+
+	log {
+		output file /var/log/caddy/dreamtwin.hipaql.cn.log {
+			roll_size 10MB
+			roll_keep 5
+		}
+		format json
+	}
+}

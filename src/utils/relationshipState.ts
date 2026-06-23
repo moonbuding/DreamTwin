@@ -47,8 +47,8 @@ export function createRelationshipStates(nodes: DreamNode[], simulations: Relati
 
 export function selectTodayPrimaryNode(nodes: DreamNode[]): DreamNode | undefined {
   return (
-    nodes.find((node) => node.status === "opened") ??
     nodes.find((node) => node.status === "both_entered") ??
+    nodes.find((node) => node.status === "opened") ??
     nodes.find((node) => node.status === "in_chat") ??
     nodes.find((node) => node.status === "waiting") ??
     nodes.find((node) => node.entryMode === "overnight_discovery" && node.status === "unviewed") ??

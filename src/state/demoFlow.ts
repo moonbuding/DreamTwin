@@ -200,8 +200,13 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
       return goToPage({ ...state, selectedNodeId: action.nodeId, resumeAtOutcomeNodeId: action.nodeId }, "waiting");
     case "OPEN_DREAM_GATE":
       return goToPage({ ...state, selectedNodeId: action.nodeId, resumeAtOutcomeNodeId: action.nodeId }, "dream-gate");
-    case "SIMULATE_COUNTERPART_CONFIRM":
-      return goToPage({ ...setNodeStatus(state, action.nodeId, "opened"), resumeAtOutcomeNodeId: action.nodeId }, "dream-gate");
+    case "SIMULATE_COUNTERPART_CONFIRM": {
+      const node = state.nodes.find((item) => item.id === action.nodeId);
+      if (node?.entryMode === "friend_invite") {
+        return goToPage({ ...setNodeStatus(state, action.nodeId, "opened"), resumeAtOutcomeNodeId: action.nodeId }, "dream-gate");
+      }
+      return goToPage({ ...setNodeStatus(state, action.nodeId, "both_entered"), resumeAtOutcomeNodeId: action.nodeId }, "chat-entry");
+    }
     case "SIMULATE_FRIEND_ACCEPT":
       return goToPage(
         {

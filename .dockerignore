@@ -1,0 +1,16 @@
+.git
+.gitignore
+.DS_Store
+.env
+.env.*
+.dreamtwin-local
+.qa-build
+.playwright-cli
+dist
+dist-server
+node_modules
+output
+npm-debug.log*
+yarn-debug.log*
+yarn-error.log*
+*.tsbuildinfo

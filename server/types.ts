@@ -10,6 +10,8 @@ export interface UserProfile {
   relationshipIntention: string;
   interests: string[];
   optionalSignals: string[];
+  appearanceTags?: string[];
+  education?: string;
   mbti?: string;
   bloodType?: string;
   zodiac?: string;
@@ -73,6 +75,8 @@ export interface RelationshipCounterpartProfile {
   communicationStyle?: string;
   values?: string[];
   optionalSignals?: string[];
+  appearanceTags?: string[];
+  education?: string;
 }
 
 export interface GuidedSceneEventInput {

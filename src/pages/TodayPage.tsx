@@ -33,7 +33,7 @@ export function TodayPage({
   const overnightNodes = nodes.filter((node) => node.entryMode === "overnight_discovery");
   const newCount = overnightNodes.filter((node) => node.status === "unviewed").length || overnightNodes.length;
   const waitingNodes = nodes.filter((node) => node.status === "waiting");
-  const chatNodes = nodes.filter((node) => node.status === "opened" || node.status === "in_chat");
+  const chatNodes = nodes.filter((node) => node.status === "both_entered" || node.status === "opened" || node.status === "in_chat");
   const friendInitial = (friends[0]?.name ?? "友").slice(0, 1);
   const friendNode = nodes.find((node) => node.entryMode === "friend_invite");
   const isFriendAccepted =
@@ -102,8 +102,8 @@ export function TodayPage({
             <DoorOpen size={20} />
           </span>
           <span className="dt-card-body">
-            <strong>梦境门打开</strong>
-            <span>{chatNodes.length} 段梦境已开启聊天</span>
+            <strong>双方已入梦</strong>
+            <span>{chatNodes.length} 段梦境可进入正常聊天</span>
           </span>
           <span className="dt-card-aside dt-ava-stack">
             <span className="dt-ava">她</span>

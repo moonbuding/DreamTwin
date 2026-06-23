@@ -1,0 +1,37 @@
+<svg width="1200" height="360" viewBox="0 0 1200 360" fill="none" xmlns="http://www.w3.org/2000/svg" role="img" aria-labelledby="title desc">
+  <title id="title">DreamTwins logo</title>
+  <desc id="desc">A white DreamTwins logo with an interlocking twin-orbit mark and a custom wordmark.</desc>
+  <style>
+    .logo-color { color: #fff; }
+    .word {
+      fill: currentColor;
+      font-family: Didot, "Bodoni 72", "Baskerville", "Times New Roman", serif;
+      font-size: 96px;
+      font-weight: 400;
+      letter-spacing: -0.02em;
+    }
+  </style>
+  <g class="logo-color">
+    <g transform="translate(72 68)" stroke="currentColor" stroke-linecap="round" stroke-linejoin="round">
+      <path d="M126 18C76 32 42 68 39 115C36 167 76 207 130 202C185 197 219 151 212 101C205 51 169 9 126 18Z" stroke-width="12"/>
+      <path d="M157 18C207 32 241 68 244 115C247 167 207 207 153 202C98 197 64 151 71 101C78 51 114 9 157 18Z" stroke-width="12" opacity=".74"/>
+      <path d="M72 139C99 102 135 76 181 60" stroke-width="5" opacity=".72"/>
+      <path d="M211 139C184 102 148 76 102 60" stroke-width="5" opacity=".72"/>
+      <circle cx="142" cy="110" r="7" fill="currentColor"/>
+      <circle cx="142" cy="110" r="22" stroke-width="3" opacity=".28"/>
+    </g>
+    <g transform="translate(338 82)">
+      <text class="word" x="0" y="120">DreamTw</text>
+      <g transform="translate(392 39)">
+        <rect x="5" y="24" width="4" height="76" rx="2" fill="currentColor"/>
+        <rect x="19" y="24" width="4" height="76" rx="2" fill="currentColor"/>
+        <circle cx="7" cy="8" r="5" fill="currentColor"/>
+        <circle cx="21" cy="8" r="5" fill="currentColor" opacity=".78"/>
+        <path d="M1 102H28" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".76"/>
+      </g>
+      <text class="word" x="424" y="120">ns</text>
+      <path d="M0 153H590" stroke="currentColor" stroke-width="2" stroke-linecap="round" opacity=".52"/>
+      <path d="M0 162H178" stroke="currentColor" stroke-width="1" stroke-linecap="round" opacity=".28"/>
+    </g>
+  </g>
+</svg>

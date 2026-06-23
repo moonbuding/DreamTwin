@@ -133,24 +133,16 @@ function assertOvernightDiscoveryFlow() {
   state = reduce(state, { type: "OPEN_SIMULATION_RESULT", nodeId: "node-rain-store" });
   state = reduce(state, { type: "ENTER_DREAM", nodeId: "node-rain-store" });
   state = reduce(state, { type: "SIMULATE_COUNTERPART_CONFIRM", nodeId: "node-rain-store" });
-  assert(state.currentPage === "dream-gate", "Counterpart confirm should open dream-gate.");
-  assert(nodeStatus(state, "node-rain-store") === "opened", "Counterpart confirm should open the node.");
+  assert(state.currentPage === "chat-entry", "Counterpart confirm should enter normal chat directly.");
+  assert(nodeStatus(state, "node-rain-store") === "both_entered", "Counterpart confirm should mark both sides entered.");
 
   state = reduce(state, { type: "OPEN_MESSAGES" });
-  assert(state.currentPage === "messages", "Opened dream gates should be reachable from messages.");
-  assert(nodeStatus(state, "node-rain-store") === "opened", "Opening messages should preserve opened status.");
+  assert(state.currentPage === "messages", "Both-entered dreams should be reachable from messages.");
+  assert(nodeStatus(state, "node-rain-store") === "both_entered", "Opening messages should preserve both-entered status.");
 
-  state = reduce(state, { type: "OPEN_DREAM_GATE", nodeId: "node-rain-store" });
-  assert(state.currentPage === "dream-gate", "OPEN_DREAM_GATE should reopen the gate from messages or today.");
-
-  state = reduce(state, { type: "GO_BACK" });
-  assert(state.currentPage === "messages", "GO_BACK from a surface-opened dream-gate should return to the previous app surface.");
-  assert(nodeStatus(state, "node-rain-store") === "opened", "GO_BACK should preserve opened status.");
-
-  state = reduce(state, { type: "OPEN_DREAM_GATE", nodeId: "node-rain-store" });
   state = reduce(state, { type: "OPEN_CHAT_ENTRY", nodeId: "node-rain-store" });
   assert(state.currentPage === "chat-entry", "OPEN_CHAT_ENTRY should open chat-entry.");
-  assert(nodeStatus(state, "node-rain-store") === "opened", "Opening chat-entry should not mark the relationship in-chat before sending.");
+  assert(nodeStatus(state, "node-rain-store") === "both_entered", "Opening chat-entry should not mark the relationship in-chat before sending.");
   state = reduce(state, { type: "MARK_CHAT_SENT", nodeId: "node-rain-store", text: "我想把刚才的预演带回现实聊聊。" });
   assert(nodeStatus(state, "node-rain-store") === "in_chat", "Sending the first line should mark the relationship in-chat.");
   assert(
@@ -273,7 +265,7 @@ function assertEditingTwinResetsGeneratedState() {
   state = reduce(state, { type: "ENTER_DREAM", nodeId: "node-rain-store" });
   state = reduce(state, { type: "SIMULATE_COUNTERPART_CONFIRM", nodeId: "node-rain-store" });
   state = reduce(state, { type: "STORE_LIVE_SIMULATION_RESULT", resultKey: liveResultKey, result: makeResult("星际") });
-  assert(nodeStatus(state, "node-rain-store") === "opened", "Setup should create an opened node before re-editing.");
+  assert(nodeStatus(state, "node-rain-store") === "both_entered", "Setup should create a both-entered node before re-editing.");
   assert(Object.keys(state.liveSimulationResults).length === 1, "Setup should create a live result before re-editing.");
 
   state = reduce(state, { type: "OPEN_TWIN_HOME" });
@@ -416,7 +408,10 @@ function assertTodayPrimaryNodePriority() {
     ...state,
     nodes: state.nodes.map((node) => (node.id === "node-moon-platform" ? { ...node, status: "opened" } : node)),
   };
-  assert(selectTodayPrimaryNode(state.nodes)?.id === "node-moon-platform", "Today should prioritize opened dream gates first.");
+  assert(
+    selectTodayPrimaryNode(state.nodes)?.id === "node-friend-mika",
+    "Today should prioritize both-entered dreams over legacy opened dream gates.",
+  );
 }
 
 assertOvernightDiscoveryFlow();

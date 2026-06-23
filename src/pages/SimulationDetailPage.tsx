@@ -54,6 +54,11 @@ function looksLikeInventedMemory(line: string): boolean {
   return /上次|昨天|昨晚|前天|那天|之前|刚刚|刚才|记得你|我知道你/.test(line.replace(/\s/g, ""));
 }
 
+function joinBasis(items: string[] | undefined, fallback = "资料有限"): string {
+  const values = items?.map((item) => item.trim()).filter(Boolean) ?? [];
+  return values.length ? values.join("、") : fallback;
+}
+
 export function SimulationDetailPage({
   node,
   profile,
@@ -166,6 +171,21 @@ export function SimulationDetailPage({
     isFriendInvite && activeRoamingScene
       ? `${simulation.title} / ${activeRoamingScene.label}：${activeRoamingScene.premise}`
       : `${simulation.title} / ${activeScenario?.label ?? "关系预演"}：${activeScenario?.premise ?? simulation.scene}`;
+  const previewBasis = useMemo(
+    () => [
+      { label: "你的性格", value: joinBasis(profile.personalityKeywords) },
+      { label: "你的兴趣", value: joinBasis(profile.interests) },
+      { label: "你的沟通", value: profile.communicationStyle?.trim() || "资料有限" },
+      { label: "你的外貌标签", value: joinBasis(profile.appearanceTags) },
+      { label: "你的学历", value: profile.education?.trim() || "资料有限" },
+      { label: `${counterpartProfile.name} 性格`, value: joinBasis(counterpartProfile.personalityKeywords) },
+      { label: `${counterpartProfile.name} 兴趣`, value: joinBasis(counterpartProfile.interests) },
+      { label: `${counterpartProfile.name} 沟通`, value: counterpartProfile.communicationStyle?.trim() || "资料有限" },
+      { label: `${counterpartProfile.name} 外貌标签`, value: joinBasis(counterpartProfile.appearanceTags) },
+      { label: `${counterpartProfile.name} 学历`, value: counterpartProfile.education?.trim() || "资料有限" },
+    ],
+    [counterpartProfile, profile],
+  );
 
   useEffect(() => {
     let isCurrent = true;
@@ -228,9 +248,11 @@ export function SimulationDetailPage({
       ? "进入梦境门"
       : node.status === "waiting"
         ? "回到等待状态"
+        : node.status === "both_entered"
+          ? "进入正常聊天"
         : isFriendInvite
           ? "进入这段共同梦境"
-          : "想进入这个梦境";
+          : "未来可期 续写梦境";
 
   const cycleAlternative = () => {
     setShowDetails(false);
@@ -261,7 +283,7 @@ export function SimulationDetailPage({
               <ChevronLeft size={18} />
             </button>
           </div>
-          <span className="dt-head-title">{simulation.title}</span>
+          <span className="dt-head-title">AI 未来预告片</span>
           <div className="dt-head-right">
             <button className="dt-chip-btn" onClick={onBackToLog} type="button">
               <RefreshCw size={14} />
@@ -276,8 +298,21 @@ export function SimulationDetailPage({
         </div>
 
         {isFriendInvite ? (
-          <p className="dt-status-line">共同梦境确认后梦境门打开，真实聊天仍由你亲自开始。</p>
+          <p className="dt-status-line">共同梦境确认后进入正常聊天，真实对话仍由你亲自开始。</p>
         ) : null}
+
+        <div className="dt-panel">
+          <span className="dt-panel-title">预演依据</span>
+          <p>AI 只根据双方分身画像、用户标签和当前梦境场景预演未来走向，资料不足的地方不会当成事实补全。</p>
+          <div className="simulation-basis" aria-label="AI 未来预告片依据">
+            {previewBasis.map((item) => (
+              <div key={item.label}>
+                <span>{item.label}</span>
+                <strong>{item.value}</strong>
+              </div>
+            ))}
+          </div>
+        </div>
 
         <div className="dt-gauges">
           {gauges.map((gauge) => (

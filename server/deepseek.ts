@@ -198,6 +198,8 @@ export async function generateRelationshipSimulation(input: RelationshipSimulati
     "DreamTwin is Relationship Preview, not matching. Never output or imply: 匹配度, 天生一对, 注定相遇, 最适合的人, 灵魂伴侣, 命中注定.",
     "Use uncertainty language for every relationship conclusion: 可能, 或许, 倾向于, 有机会. Avoid absolute Chinese words such as 一定, 必然, 注定, 肯定.",
     "Use both people's profile snapshots, the guided scene event, and the relationship goal as the simulation basis.",
+    "Only use explicit fields supplied in the two profiles, including personalityKeywords, appearanceTags, education, interests, communicationStyle, values, and optionalSignals.",
+    "If appearanceTags, education, or other profile fields are missing, say the basis is limited; never invent missing labels, education, appearance, identity, private history, or verified facts.",
     "Use sceneStageSpec as a fixed guided stage: visual tone, spatial metaphor, and relationship trigger only.",
     "Do not turn the scene into a walkable map, quest, game level, or fictional roleplay plot.",
     "Treat MBTI, zodiac, blood type, and mystic tags only as narrative signals, never as scientific prediction.",
@@ -221,6 +223,7 @@ export async function generateRelationshipSimulation(input: RelationshipSimulati
     relationshipGoal: input.relationshipGoal ?? input.profile.relationshipIntention,
     constraints: [
       "Use the provided counterpartName and scene in the generated content.",
+      "Base every preview on the provided selfProfile and counterpartProfile fields. Missing fields must be treated as unknown, not guessed.",
       "Reflect sceneStageSpec.visualTone, sceneStageSpec.spatialMetaphor, and sceneStageSpec.relationTrigger without describing free movement.",
       "Reflect the selectedSceneEvent and relationshipGoal in conclusion, dialogue, behavior, and suggestedMove.",
       "Use counterpartProfile only as a hypothetical profile snapshot supplied by the product, not as verified truth.",

@@ -68,7 +68,7 @@ export function App() {
   );
   const openNodeFromSurface = (nodeId: string) => {
     const node = state.nodes.find((item) => item.id === nodeId);
-    if (node?.status === "in_chat") {
+    if (node?.status === "in_chat" || node?.status === "both_entered") {
       dispatch({ type: "OPEN_CHAT_ENTRY", nodeId });
       return;
     }
@@ -84,7 +84,7 @@ export function App() {
   };
   const continueNode = (nodeId: string) => {
     const node = state.nodes.find((item) => item.id === nodeId);
-    if (node?.status === "in_chat") {
+    if (node?.status === "in_chat" || node?.status === "both_entered") {
       dispatch({ type: "OPEN_CHAT_ENTRY", nodeId });
       return;
     }
@@ -94,10 +94,6 @@ export function App() {
     }
     if (node?.status === "waiting") {
       dispatch({ type: "OPEN_WAITING", nodeId });
-      return;
-    }
-    if (node?.status === "both_entered") {
-      dispatch({ type: "SIMULATE_COUNTERPART_CONFIRM", nodeId });
       return;
     }
     dispatch({ type: "ENTER_DREAM", nodeId });
@@ -311,6 +307,7 @@ export function App() {
       {state.currentPage === "waiting" && (
         <WaitingPage
           node={selectedNode}
+          userName={state.profile.nickname || "你"}
           simulation={selectedSimulation}
           onBackToSimulation={(nodeId) =>
             selectedSimulation.entryMode === "friend_invite"

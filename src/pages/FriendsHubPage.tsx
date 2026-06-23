@@ -91,12 +91,13 @@ export function FriendsHubPage({
         ) : (
           <MessagesPage
             nodes={nodes}
-            sentFirstMessages={sentFirstMessages}
-            simulations={simulations}
-            onOpenChat={onOpenChat}
-            onOpenDreamMap={onOpenDreamMap}
-            onReviewNode={onReviewNode}
-          />
+          sentFirstMessages={sentFirstMessages}
+          simulations={simulations}
+          onOpenChat={onOpenChat}
+          onOpenDreamMap={onOpenDreamMap}
+          onOpenWaiting={onOpenWaiting}
+          onReviewNode={onReviewNode}
+        />
         )}
       </div>
     </section>

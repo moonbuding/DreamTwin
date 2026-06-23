@@ -578,6 +578,26 @@
   line-height: 1.55;
 }
 
+.dt-panel .simulation-basis {
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+}
+
+.dt-panel .simulation-basis div {
+  border-color: var(--line);
+  border-radius: 8px;
+  background: rgba(111, 211, 255, 0.06);
+}
+
+.dt-panel .simulation-basis span {
+  color: var(--muted);
+  letter-spacing: 0;
+}
+
+.dt-panel .simulation-basis strong {
+  color: var(--text);
+  white-space: normal;
+}
+
 .dt-quote {
   margin-top: 2px;
   padding: 11px 13px;

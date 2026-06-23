@@ -94,31 +94,45 @@ export function ChatEntryPage({
   return (
     <section className="page page-scroll dt-page dt-light chat-entry-page">
       <div className="page-content chat-entry-content">
-        <p className="label">真实聊天入口</p>
-        <h1>{hasSentFirstMessage ? "第一句话已经发出。" : "现在由你开始。"}</h1>
+        <p className="label">正常聊天</p>
+        <h1>{hasSentFirstMessage ? "聊天已经开始。" : "双方已入梦，开始正常聊天。"}</h1>
         <section className="counterpart-presence">
           <span>
             {hasSentFirstMessage
               ? "真实聊天正在等待真人回应"
               : isFriendInvite
                 ? "好友梦境漫游已转入真实聊天"
-                : "双人关系预演已转入真实聊天"}
+                : "AI 未来预告已转入真实聊天"}
           </span>
           <strong>{simulation.counterpartName}</strong>
           <p>{handoffOutcome}</p>
         </section>
+        <section className="chat-shared-origin" aria-label="梦境来源">
+          <span>{isFriendInvite ? "共同梦境来源" : "入梦来源"}</span>
+          <strong>{sceneTitle}</strong>
+          <p>
+            {isFriendInvite
+              ? "这不是普通好友私信。你们先一起入梦、共同选择场景，再把预演结果带回真实聊天。"
+              : "这不是普通私信。你先看过 AI 未来预告片，双方都入梦后，再把预演摘要带进真实聊天。"}
+          </p>
+        </section>
+        <section className="chat-shared-origin" aria-label="AI 预告摘要">
+          <span>AI 预告摘要</span>
+          <strong>{handoffOutcome}</strong>
+          <p>{recommendedMove}</p>
+        </section>
         {isFriendInvite ? (
-          <section className="chat-shared-origin" aria-label="共同梦境来源">
-            <span>共同梦境来源</span>
+          <section className="chat-shared-origin" aria-label="共同梦境场景">
+            <span>共同梦境场景</span>
             <strong>{sceneTitle}</strong>
-            <p>这不是普通好友私信。你们先一起入梦、共同选择场景，再把预演结果带回真实聊天。</p>
+            <p>场景只提供聊天来源，不替你们决定关系走向。</p>
           </section>
         ) : null}
         <section className="chat-handoff-panel" aria-label="真实聊天交接状态">
           <div>
             <CheckCircle2 size={15} />
             <span>
-              {hasSentFirstMessage ? "第一句话已进入真实聊天" : liveSimulationResult ? "AI 预演建议已带入" : "预演建议已带入"}
+              {hasSentFirstMessage ? "消息已进入真实聊天" : liveSimulationResult ? "AI 未来预告已带入" : "预演建议已带入"}
             </span>
           </div>
           <div>
@@ -175,8 +189,8 @@ export function ChatEntryPage({
             <ShieldCheck size={15} />
             <span>
               {hasSentFirstMessage
-                ? `梦境门已打开。你已经向 ${simulation.counterpartName} 发出第一句话，接下来只等待真人回应。`
-                : `梦境门已打开。${simulation.counterpartName} 已确认进入，真实聊天从你亲自发送的第一句话开始。`}
+                ? `双方已入梦。你已经向 ${simulation.counterpartName} 发出消息，接下来只等待真人回应。`
+                : `双方已入梦。${simulation.counterpartName} 已确认进入，真实聊天从你亲自发送的第一句话开始。`}
             </span>
           </div>
           {displaySentMessages.map((message, index) => (
@@ -188,7 +202,7 @@ export function ChatEntryPage({
           {hasSentMessage ? (
             <div className="chat-delivery-receipt" aria-label="发送完成状态">
               <CheckCircle2 size={15} />
-              <span>第一句话已进入真实聊天。DreamTwin 的工作到这里结束，接下来只等待真人回应。</span>
+              <span>消息已进入真实聊天。DreamTwin 的工作到这里结束，接下来只等待真人回应。</span>
             </div>
           ) : null}
           {hasSentMessage ? (
