@@ -85,7 +85,7 @@ export function TwinGeneratingPage({
     <section className="page page-scroll dt-page dt-light">
       <div className="page-content">
         <p className="label">首次生成</p>
-        <h1>你的 DreamTwin 已保存。</h1>
+        <h1>你的 DreamTwins 已保存。</h1>
         <TwinProjection twin={displayTwin} />
         <div className="generation-progress" aria-label="AI 分身生成进度">
           <span style={{ width: `${progress}%` }} />

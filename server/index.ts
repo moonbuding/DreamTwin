@@ -14,11 +14,11 @@ async function main(): Promise<void> {
     void routeRequest(request, response);
   });
   server.listen(port, host, () => {
-    console.log(`DreamTwin API listening on http://${host}:${port}`);
+    console.log(`DreamTwins API listening on http://${host}:${port}`);
   });
 }
 
 main().catch((error) => {
-  console.error("Failed to start DreamTwin API:", error);
+  console.error("Failed to start DreamTwins API:", error);
   process.exit(1);
 });

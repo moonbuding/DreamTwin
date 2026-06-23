@@ -148,7 +148,7 @@ export function ChatEntryPage({
           <span>{hasSentFirstMessage ? "当前状态" : "建议动作"}</span>
           <p>
             {hasSentFirstMessage
-              ? `你已经把预演带回真实聊天。DreamTwin 不会替你继续推进，只等待 ${simulation.counterpartName} 的真实回应。`
+              ? `你已经把预演带回真实聊天。DreamTwins 不会替你继续推进，只等待 ${simulation.counterpartName} 的真实回应。`
               : recommendedMove}
           </p>
         </section>
@@ -202,7 +202,7 @@ export function ChatEntryPage({
           {hasSentMessage ? (
             <div className="chat-delivery-receipt" aria-label="发送完成状态">
               <CheckCircle2 size={15} />
-              <span>消息已进入真实聊天。DreamTwin 的工作到这里结束，接下来只等待真人回应。</span>
+              <span>消息已进入真实聊天。DreamTwins 的工作到这里结束，接下来只等待真人回应。</span>
             </div>
           ) : null}
           {hasSentMessage ? (

@@ -1,4 +1,4 @@
-# DreamTwin deployment image.
+# DreamTwins deployment image.
 # Build on Mac, run on amd64 ECS. The frontend is served by nginx and /api is
 # proxied to the Node API container in docker compose.
 

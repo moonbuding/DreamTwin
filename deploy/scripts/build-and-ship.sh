@@ -1,5 +1,5 @@
 #!/usr/bin/env bash
-# DreamTwin · Mac local build + ship to ECS.
+# DreamTwins · Mac local build + ship to ECS.
 #
 # Usage:
 #   bash deploy/scripts/build-and-ship.sh [prod]
@@ -22,7 +22,7 @@ SSH_KEY="${SSH_KEY:-$HOME/.ssh/hipa_deploy}"
 SKIP_GIT_CHECK="${SKIP_GIT_CHECK:-0}"
 
 if [[ "$ENV_NAME" != "prod" ]]; then
-  err "Only prod is configured for DreamTwin right now."
+  err "Only prod is configured for DreamTwins right now."
   exit 1
 fi
 

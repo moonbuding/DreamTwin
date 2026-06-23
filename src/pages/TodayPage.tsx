@@ -28,7 +28,7 @@ export function TodayPage({
   onOpenFriends,
   onOpenMessages,
 }: TodayPageProps) {
-  const userName = twin.nickname.replace(/\s*的\s*DreamTwin.*$/, "").trim() || "你";
+  const userName = twin.nickname.replace(/\s*的\s*DreamTwins?.*$/, "").trim() || "你";
   const greeting = themeMode === "day" ? "早安" : "晚安";
   const overnightNodes = nodes.filter((node) => node.entryMode === "overnight_discovery");
   const newCount = overnightNodes.filter((node) => node.status === "unviewed").length || overnightNodes.length;
@@ -53,7 +53,7 @@ export function TodayPage({
           <div className="dt-head-left">
             <span className="dt-brand">
               <span className="dt-brand-mark" />
-              DreamTwin
+              DreamTwins
             </span>
           </div>
           <div className="dt-head-right">

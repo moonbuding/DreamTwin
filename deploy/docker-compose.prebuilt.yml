@@ -1,4 +1,4 @@
-# DreamTwin · prebuilt image deployment
+# DreamTwins · prebuilt image deployment
 #
 # Mac builds linux/amd64 images and ships them to ECS with docker save/load.
 # ECS must not pull from Docker Hub during deploy, so every service uses

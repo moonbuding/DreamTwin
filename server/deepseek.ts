@@ -135,7 +135,7 @@ export async function generateTwinSummary(profile: UserProfile): Promise<{ job: 
   const fallback = createDefaultTwin(profile);
   const fallbackAvatarStyle = fallback.avatarStyleSpec as AvatarStyleSpec;
   const systemPrompt = [
-    "You generate DreamTwin AI twin projections for a C-side relationship rehearsal app.",
+    "You generate DreamTwins AI twin projections for a C-side relationship rehearsal app.",
     "Return strict JSON only.",
     "The twin can include a stylized full-body luminous personality silhouette for visual rendering.",
     "It must not be a realistic human, face, clothing, dress-up item, companion, roleplay character, or agent that sends messages.",
@@ -192,10 +192,10 @@ export async function generateRelationshipSimulation(input: RelationshipSimulati
   simulation: RelationshipSimulationResult;
 }> {
   const systemPrompt = [
-    "You generate DreamTwin relationship simulation results in Chinese.",
+    "You generate DreamTwins relationship simulation results in Chinese.",
     "Return strict JSON only.",
     "Do not make absolute predictions, do not impersonate the other person, and do not send messages for the user.",
-    "DreamTwin is Relationship Preview, not matching. Never output or imply: 匹配度, 天生一对, 注定相遇, 最适合的人, 灵魂伴侣, 命中注定.",
+    "DreamTwins is Relationship Preview, not matching. Never output or imply: 匹配度, 天生一对, 注定相遇, 最适合的人, 灵魂伴侣, 命中注定.",
     "Use uncertainty language for every relationship conclusion: 可能, 或许, 倾向于, 有机会. Avoid absolute Chinese words such as 一定, 必然, 注定, 肯定.",
     "Use both people's profile snapshots, the guided scene event, and the relationship goal as the simulation basis.",
     "Only use explicit fields supplied in the two profiles, including personalityKeywords, appearanceTags, education, interests, communicationStyle, values, and optionalSignals.",

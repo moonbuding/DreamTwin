@@ -1,4 +1,4 @@
-# DreamTwin site config. Symlink to /etc/caddy/sites/dreamtwin.caddy.
+# DreamTwins site config. Symlink to /etc/caddy/sites/dreamtwin.caddy.
 
 dreamtwin.hipaql.cn {
 	encode gzip zstd

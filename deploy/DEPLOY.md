@@ -1,4 +1,4 @@
-# DreamTwin ECS Deploy
+# DreamTwins ECS Deploy
 
 This follows the hipa ECS pattern: build linux/amd64 images on the Mac, ship
 them to ECS, run with Docker Compose, and expose through host Caddy.

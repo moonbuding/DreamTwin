@@ -1,14 +1,14 @@
-# DreamTwin App 后端与 AI 架构 v0.1
+# DreamTwins App 后端与 AI 架构 v0.1
 
 > 文档状态：真实 App 后端与 AI 架构基准版
-> 当前定位：静态移动端 Web Demo 之后的 App 落地方案
+> 当前定位：当前 Node API / MySQL / Live AI 基线之后的真实 App 落地方案
 > 上游文档：`doc/DreamTwin_产品说明书_v0.1.md`、`doc/DreamTwin_PRD_v0.1.md`、`doc/DreamTwin_需求池_v0.1.md`、`doc/DreamTwin_技术方案_v0.1.md`
 
 ## 1. 架构目标
 
-本方案把 DreamTwin 从“纯前端静态 Demo”推进到“真实 App 可落地架构”。
+本方案把 DreamTwins 从“静态前端 Demo + 最小 Node API”推进到“真实 App 可落地架构”。
 
-下一阶段不急着部署公开 Demo，也不直接接大模型 API，而是先设计真实 App 需要的后端、数据、AI 生成和关系边界。
+当前分支已具备手机号密码登录、JWT、MySQL 持久化、DeepSeek 服务端调用和 Live AI adapter。下一阶段重点不是重新证明后端可行，而是把好友邀请、梦境门、聊天边界、关系状态和内容安全继续产品化。
 
 真实 App 的核心闭环是：
 
@@ -478,7 +478,7 @@ AI 生成只允许从后端触发：
 - 不把 API key 写入前端代码。
 - 不把 API key 写入仓库、文档、提交记录或构建产物。
 - 不通过浏览器请求直接调用 DeepSeek。
-- 后端对外只暴露 DreamTwin 业务接口，不暴露 provider 原始接口。
+- 后端对外只暴露 DreamTwins 业务接口，不暴露 provider 原始接口。
 
 后续如需切换模型，应通过 provider adapter 完成，不影响前端页面和核心数据结构。
 
@@ -589,7 +589,7 @@ type GenerationJobStatus =
 第一版后端实现完成后必须跑通：
 
 1. 用户登录后创建并保存 AI 分身。
-2. 用户刷新后默认进入今日首页，并可在分身 Tab 查看自己的 AI 分身。
+2. 用户刷新后默认进入今日首页，并可在我的 Tab 查看自己的 AI 分身。
 3. 用户获取至少一条 AI 生成的梦境节点。
 4. 用户查看一条关系预演模拟。
 5. 用户创建好友梦境漫游邀请。
@@ -599,7 +599,7 @@ type GenerationJobStatus =
 
 ## 9. 结论
 
-DreamTwin 下一阶段不应急着部署，也不应直接把 API key 接进前端。
+DreamTwins 下一阶段不应急着部署，也不应直接把 API key 接进前端。
 
 正确路线是：先把真实 App 的后端、AI 生成、邀请确认和聊天边界设计清楚，再把当前静态 Demo 逐步迁移为真实数据驱动的 App。
 

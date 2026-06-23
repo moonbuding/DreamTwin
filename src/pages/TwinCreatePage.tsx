@@ -176,7 +176,7 @@ export function TwinCreatePage({ profile, onSubmit }: TwinCreatePageProps) {
           </section>
           <div className="projection-preview">
             <span>即将生成</span>
-            <strong>{nickname || "你"} 的 DreamTwin</strong>
+            <strong>{nickname || "你"} 的 DreamTwins</strong>
             <p>
               {[...personalityKeywords.slice(0, 2), ...values.slice(0, 1), mbti.trim()].filter(Boolean).join(" / ") ||
                 "等待人格线索"}

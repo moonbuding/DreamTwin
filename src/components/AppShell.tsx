@@ -64,7 +64,7 @@ export function AppShell({
               </button>
             ) : null}
             <span className="brand-mark" />
-            <span>DreamTwin</span>
+            <span>DreamTwins</span>
           </div>
           {showDemoChrome ? (
             <>
@@ -85,7 +85,7 @@ export function AppShell({
         ) : null}
         {children}
         {showTabs && onNavigateTab ? (
-          <nav className="app-tabbar" aria-label="DreamTwin 主导航">
+          <nav className="app-tabbar" aria-label="DreamTwins 主导航">
             {tabItems.map((item) => (
               <button
                 aria-current={activeTab === item.id ? "page" : undefined}

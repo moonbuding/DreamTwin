@@ -1,4 +1,4 @@
-# DreamTwin 技术方案 v0.1
+# DreamTwins 技术方案 v0.1
 
 > 文档状态：移动端 Web MVP / Demo 技术方案基准版
 > 技术路线：React + Vite + TypeScript
@@ -7,7 +7,7 @@
 
 ## 1. 技术方案目标
 
-本技术方案把 DreamTwin 需求池转成第一版移动端 Web MVP / Demo 的工程实现方案。
+本技术方案把 DreamTwins 需求池转成第一版移动端 Web MVP / Demo 的工程实现方案。
 
 第一版目标是：
 
@@ -19,14 +19,13 @@
 
 第一版不是临时报名材料，也不是完整商业产品。
 
-第一版采用纯前端静态 Demo：
+当前真实开发基线已经推进到移动端 Web + Node API：
 
-- 不接真实后端。
-- 不接真实用户关系发现。
-- 不接生产级 AI 实时生成；本地 Live AI adapter 可用于验证。
-- 不做真实聊天服务。
-- 不做账号系统。
-- 不做审核后台。
+- 已有手机号密码注册 / 登录、JWT 和 MySQL 持久化。
+- 已有用户 Profile、AI 分身保存、DeepSeek 服务端调用和 Live AI adapter。
+- 仍不接真实用户关系发现。
+- 仍不做真实好友邀请触达、真实多人聊天服务、实时消息和审核后台。
+- 静态 Demo 数据继续作为无后端或 AI 失败时的保底体验。
 
 默认运行前端时保持静态稳定模式，不主动探测本地后端，避免无后端时出现失败请求或控制台噪声。需要验证真实 AI 能力时，再通过 `VITE_DREAMTWIN_ENABLE_LIVE_AI=true` 或显式 `VITE_DREAMTWIN_API_URL` 开启 Live AI adapter。
 
@@ -83,7 +82,7 @@
 
 ### 2.2 技术选择理由
 
-React + Vite + TypeScript 适合第一版 DreamTwin：
+React + Vite + TypeScript 适合第一版 DreamTwins：
 
 - 启动快。
 - 适合单页 Demo。
@@ -251,7 +250,7 @@ export interface TwinProjection {
 用途：
 
 - 支撑 AI 分身生成页。
-- 支撑分身 Tab 管理页。
+- 支撑我的 Tab 管理页。
 - 支撑梦境广场 / 昨夜梦境日志页。
 - 支撑抽象投影视觉。
 - v0.2 支撑风格化全身 3D 分身候选。
@@ -455,14 +454,14 @@ export interface DemoFlowState {
 用途：
 
 - 支撑单页 App 内部页面状态。
-- 支撑 `今日 / 梦境 / 消息 / 好友 / 分身` 五区 App 骨架。
+- 支撑 `今日 / 梦境 / 消息 / 我的` 四 Tab App 骨架。
 - 支撑 Demo 分身保存与刷新恢复。
 - 支撑好友邀请梦境漫游路径。
 - 支撑节点状态流转。
 - 支撑跨页面关系状态对象：AI 已预演、等待对方入梦、双方已入梦、梦境门打开、等待真人回应。
 - 支撑完整演示路径。
 
-第一版使用 `localStorage` 模拟 Demo 分身保存。当前实现中，如果 `hasCompletedTwinSetup` 为 `true`，刷新或后续打开默认进入 `今日`，并将原 AI 分身主页能力收敛为 `分身` Tab 内的管理页。Demo 控件通过 URL 参数显示，点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
+第一版使用 `localStorage` 模拟 Demo 分身保存。当前实现中，如果 `hasCompletedTwinSetup` 为 `true`，刷新或后续打开默认进入 `今日`，并将原 AI 分身主页能力收敛为 `我的` Tab 内的管理页。Demo 控件通过 URL 参数显示，点击重新开始演示时清空本地 Demo 状态。正式后端阶段再替换为账号级持久化。
 
 ## 5. 状态与路由方案
 
@@ -487,7 +486,7 @@ export interface DemoFlowState {
 
 这样做的原因：
 
-- 第一版已从单流程演示切到五区 App 骨架，`今日` 是默认首页。
+- 第一版已从单流程演示切到四 Tab App 骨架，`今日` 是默认首页。
 - 可以减少路由依赖。
 - 演示状态更容易控制。
 - 后续接真实 App 时再迁移到正式路由或路由库。
@@ -563,7 +562,7 @@ unviewed
 - 用户点击梦境节点，节点进入 `viewed`。
 - 用户点击“想进入这个梦境”，节点进入 `waiting`。
 - 等待页可以提供一个路演用推进操作，模拟对方也确认。
-- 好友邀请页可以提供一个路演用推进操作，模拟好友接受邀请。
+- 消息-通讯录邀请页可以提供一个路演用推进操作，模拟好友接受邀请。
 - 对方确认后节点进入 `opened`。
 - 梦境门打开页进入真实聊天入口。
 
@@ -580,7 +579,7 @@ unviewed
 
 职责：
 
-- 解释 DreamTwin 是 AI 关系预演社交。
+- 解释 DreamTwins 是 AI 关系预演社交。
 - 建立梦境空间的第一印象。
 - 引导用户开始创建 AI 分身。
 
@@ -667,7 +666,7 @@ unviewed
 职责：
 
 - 展示已保存 AI 分身。
-- 作为 `分身` Tab 内的管理页。
+- 作为 `我的` Tab 内的管理页。
 - 提供修改分身和分身边界说明。
 
 主要组件：
@@ -747,7 +746,7 @@ unviewed
 验收重点：
 
 - 不能表现为偷偷分析好友。
-- 不能在好友页直接用场景卡片选择梦境。
+- 不能在消息-通讯录页直接用场景卡片选择梦境。
 - 不能接真实通讯录、真实邀请链接或真实消息发送。
 - 必须说明好友接受后才共同预演。
 
@@ -932,7 +931,7 @@ prototype/
 
 验证目标：
 
-- 判断 Three.js 是否能明显提升 DreamTwin 的第一眼沉浸感。
+- 判断 Three.js 是否能明显提升 DreamTwins 的第一眼沉浸感。
 - 比较 Canvas 2D 星尘背景与 Three.js 景深星场的差异。
 
 Canvas 2D baseline：
@@ -1207,8 +1206,8 @@ export const demoSimulations: RelationshipSimulation[] = [ ... ];
 | `DT-P0-003` | `WelcomePage` |
 | `DT-P0-004` | `TwinCreatePage` |
 | `DT-P0-005` | `TwinGeneratingPage`、`TwinProjection` |
-| `DT-P0-014` | `TwinHomePage`、`localStorage` Demo 保存、分身 Tab 管理 |
-| `DT-P0-015` | `AppShell` 五区导航、`ENTER_DREAM_PLAZA`、`OPEN_FRIEND_INVITE` |
+| `DT-P0-014` | `TwinHomePage`、`localStorage` Demo 保存、我的 Tab 管理 |
+| `DT-P0-015` | `AppShell` 四 Tab 导航、`ENTER_DREAM_PLAZA`、`OPEN_FRIEND_INVITE` |
 | `DT-P0-006` | `DreamLogPage` |
 | `DT-P0-007` | `DreamStarMap`、`DreamNodeBadge` |
 | `DT-P0-016` | `FriendInvitePage`、`SEND_DREAM_INVITE`、`SIMULATE_FRIEND_ACCEPT` |
@@ -1224,9 +1223,9 @@ P0 完成标准：
 - 从欢迎页能跑到聊天入口页。
 - 生成分身后能进入今日首页。
 - 刷新后已创建分身的用户能回到今日首页。
-- 今日 / 梦境 / 好友 / 消息 / 分身五区能切换并承接对应路径。
+- `今日 / 梦境 / 消息 / 我的` 四 Tab 能切换并承接对应路径。
 - 梦境节点状态能从 `unviewed` 到 `opened`。
-- 关系状态能跨今日、梦境、消息、好友流转。
+- 关系状态能跨今日、梦境、消息流转。
 - 好友邀请路径能完成等待、接受、共同预演和聊天入口。
 - Demo 不依赖真实接口。
 - 视觉不能像静态文档。
@@ -1258,12 +1257,12 @@ P1 实现原则：
 
 以下内容不进入第一版技术实现：
 
-- 登录注册。
+- 生产级账号体系与第三方登录。
 - 真实用户关系发现系统。
 - 真实好友系统。
 - 通讯录导入。
 - 真实邀请链接或真实消息触达。
-- 后端分身持久化。
+- 生产级分身版本管理。
 - 生产级 AI 实时生成。
 - 聊天后端。
 - 推送通知。
@@ -1298,8 +1297,8 @@ P1 实现原则：
 9. 实现欢迎页。
 10. 实现 AI 分身创建页。
 11. 实现 AI 分身生成页和抽象投影。
-12. 实现今日首页和五区底部导航。
-13. 实现分身 Tab 管理页和 `localStorage` Demo 保存。
+12. 实现今日首页和四 Tab 底部导航。
+13. 实现我的 Tab 管理页和 `localStorage` Demo 保存。
 14. 实现梦境广场 / 昨夜梦境日志页。
 15. 实现梦境星图与节点点击。
 16. 实现好友邀请梦境漫游页。
@@ -1356,7 +1355,7 @@ npm run build
 11. 模拟对方确认。
 12. 进入梦境门打开页。
 13. 进入真实聊天入口页。
-14. 回到好友 Tab，进入邀请好友梦境漫游。
+14. 回到消息-通讯录，进入邀请好友梦境漫游。
 15. 选择好友并发送一起入梦邀请。
 16. 发出 Demo 邀请并进入等待好友入梦页。
 17. 模拟好友接受邀请。
@@ -1398,7 +1397,7 @@ npm run build
 
 ## 15. 当前结论
 
-DreamTwin 第一版技术实现应该是一个 React + Vite + TypeScript 的移动端 Web App-grade Demo，并在开发前通过 Three.js / WebGL Canvas 小样验证 3D 视觉是否值得正式采用。
+DreamTwins 第一版技术实现应该是一个 React + Vite + TypeScript 的移动端 Web App-grade Demo，并在开发前通过 Three.js / WebGL Canvas 小样验证 3D 视觉是否值得正式采用。
 
 它不是静态介绍页，而是一个可交互、可演示、可录屏、可继续开发成真实 App 的产品雏形。
 

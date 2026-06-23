@@ -49,11 +49,11 @@ export function AuthPage({ onAuthed }: AuthPageProps) {
       <div className="page-content dt-content auth-content">
         <div className="auth-brand">
           <span className="dt-brand-mark" />
-          DreamTwin
+          DreamTwins
         </div>
 
         <div className="auth-hero">
-          <h1>{isRegister ? "创建你的 DreamTwin" : "欢迎回来"}</h1>
+          <h1>{isRegister ? "创建你的 DreamTwins" : "欢迎回来"}</h1>
           <p>{isRegister ? "先注册账号,再创建专属于你的 AI 分身。" : "登录后继续你的关系预演。"}</p>
         </div>
 

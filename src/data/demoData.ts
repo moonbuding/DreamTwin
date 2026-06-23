@@ -286,7 +286,7 @@ function createGuidedSceneEvents(variant: SceneStageVariant): GuidedSceneEvent[]
 
 export const demoTwin: TwinProjection = {
   id: "twin-aurora",
-  nickname: "你的 DreamTwin",
+  nickname: "你的 DreamTwins",
   summary: "它记住你的慢热、敏感和好奇心，先帮你预演关系可能性，带回可以亲自尝试的片段。",
   colorPalette: ["#6fd3ff", "#a779ff", "#ff72d2"],
   lightShape: "orbit",
@@ -302,7 +302,7 @@ export function createTwinFromProfile(profile: UserProfile): TwinProjection {
 
   return {
     ...demoTwin,
-    nickname: `${profile.nickname || "你"} 的 DreamTwin`,
+    nickname: `${profile.nickname || "你"} 的 DreamTwins`,
     summary: `它会记住你“${profile.relationshipIntention || "想认真靠近一段关系"}”的愿望，用${profile.personalityKeywords.slice(0, 2).join("、") || "真实、温柔"}的方式帮你预演关系可能性。`,
     colorPalette,
     keywords: topKeywords.length ? topKeywords : demoTwin.keywords,
@@ -459,7 +459,7 @@ function createFriendInviteSimulation(profile: UserProfile): RelationshipSimulat
     counterpartProjection: "她像一束带着速度感的银蓝光，外表轻松，真正靠近时会先确认彼此有没有空间。",
     scene: "你想邀请 Mika 进入一次共同梦境漫游。AI 会先搭好共同经历，再模拟你们在里面会怎么相处。",
     relationshipHypothesis: `你的分身判断：你和 ${friend.name} 不是缺少话题，而是缺少一个低压、共同参与的语境来确认关系能否往前走。`,
-    twinApproach: `你的 DreamTwin 会先把邀请说成一次共同体验，而不是关系表态：一起进梦境看看我们会怎么配合。`,
+    twinApproach: `你的 DreamTwins 会先把邀请说成一次共同体验，而不是关系表态：一起进梦境看看我们会怎么配合。`,
     counterpartSimulatedReply: "Mika 会先用玩笑确认是不是太认真，但如果邀请足够轻，她会愿意一起试一次。",
     rehearsalOutcome: "预演结论：好友梦境漫游适合用共同经历降低尴尬，让关系从熟悉感进入可推进的真实判断。",
     conversationPreview: [
@@ -696,7 +696,7 @@ export function createSimulationsForProfile(profile: UserProfile): RelationshipS
     sceneStageSpec: createSceneStageSpec("rain_store"),
     guidedSceneEvents: createGuidedSceneEvents("rain_store"),
     relationshipHypothesis: `你的分身判断：这段关系不是靠热闹破冰开始，而是靠“${interest}”这样的日常细节慢慢确认彼此是否能聊深。`,
-    twinApproach: `你的 DreamTwin 选择${closenessStyle}，没有追问背景，也没有表演幽默，只把共同处境轻轻递给对方。`,
+    twinApproach: `你的 DreamTwins 选择${closenessStyle}，没有追问背景，也没有表演幽默，只把共同处境轻轻递给对方。`,
     counterpartSimulatedReply: "她没有立刻给出热情回应，但把伞往中间挪了一点。这说明她愿意继续，只是不喜欢被推着走。",
     rehearsalOutcome: "预演结论：如果你从具体细节开场，关系有机会自然延长到真实聊天；如果一上来问太多，连接会变浅。",
     conversationPreview: [
@@ -832,7 +832,7 @@ export function createSimulationsForProfile(profile: UserProfile): RelationshipS
     },
     guidedSceneEvents: createGuidedSceneEvents("starlight"),
     relationshipHypothesis: `你的分身判断：这段关系会从共同的表达媒介开始，不是问答式认识，而是借“${secondInterest}”确认彼此的情绪频率。`,
-    twinApproach: "你的 DreamTwin 没有直接问职业和年龄，而是先把你们都在意的那段声音指出来，观察对方是否愿意接住隐含情绪。",
+    twinApproach: "你的 DreamTwins 没有直接问职业和年龄，而是先把你们都在意的那段声音指出来，观察对方是否愿意接住隐含情绪。",
     counterpartSimulatedReply: "她接住了你的隐喻，并没有急着转移话题。这说明她愿意在不尴尬的距离里继续聊深。",
     rehearsalOutcome: "预演结论：如果第一句话围绕共同感受展开，对话会进入稳定来回；如果变成查户口，关系热度会明显下降。",
     conversationPreview: [
@@ -966,7 +966,7 @@ export function createSimulationsForProfile(profile: UserProfile): RelationshipS
     },
     guidedSceneEvents: createGuidedSceneEvents("starlight"),
     relationshipHypothesis: `你的分身判断：这段关系的核心不是相似兴趣，而是你们都在寻找“不催促、不表演”的靠近方式。`,
-    twinApproach: "你的 DreamTwin 没有马上制造话题，而是回应她那句关于慢下来的判断，观察价值观是否真的相邻。",
+    twinApproach: "你的 DreamTwins 没有马上制造话题，而是回应她那句关于慢下来的判断，观察价值观是否真的相邻。",
     counterpartSimulatedReply: "她停了一下，然后继续说自己的判断。这说明她不是礼貌回应，而是在确认你是否真的理解她的节奏。",
     rehearsalOutcome: "预演结论：如果你从价值观切入，关系会更快进入真实层；如果只停留在场景寒暄，会浪费一次高质量开场。",
     conversationPreview: [

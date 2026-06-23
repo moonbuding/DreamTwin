@@ -1,5 +1,5 @@
 /* =====================================================================
-   DreamTwin — clean layout redesign (v0.1 形态概念稿)
+   DreamTwins — clean layout redesign (v0.1 形态概念稿)
    New `dt-` classes only. Layered on top of global.css, no edits to it.
    ===================================================================== */
 
@@ -47,7 +47,11 @@
 /* ------------------------------------------------------------ auth page */
 .auth-content {
   gap: 18px;
-  padding-top: 56px;
+  padding-top: 82px;
+}
+
+.phone-shell-app-mode .auth-page .auth-content {
+  padding-top: 96px;
 }
 
 .auth-brand {

@@ -66,7 +66,7 @@ export function createDefaultTwin(profile: UserProfile): TwinProjection {
 
   return {
     id: "twin-local-demo",
-    nickname: `${profile.nickname || "你"} 的 DreamTwin`,
+    nickname: `${profile.nickname || "你"} 的 DreamTwins`,
     summary: `它会记住你“${profile.relationshipIntention || "想认真靠近一段关系"}”的愿望，用${profile.personalityKeywords.slice(0, 2).join("、") || "真实、温柔"}的方式帮你预演关系可能性。`,
     colorPalette,
     lightShape: "orbit",
