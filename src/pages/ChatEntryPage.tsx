@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { ArrowLeft, CheckCircle2, Compass, MessageCircle, RefreshCw, Send, ShieldCheck } from "lucide-react";
+import { ArrowLeft, CheckCircle2, ChevronLeft, Compass, MessageCircle, RefreshCw, Send, ShieldCheck } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import type { RelationshipSimulation, RelationshipSimulationResult } from "../types/dreamtwin";
 import { adaptFriendInviteMoveAfterAcceptance } from "../utils/relationshipCopy";
@@ -10,6 +10,7 @@ interface ChatEntryPageProps {
   sentFirstMessage?: string;
   simulation: RelationshipSimulation;
   selectedRoamingSceneId: string | null;
+  onBack: () => void;
   onBackToLog: () => void;
   onBackToSimulation: () => void;
   onFirstMessageSent: (text: string) => void;
@@ -22,6 +23,7 @@ export function ChatEntryPage({
   sentFirstMessage,
   simulation,
   selectedRoamingSceneId,
+  onBack,
   onBackToLog,
   onBackToSimulation,
   onFirstMessageSent,
@@ -94,8 +96,18 @@ export function ChatEntryPage({
   return (
     <section className="page page-scroll dt-page dt-light chat-entry-page">
       <div className="page-content chat-entry-content">
-        <p className="label">正常聊天</p>
-        <h1>{hasSentFirstMessage ? "聊天已经开始。" : "双方已入梦，开始正常聊天。"}</h1>
+        <header className="dt-head">
+          <div className="dt-head-left">
+            <button className="dt-icon-btn" onClick={onBack} type="button" aria-label="返回">
+              <ChevronLeft size={18} />
+            </button>
+          </div>
+          <span className="dt-head-title">正常聊天</span>
+          <div className="dt-head-right" />
+        </header>
+        <div className="dt-greeting">
+          <h1>{hasSentFirstMessage ? "聊天已经开始。" : "双方已入梦，开始正常聊天。"}</h1>
+        </div>
         <section className="counterpart-presence">
           <span>
             {hasSentFirstMessage

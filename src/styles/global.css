@@ -98,6 +98,15 @@ button {
   padding-top: 30px;
 }
 
+/* welcome/twin-create/twin-generating keep the global brand topbar; their
+   content must clear the 56px absolute app topbar, since .dt-page resets the
+   .page top padding that would otherwise provide it. (welcome is bottom-
+   anchored, so it stays clear without this.) */
+.phone-shell-app-mode .twin-create-page .page-content,
+.phone-shell-app-mode .twin-generating-page .page-content {
+  padding-top: 64px;
+}
+
 .topbar-left,
 .app-topbar > div {
   display: inline-flex;
@@ -265,8 +274,7 @@ button {
   padding: 0 20px 34px;
 }
 
-.welcome-page,
-.gate-page {
+.welcome-page {
   overflow: hidden;
 }
 
@@ -5503,10 +5511,17 @@ blockquote {
 }
 
 .chat-entry-content {
-  min-height: calc(100% - 72px);
-  align-content: end;
-  padding-top: 68px;
+  align-content: start;
   padding-bottom: 28px;
+}
+
+/* chat-entry / dream-gate render a sticky .dt-head as their first child, so the
+   wrapper must not add top padding in app mode — otherwise the header sits ~30px
+   down and only snaps flush after scrolling (looks like it "drags down"). The
+   .dt-content pages already get padding-top: 0; mirror that here. */
+.phone-shell-app-mode .chat-entry-content,
+.phone-shell-app-mode .gate-page .page-content {
+  padding-top: 0;
 }
 
 .chat-entry-page .bottom-action {

@@ -8,6 +8,8 @@
     "db:up": "docker compose up -d mysql",
     "db:down": "docker compose down",
     "dev": "vite --host 127.0.0.1",
+    "dev:full": "bash scripts/dev.sh",
+    "dev:web": "bash scripts/dev.sh --web-only",
     "build": "tsc -b && vite build && npm run server:build",
     "qa": "npm run qa:state && npm run qa:safety",
     "qa:safety": "node scripts/product-safety-qa.mjs",

@@ -82,7 +82,7 @@ export function TwinGeneratingPage({
           : "当前使用本地保底分身摘要";
 
   return (
-    <section className="page page-scroll dt-page dt-light">
+    <section className="page page-scroll dt-page dt-light twin-generating-page">
       <div className="page-content">
         <p className="label">首次生成</p>
         <h1>你的 DreamTwins 已保存。</h1>

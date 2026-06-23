@@ -1,4 +1,4 @@
-import { ArrowLeft, Compass, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
+import { ArrowLeft, ChevronLeft, Compass, MessageCircle, ShieldCheck, Sparkles } from "lucide-react";
 import { PrimaryButton } from "../components/PrimaryButton";
 import { StatusPill } from "../components/StatusPill";
 import type { DreamNode, RelationshipSimulation } from "../types/dreamtwin";
@@ -7,12 +7,13 @@ interface DreamGatePageProps {
   node: DreamNode;
   selectedRoamingSceneId: string | null;
   simulation: RelationshipSimulation;
+  onBack: () => void;
   onBackToSimulation: (nodeId: string) => void;
   onBackToLog: () => void;
   onOpenChat: (nodeId: string) => void;
 }
 
-export function DreamGatePage({ node, selectedRoamingSceneId, simulation, onBackToSimulation, onBackToLog, onOpenChat }: DreamGatePageProps) {
+export function DreamGatePage({ node, selectedRoamingSceneId, simulation, onBack, onBackToSimulation, onBackToLog, onOpenChat }: DreamGatePageProps) {
   const isFriendInvite = simulation.entryMode === "friend_invite";
   const activeRoamingScene =
     simulation.roamingScenes?.find((scene) => scene.id === selectedRoamingSceneId) ?? simulation.roamingScenes?.[0];
@@ -21,9 +22,19 @@ export function DreamGatePage({ node, selectedRoamingSceneId, simulation, onBack
 
   return (
     <section className="page page-scroll dt-page dt-light gate-page">
-      <div className="page-content page-content-bottom">
-        <p className="label">梦境门打开</p>
-        <h1>{isFriendInvite ? `${simulation.counterpartName} 确认了这段共同梦境。` : `${simulation.counterpartName} 也选择进入。`}</h1>
+      <div className="page-content">
+        <header className="dt-head">
+          <div className="dt-head-left">
+            <button className="dt-icon-btn" onClick={onBack} type="button" aria-label="返回">
+              <ChevronLeft size={18} />
+            </button>
+          </div>
+          <span className="dt-head-title">梦境门</span>
+          <div className="dt-head-right" />
+        </header>
+        <div className="dt-greeting">
+          <h1>{isFriendInvite ? `${simulation.counterpartName} 确认了这段共同梦境。` : `${simulation.counterpartName} 也选择进入。`}</h1>
+        </div>
         <div className="gate-status">
           <StatusPill entryMode={node.entryMode} status={node.status} />
           <span>{isFriendInvite ? `${simulation.title} · ${activeSceneLabel}` : simulation.title}</span>

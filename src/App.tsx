@@ -138,6 +138,8 @@ export function App() {
     "twin-home",
     "simulation-detail",
     "waiting",
+    "dream-gate",
+    "chat-entry",
     "auth",
   ];
   const showTabs =
@@ -324,6 +326,7 @@ export function App() {
       {state.currentPage === "dream-gate" && (
         <DreamGatePage
           node={selectedNode}
+          onBack={() => dispatch({ type: "GO_BACK" })}
           selectedRoamingSceneId={state.selectedRoamingSceneId}
           simulation={selectedSimulation}
           onBackToSimulation={(nodeId) => dispatch({ type: "OPEN_SIMULATION_RESULT", nodeId })}
@@ -334,6 +337,7 @@ export function App() {
       {state.currentPage === "chat-entry" && (
         <ChatEntryPage
           hasSentFirstMessage={selectedNode.status === "in_chat"}
+          onBack={() => dispatch({ type: "GO_BACK" })}
           liveSimulationResult={state.liveSimulationResults?.[selectedLiveResultKey]}
           sentFirstMessage={state.sentFirstMessages?.[selectedNode.id]}
           simulation={selectedSimulation}
