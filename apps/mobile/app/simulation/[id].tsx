@@ -1,4 +1,4 @@
-import React, { useEffect, useMemo, useRef, useState } from 'react';
+import React, { useEffect, useRef, useState } from 'react';
 import {
   Animated,
   Image,
@@ -15,6 +15,7 @@ import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Screen } from '@/components/Screen';
 import { PrimaryButton } from '@/components/forms';
 import { getDreamStory, type DreamStory, type StoryFrame } from '@/lib/dreamStories';
+import { useDreamStory } from '@/lib/queries';
 import { colors, fonts, radius, spacing } from '@/design/tokens';
 
 const twinAvatar = require('../../assets/twin-avatar.png');
@@ -91,7 +92,8 @@ export default function DreamStoryScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { width } = useWindowDimensions();
-  const story = useMemo(() => getDreamStory(id), [id]);
+  // 后端按人格 AI 生成优先;加载中 / 失败回退本地固定脚本。
+  const story: DreamStory = useDreamStory(id).data ?? getDreamStory(id);
   const [index, setIndex] = useState(0);
   const fade = useRef(new Animated.Value(1)).current;
 

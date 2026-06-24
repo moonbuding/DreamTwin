@@ -244,3 +244,24 @@ export interface TodayResponse {
   waitingCount: number;
   bothEnteredCount: number;
 }
+
+// 「梦境相遇」图文短故事(6 帧叙事 + 1 帧关系预言)。固定模板与 AI 生成共用此结构。
+export type StoryFrameVisual = "scene" | "you" | "ta" | "prop" | "turn" | "freeze" | "reading";
+
+export interface StoryFrame {
+  visual: StoryFrameVisual;
+  icon?: string;
+  text?: string;
+  youLine?: string;
+  taLine?: string;
+  read?: string;
+  opener?: string;
+}
+
+export interface DreamStory {
+  sceneId: string;
+  title: string;
+  theme: { glow: string; accent: string };
+  frames: StoryFrame[];
+  source?: "ai" | "fixed";
+}

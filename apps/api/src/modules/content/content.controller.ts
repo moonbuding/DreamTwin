@@ -1,6 +1,10 @@
-import { Controller, Get, Param } from '@nestjs/common';
+import { Controller, Get, Param, UseGuards } from '@nestjs/common';
 import { ApiTags } from '@nestjs/swagger';
-import type { PlazaProfile, RelationshipSimulationResult } from '@dreamtwin/api-types';
+import type { DreamStory, PlazaProfile, RelationshipSimulationResult } from '@dreamtwin/api-types';
+import { OptionalJwtAuthGuard } from '../auth/auth.guard';
+import { CurrentUser } from '../auth/current-user.decorator';
+import type { AuthenticatedUser } from '../auth/auth.types';
+import { StoryService } from './story.service';
 
 const PLAZA: PlazaProfile[] = [
   { id: 'plaza-yuzi', name: '玻璃橘子', tagline: '习惯把真实需求藏在玩笑后面', keywords: ['细腻', '夜行', '影像'], colorPalette: ['#7ad7ff', '#a98bff', '#ff8fd0'], presence: '在线' },
@@ -32,6 +36,8 @@ const DEFAULT_RESULT: RelationshipSimulationResult = {
 @ApiTags('content')
 @Controller()
 export class ContentController {
+  constructor(private readonly storyService: StoryService) {}
+
   @Get('plaza')
   plaza(): PlazaProfile[] {
     return PLAZA;
@@ -40,5 +46,12 @@ export class ContentController {
   @Get('simulation/:nodeId')
   simulation(@Param('nodeId') _nodeId: string): RelationshipSimulationResult {
     return DEFAULT_RESULT;
+  }
+
+  // 「梦境相遇」短故事:按登录用户的分身人格生成;无 key / 失败时回退固定脚本。
+  @Get('story/:nodeId')
+  @UseGuards(OptionalJwtAuthGuard)
+  story(@Param('nodeId') nodeId: string, @CurrentUser() user?: AuthenticatedUser | null): Promise<DreamStory> {
+    return this.storyService.getStory(nodeId, user?.id ?? null);
   }
 }
