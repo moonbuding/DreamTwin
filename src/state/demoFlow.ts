@@ -27,6 +27,8 @@ export type DemoFlowAction =
   | { type: "OPEN_FRIENDS" }
   | { type: "OPEN_TWIN_HOME" }
   | { type: "EDIT_TWIN" }
+  | { type: "UPDATE_PROFILE"; profile: UserProfile }
+  | { type: "UPDATE_TWIN"; twin: TwinProjection }
   | { type: "ENTER_DREAM_PLAZA" }
   | { type: "OPEN_DREAM_TAB" }
   | { type: "OPEN_DREAM_LOG" }
@@ -161,6 +163,12 @@ export function demoFlowReducer(state: DemoFlowState, action: DemoFlowAction): D
       return openAppTab(state, "twin-home");
     case "EDIT_TWIN":
       return goToPage(state, "twin-create");
+    // Independent in-place edits from the "我的" page — only touch the edited
+    // record, leaving the dream flow (nodes/simulations) untouched.
+    case "UPDATE_PROFILE":
+      return { ...state, profile: action.profile };
+    case "UPDATE_TWIN":
+      return { ...state, twin: action.twin };
     case "OPEN_DREAM_TAB":
       return openAppTab(state, "dream-log");
     case "ENTER_DREAM_PLAZA":

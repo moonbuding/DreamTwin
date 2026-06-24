@@ -4,7 +4,7 @@ import { demoFlowReducer, initialDemoFlowState } from "./state/demoFlow";
 import { liveSimulationResultKey } from "./state/liveSimulationKey";
 import { loadPersistedState, persistDemoState } from "./state/persistence";
 import { AuthApiError, fetchMe } from "./api/authApi";
-import { saveTwin as saveTwinToBackend, setAuthToken } from "./api/dreamTwinApi";
+import { saveProfile as saveProfileToBackend, saveTwin as saveTwinToBackend, setAuthToken } from "./api/dreamTwinApi";
 import { AuthPage } from "./pages/AuthPage";
 import { ChatEntryPage } from "./pages/ChatEntryPage";
 import { DreamGatePage } from "./pages/DreamGatePage";
@@ -252,7 +252,14 @@ export function App() {
           nodes={state.nodes}
           themeMode={state.themeMode}
           onSetTheme={(mode) => dispatch({ type: "SET_THEME", mode })}
-          onEditTwin={() => dispatch({ type: "EDIT_TWIN" })}
+          onSaveProfile={(profile) => {
+            dispatch({ type: "UPDATE_PROFILE", profile });
+            if (state.authToken) void saveProfileToBackend(profile).catch(() => undefined);
+          }}
+          onSaveTwin={(twin) => {
+            dispatch({ type: "UPDATE_TWIN", twin });
+            if (state.authToken) void saveTwinToBackend(twin).catch(() => undefined);
+          }}
           onLogout={() => dispatch({ type: "LOGOUT" })}
           onBack={() => dispatch({ type: "OPEN_TODAY" })}
         />

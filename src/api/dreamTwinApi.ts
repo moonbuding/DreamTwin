@@ -113,7 +113,8 @@ async function requestJson<T>(path: string, init?: RequestInit): Promise<T> {
   }
 }
 
-async function patchProfile(profile: UserProfile): Promise<void> {
+/** Persist the signed-in user's profile (PATCH /api/me/profile). */
+export async function saveProfile(profile: UserProfile): Promise<void> {
   await requestJson<{ profile: UserProfile }>("/api/me/profile", {
     method: "PATCH",
     body: JSON.stringify(profile),
@@ -158,7 +159,7 @@ export function saveTwin(twin: TwinProjection): Promise<{ twin: TwinProjection }
 export function generateTwinSummary(profile: UserProfile): Promise<{ job: GenerationJob; twin: TwinProjection }> {
   const key = JSON.stringify(profile);
   return cachedRequest(twinSummaryRequests, key, async () => {
-    await patchProfile(profile);
+    await saveProfile(profile);
     const response = await requestJson<GenerationResponse<{ twin: TwinProjection }>>("/api/ai/twin-summary", {
       method: "POST",
       body: JSON.stringify({}),
@@ -179,7 +180,7 @@ export function generateRelationshipSimulation(input: {
 }): Promise<{ job: GenerationJob; simulation: RelationshipSimulationResult }> {
   const key = JSON.stringify(input);
   return cachedRequest(relationshipRequests, key, async () => {
-    await patchProfile(input.profile);
+    await saveProfile(input.profile);
     const response = await requestJson<GenerationResponse<{ simulation: RelationshipSimulationResult }>>(
       "/api/ai/relationship-simulation",
       {
