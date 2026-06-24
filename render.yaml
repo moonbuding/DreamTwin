@@ -1,0 +1,37 @@
+# Render Blueprint — DreamTwin API (NestJS + Prisma + PostgreSQL)
+# 部署: Render Dashboard → Blueprints → New Blueprint Instance → 选本仓库。
+# 移动端(Expo)单独通过 EAS 构建上架,不在此蓝图内。
+# 标 sync:false 的变量需在 Dashboard 手动填(密钥不入仓库)。
+
+services:
+  - type: web
+    name: dreamtwin-api
+    runtime: node
+    region: singapore
+    plan: starter # $7/mo 常驻不休眠;验证期可临时用 free(会休眠 + 冷启动)
+    branch: codex/dreamtwin-flow-review # 验证阶段从工作分支部署;合并到 main 后改回 main
+    autoDeploy: true
+    buildCommand: corepack enable && pnpm install --frozen-lockfile && pnpm --filter @dreamtwin/api db:generate && pnpm --filter @dreamtwin/api build
+    preDeployCommand: pnpm --filter @dreamtwin/api db:deploy # 上线前自动跑 prisma migrate deploy
+    startCommand: pnpm --filter @dreamtwin/api start
+    healthCheckPath: /api/health
+    envVars:
+      - key: NODE_VERSION
+        value: "20"
+      - key: NODE_ENV
+        value: production
+      - key: DATABASE_URL
+        fromDatabase:
+          name: dreamtwin-db
+          property: connectionString
+      - key: JWT_SECRET
+        generateValue: true
+      # 生产 CORS 白名单(Web 端域名,逗号分隔);原生 App 不受影响,可留空
+      - key: CORS_ORIGINS
+        sync: false
+
+databases:
+  - name: dreamtwin-db
+    region: singapore
+    plan: basic-256mb # 验证期可用 free;生产建议付费档以获得持久化与备份
+    postgresMajorVersion: "15"

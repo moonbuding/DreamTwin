@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { PrimaryButton } from '@/components/forms';
-import { useToday } from '@/lib/queries';
+import { useSimulation, useToday } from '@/lib/queries';
 import { defaultSimulationResult, findDemoNode } from '@/lib/demoContent';
 import { colors, fonts, radius, spacing } from '@/design/tokens';
 
@@ -49,7 +49,7 @@ export default function SimulationDetail() {
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data } = useToday();
   const node = data?.nodes.find((n) => n.id === id) ?? findDemoNode(id);
-  const result = defaultSimulationResult;
+  const result = useSimulation(id).data ?? defaultSimulationResult;
   const title = node?.title ?? '关系预演';
 
   return (

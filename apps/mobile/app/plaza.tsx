@@ -5,6 +5,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import type { PlazaProfile } from '@dreamtwin/api-types';
 import { Screen } from '@/components/Screen';
+import { usePlaza } from '@/lib/queries';
 import { demoPlazaProfiles } from '@/lib/demoContent';
 import { colors, fonts, radius, spacing } from '@/design/tokens';
 
@@ -27,6 +28,7 @@ function Orb({ profile }: { profile: PlazaProfile }) {
 
 export default function Plaza() {
   const router = useRouter();
+  const profiles = usePlaza().data ?? demoPlazaProfiles;
 
   return (
     <Screen>
@@ -50,7 +52,7 @@ export default function Plaza() {
         </View>
 
         <View style={styles.grid}>
-          {demoPlazaProfiles.map((profile) => (
+          {profiles.map((profile) => (
             <View key={profile.id} style={styles.card}>
               <Orb profile={profile} />
               <Text style={styles.name}>{profile.name}</Text>
