@@ -6,6 +6,7 @@ import type {
   AuthUser,
   DreamNode,
   FriendProfile,
+  RelationshipSimulationResult,
   TodayResponse,
   TwinProjection,
   UserProfile,
@@ -127,6 +128,33 @@ export const demoFriends: FriendProfile[] = [
     keywords: ['好奇', '理性', '喜欢科技'],
   },
 ];
+
+// 关系预演保底结果(端口自 legacy server/defaults.ts#defaultRelationshipSimulation)。
+export const defaultSimulationResult: RelationshipSimulationResult = {
+  conclusion: '这段关系适合从一个具体、轻、不逼迫的共同情境开始。',
+  attractionScore: 72,
+  paceScore: 58,
+  riskScore: 36,
+  likelyDialogue: [
+    '你们会先从场景里的一个小选择聊起,而不是直接聊关系定义。',
+    '对方会观察你是否尊重边界,也会用轻松回应确认安全感。',
+  ],
+  behaviorPreview: [
+    '你的分身会先给出一个低压邀请,把选择权留给对方。',
+    '对方如果愿意继续,会用追问或补充细节释放推进信号。',
+  ],
+  relationshipTrajectory: ['第一阶段建立共同语境。', '第二阶段通过具体行动确认舒适度。', '第三阶段再进入真实聊天或线下邀约。'],
+  romancePossibility: '存在升温可能,但需要通过稳定互动而不是强表白推动。',
+  conflictRisk: '如果过早要求明确回应,对方可能把关系推进误读为压力。',
+  badOutcomeScenario: '双方都保持礼貌,但没有人给出下一步,关系停在一次短暂体验。',
+  suggestedMove: '先提出一个共享的小行动,再观察对方是否愿意补充细节。',
+  possibleFirstLine: '这个场景有点像我们会遇到的真实小岔路,你会先往哪边走?',
+  safetyHint: 'AI 只提供预演和建议,不代表对方真实承诺,也不会替用户发送消息。',
+};
+
+export function findDemoNode(id: string | undefined): DreamNode | undefined {
+  return demoNodes.find((node) => node.id === id);
+}
 
 export function buildDemoToday(): TodayResponse {
   const overnight = demoNodes.filter((node) => node.entryMode === 'overnight_discovery');
