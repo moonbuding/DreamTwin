@@ -34,6 +34,9 @@ export default function RootLayout() {
           <Stack.Screen name="twin-generating" />
           <Stack.Screen name="simulation/[id]" />
           <Stack.Screen name="dream-gate" />
+          <Stack.Screen name="waiting" />
+          <Stack.Screen name="chat/[id]" />
+          <Stack.Screen name="plaza" />
         </Stack>
       </SafeAreaProvider>
     </QueryClientProvider>

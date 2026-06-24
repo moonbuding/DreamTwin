@@ -1,5 +1,6 @@
 import React from 'react';
-import { ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { TabBar } from '@/components/TabBar';
@@ -17,7 +18,11 @@ export default function Dream() {
       <View style={styles.head}>
         <View style={styles.headSide} />
         <Text style={styles.headTitle}>梦境广场</Text>
-        <View style={styles.headSide} />
+        <View style={[styles.headSide, { alignItems: 'flex-end' }]}>
+          <Pressable style={styles.iconBtn} onPress={() => router.push('/plaza')} hitSlop={6}>
+            <Feather name="compass" size={18} color={colors.textSoft} />
+          </Pressable>
+        </View>
       </View>
 
       <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
@@ -47,6 +52,16 @@ const styles = StyleSheet.create({
     paddingVertical: spacing.sm,
   },
   headSide: { width: 40 },
+  iconBtn: {
+    width: 38,
+    height: 38,
+    borderRadius: 12,
+    alignItems: 'center',
+    justifyContent: 'center',
+    backgroundColor: colors.panelSoft,
+    borderWidth: StyleSheet.hairlineWidth,
+    borderColor: colors.line,
+  },
   headTitle: {
     fontFamily: fonts.sans,
     fontSize: 17,

@@ -74,7 +74,7 @@ export default function DreamGate() {
           <Text style={styles.nextLine}>「{defaultSimulationResult.possibleFirstLine}」</Text>
         </View>
 
-        <PrimaryButton label="去写第一句话" icon="message-circle" onPress={() => router.replace('/(tabs)/messages')} />
+        <PrimaryButton label="去写第一句话" icon="message-circle" onPress={() => router.replace(`/chat/${encodeURIComponent(nodeId ?? '')}`)} />
         <GhostButton label="回到梦境地图" onPress={() => router.replace('/(tabs)/dream')} />
       </ScrollView>
     </Screen>
