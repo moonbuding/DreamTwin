@@ -59,6 +59,7 @@ export default function Today() {
           title="等待回应"
           subtitle={`${waitingCount} 个邀请正在等待对方入梦`}
           aside={<Avatar label={friendInitial} />}
+          onPress={() => router.replace('/(tabs)/messages' as never)}
         />
         <DreamCard
           icon="log-in"
@@ -78,6 +79,7 @@ export default function Today() {
           tint="aura"
           title="好友邀请"
           subtitle="邀请好友开启共同梦境"
+          onPress={() => router.replace('/(tabs)/messages' as never)}
         />
       </ScrollView>
 
