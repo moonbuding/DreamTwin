@@ -1,5 +1,5 @@
 import type { AvatarStyleSpec, TwinProjection as TwinProjectionModel } from "../types/dreamtwin";
-import { ThreeDreamScene } from "./ThreeDreamScene";
+import { TwinAvatar } from "./TwinAvatar";
 
 function deriveAvatarStyle(twin: TwinProjectionModel): AvatarStyleSpec {
   return {
@@ -20,7 +20,7 @@ export function TwinProjection({ twin, compact = false }: { twin: TwinProjection
   return (
     <section className={`twin-projection ${compact ? "twin-projection-compact" : "twin-projection-avatar"}`}>
       {!compact ? (
-        <ThreeDreamScene variant="avatar" className="twin-projection-scene" avatarStyleSpec={avatarStyleSpec} />
+        <TwinAvatar className="twin-projection-scene" avatarStyleSpec={avatarStyleSpec} />
       ) : null}
       <div className="projection-orbit" aria-hidden="true">
         <span />

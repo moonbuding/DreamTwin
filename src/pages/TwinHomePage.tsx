@@ -1,6 +1,6 @@
 import { useEffect, useRef, useState } from "react";
 import { ChevronLeft, LogOut, MoonStar, Pencil, Settings, Sun } from "lucide-react";
-import { ThreeDreamScene } from "../components/ThreeDreamScene";
+import { TwinAvatar } from "../components/TwinAvatar";
 import type { AvatarStyleSpec, DreamNode, ThemeMode, TwinProjection as TwinProjectionModel, UserProfile } from "../types/dreamtwin";
 
 type MeTab = "personal" | "twin";
@@ -329,8 +329,7 @@ export function TwinHomePage({ profile, twin, themeMode, onSetTheme, onSaveProfi
         ) : (
           <>
             <div className="dt-twin-stage dt-zone-dark">
-              <ThreeDreamScene variant="avatar" avatarStyleSpec={resolveAvatarStyle(twin)} />
-              <span className="dt-twin-base" aria-hidden="true" />
+              <TwinAvatar avatarStyleSpec={resolveAvatarStyle(twin)} />
             </div>
 
             <div className="dt-twin-name">
