@@ -28,6 +28,10 @@ export default function RootLayout() {
         >
           <Stack.Screen name="index" />
           <Stack.Screen name="(tabs)" />
+          <Stack.Screen name="onboarding" />
+          <Stack.Screen name="login" />
+          <Stack.Screen name="twin-create" />
+          <Stack.Screen name="twin-generating" />
         </Stack>
       </SafeAreaProvider>
     </QueryClientProvider>

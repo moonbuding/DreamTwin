@@ -1,7 +1,13 @@
 import { Redirect } from 'expo-router';
+import { useAuthStore } from '@/stores/auth';
 
-// Batch 1:demo persona 默认已"登录",直接进今日页。
-// 后续接入鉴权后,这里改成:有 user → tabs,否则 → /onboarding。
+// 已登录或已完成引导 → 今日;否则 → 引导(欢迎)页。
 export default function Index() {
-  return <Redirect href="/(tabs)/today" />;
+  const hydrated = useAuthStore((s) => s.hydrated);
+  const token = useAuthStore((s) => s.token);
+  const onboarded = useAuthStore((s) => s.onboarded);
+
+  if (!hydrated) return null; // 等待持久化会话恢复(splash 期间)
+  if (token || onboarded) return <Redirect href="/(tabs)/today" />;
+  return <Redirect href="/onboarding" />;
 }

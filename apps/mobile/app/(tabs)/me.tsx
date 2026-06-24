@@ -1,6 +1,7 @@
 import React, { useState } from 'react';
 import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
+import { useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { TabBar } from '@/components/TabBar';
 import { KeywordRow, SectionLabel } from '@/components/atoms';
@@ -11,9 +12,16 @@ import { colors, fonts, spacing } from '@/design/tokens';
 type SubTab = 'personal' | 'twin';
 
 export default function Me() {
+  const router = useRouter();
   const [tab, setTab] = useState<SubTab>('twin');
   const profile = useAuthStore((s) => s.profile);
   const twin = useAuthStore((s) => s.twin);
+  const clear = useAuthStore((s) => s.clear);
+
+  const logout = () => {
+    void clear();
+    router.replace('/onboarding');
+  };
 
   return (
     <Screen>
@@ -21,9 +29,9 @@ export default function Me() {
         <View style={styles.headSide} />
         <Text style={styles.headTitle}>我的</Text>
         <View style={[styles.headSide, styles.headSideRight]}>
-          <View style={styles.iconBtn}>
-            <Feather name="settings" size={18} color={colors.textSoft} />
-          </View>
+          <Pressable style={styles.iconBtn} onPress={logout} hitSlop={6}>
+            <Feather name="log-out" size={18} color={colors.textSoft} />
+          </Pressable>
         </View>
       </View>
 
