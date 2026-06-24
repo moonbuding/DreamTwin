@@ -7,9 +7,11 @@
     "userInterfaceStyle": "dark",
     "scheme": "dreamtwin",
     "newArchEnabled": true,
+    "icon": "./assets/icon.png",
     "splash": {
-      "backgroundColor": "#060816",
-      "resizeMode": "cover"
+      "image": "./assets/splash-icon.png",
+      "resizeMode": "contain",
+      "backgroundColor": "#060816"
     },
     "ios": {
       "supportsTablet": false,
@@ -18,13 +20,15 @@
     "android": {
       "package": "com.dreamtwin.app",
       "adaptiveIcon": {
+        "foregroundImage": "./assets/adaptive-icon.png",
         "backgroundColor": "#060816"
       }
     },
     "web": {
-      "bundler": "metro"
+      "bundler": "metro",
+      "favicon": "./assets/icon.png"
     },
-    "plugins": ["expo-router", "expo-font", "expo-secure-store"],
+    "plugins": ["expo-router", "expo-secure-store"],
     "experiments": {
       "typedRoutes": true
     },
