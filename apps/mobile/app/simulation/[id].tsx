@@ -1,195 +1,259 @@
-import React from 'react';
-import { Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
+import React, { useEffect, useMemo, useRef, useState } from 'react';
+import {
+  Animated,
+  Image,
+  Pressable,
+  StyleSheet,
+  Text,
+  View,
+  useWindowDimensions,
+  type GestureResponderEvent,
+} from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
+import Svg, { Circle, Defs, RadialGradient, Stop } from 'react-native-svg';
 import { Screen } from '@/components/Screen';
 import { PrimaryButton } from '@/components/forms';
-import { useSimulation, useToday } from '@/lib/queries';
-import { defaultSimulationResult, findDemoNode } from '@/lib/demoContent';
+import { getDreamStory, type DreamStory, type StoryFrame } from '@/lib/dreamStories';
 import { colors, fonts, radius, spacing } from '@/design/tokens';
 
-function Metric({ label, value, tint, invert }: { label: string; value: number; tint: string; invert?: boolean }) {
-  return (
-    <View style={styles.metric}>
-      <View style={styles.metricHead}>
-        <Text style={styles.metricLabel}>{label}</Text>
-        <Text style={[styles.metricValue, { color: tint }]}>{value}{invert ? ' · 越低越稳' : ''}</Text>
-      </View>
-      <View style={styles.metricTrack}>
-        <View style={[styles.metricFill, { width: `${value}%`, backgroundColor: tint }]} />
-      </View>
-    </View>
-  );
-}
+const twinAvatar = require('../../assets/twin-avatar.png');
 
-function Section({ title, children }: { title: string; children: React.ReactNode }) {
-  return (
-    <View style={styles.section}>
-      <Text style={styles.sectionLabel}>{title}</Text>
-      {children}
-    </View>
-  );
-}
+const STARS = Array.from({ length: 28 }, (_, i) => ({
+  cx: ((i * 67) % 100) + ((i * 11) % 5) * 0.5,
+  cy: ((i * 39) % 100) + ((i * 7) % 6) * 0.4,
+  r: 0.5 + ((i * 13) % 8) / 12,
+  o: 0.2 + ((i * 23) % 10) / 22,
+}));
 
-function Bullets({ items }: { items: string[] }) {
+function Backdrop({ theme }: { theme: DreamStory['theme'] }) {
   return (
-    <View style={styles.bullets}>
-      {items.map((item, i) => (
-        <View key={i} style={styles.bulletRow}>
-          <View style={styles.bulletDot} />
-          <Text style={styles.bulletText}>{item}</Text>
-        </View>
+    <Svg style={StyleSheet.absoluteFill} viewBox="0 0 100 100" preserveAspectRatio="none" pointerEvents="none">
+      <Defs>
+        <RadialGradient id="g" cx="50%" cy="34%" rx="70%" ry="60%">
+          <Stop offset="0" stopColor={theme.glow} stopOpacity={0.32} />
+          <Stop offset="0.55" stopColor={theme.accent} stopOpacity={0.08} />
+          <Stop offset="1" stopColor={theme.glow} stopOpacity={0} />
+        </RadialGradient>
+      </Defs>
+      <Circle cx="50" cy="34" r="80" fill="url(#g)" />
+      {STARS.map((s, i) => (
+        <Circle key={i} cx={s.cx} cy={s.cy} r={s.r} fill={colors.white} opacity={s.o} />
       ))}
+    </Svg>
+  );
+}
+
+function YouFigure({ theme, size = 168 }: { theme: DreamStory['theme']; size?: number }) {
+  return (
+    <View style={{ alignItems: 'center', gap: 8 }}>
+      <View style={[styles.figGlow, { backgroundColor: `${theme.glow}26`, width: size * 0.9, height: size * 0.9, borderRadius: size }]} />
+      <Image source={twinAvatar} style={{ width: size, height: size, resizeMode: 'contain' }} />
+      <Text style={[styles.figLabel, { color: theme.glow }]}>你的分身</Text>
     </View>
   );
 }
 
-export default function SimulationDetail() {
+function TaFigure({ theme, size = 120 }: { theme: DreamStory['theme']; size?: number }) {
+  return (
+    <View style={{ alignItems: 'center', gap: 10 }}>
+      <View style={[styles.orb, { width: size, height: size, borderRadius: size, backgroundColor: `${theme.accent}33`, borderColor: theme.accent }]}>
+        <View style={[styles.orbCore, { backgroundColor: theme.accent }]} />
+      </View>
+      <Text style={[styles.figLabel, { color: theme.accent }]}>梦中人</Text>
+    </View>
+  );
+}
+
+function BigIcon({ icon, theme }: { icon: string; theme: DreamStory['theme'] }) {
+  return (
+    <View style={[styles.bigIconWrap, { borderColor: `${theme.glow}55`, backgroundColor: `${theme.glow}14` }]}>
+      <Feather name={icon as never} size={56} color={theme.glow} />
+    </View>
+  );
+}
+
+function Stage({ frame, theme }: { frame: StoryFrame; theme: DreamStory['theme'] }) {
+  if (frame.visual === 'you') return <YouFigure theme={theme} />;
+  if (frame.visual === 'ta') return <TaFigure theme={theme} />;
+  if (frame.visual === 'turn' || frame.visual === 'reading') {
+    return (
+      <View style={styles.duo}>
+        <YouFigure theme={theme} size={frame.visual === 'reading' ? 110 : 132} />
+        <TaFigure theme={theme} size={frame.visual === 'reading' ? 78 : 92} />
+      </View>
+    );
+  }
+  return <BigIcon icon={frame.icon ?? 'moon'} theme={theme} />;
+}
+
+export default function DreamStoryScreen() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
-  const { data } = useToday();
-  const node = data?.nodes.find((n) => n.id === id) ?? findDemoNode(id);
-  const result = useSimulation(id).data ?? defaultSimulationResult;
-  const title = node?.title ?? '关系预演';
+  const { width } = useWindowDimensions();
+  const story = useMemo(() => getDreamStory(id), [id]);
+  const [index, setIndex] = useState(0);
+  const fade = useRef(new Animated.Value(1)).current;
+
+  const frame = story.frames[Math.min(index, story.frames.length - 1)] ?? story.frames[0]!;
+  const isReading = frame.visual === 'reading';
+  const isLast = index >= story.frames.length - 1;
+
+  useEffect(() => {
+    fade.setValue(0);
+    Animated.timing(fade, { toValue: 1, duration: 320, useNativeDriver: true }).start();
+  }, [index, fade]);
+
+  const go = (dir: 1 | -1) => {
+    setIndex((i) => Math.max(0, Math.min(story.frames.length - 1, i + dir)));
+  };
+  const onTap = (e: GestureResponderEvent) => {
+    if (e.nativeEvent.locationX < width * 0.32) go(-1);
+    else if (!isLast) go(1);
+  };
 
   return (
-    <Screen>
-      <View style={styles.head}>
-        <Pressable style={styles.back} onPress={() => router.back()} hitSlop={8}>
-          <Feather name="chevron-left" size={22} color={colors.textSoft} />
+    <Screen bg="#05060f">
+      <Backdrop theme={story.theme} />
+
+      <View style={styles.topRow}>
+        <View style={styles.segments}>
+          {story.frames.map((_, i) => (
+            <View key={i} style={styles.segTrack}>
+              <View style={[styles.segFill, { width: i <= index ? '100%' : '0%', backgroundColor: story.theme.glow }]} />
+            </View>
+          ))}
+        </View>
+        <Pressable onPress={() => router.back()} hitSlop={10} style={styles.close}>
+          <Feather name="x" size={20} color={colors.textSoft} />
         </Pressable>
-        <Text style={styles.headTitle} numberOfLines={1}>{title}</Text>
-        <View style={styles.back} />
       </View>
 
-      <ScrollView contentContainerStyle={styles.content} showsVerticalScrollIndicator={false}>
-        <View style={styles.intro}>
-          <Text style={styles.kicker}>AI 关系预演</Text>
-          <Text style={styles.conclusion}>{result.conclusion}</Text>
-        </View>
+      <Text style={[styles.sceneLabel, { color: story.theme.glow }]}>{story.title} · 梦境相遇</Text>
 
-        <View style={styles.metrics}>
-          <Metric label="吸引力" value={result.attractionScore} tint={colors.aura} />
-          <Metric label="推进节奏" value={result.paceScore} tint={colors.secondary} />
-          <Metric label="风险" value={result.riskScore} tint={colors.gold} invert />
-        </View>
+      <Pressable style={styles.body} onPress={onTap}>
+        <Animated.View style={[styles.bodyInner, { opacity: fade }]}>
+          <View style={styles.stage}>
+            <Stage frame={frame} theme={story.theme} />
+          </View>
 
-        <Section title="可能的对话">
-          <Bullets items={result.likelyDialogue} />
-        </Section>
+          <View style={styles.narration}>
+            {isReading ? (
+              <View style={[styles.readCard, { borderColor: `${story.theme.glow}40` }]}>
+                <Text style={[styles.readKicker, { color: story.theme.glow }]}>这段关系</Text>
+                <Text style={styles.readText}>{frame.read}</Text>
+                <View style={styles.openerWrap}>
+                  <Feather name="message-circle" size={13} color={colors.muted} />
+                  <Text style={styles.openerText}>「{frame.opener}」</Text>
+                </View>
+              </View>
+            ) : (
+              <>
+                {frame.text ? <Text style={styles.narrText}>{frame.text}</Text> : null}
+                {frame.youLine ? (
+                  <View style={[styles.bubble, styles.bubbleYou, { borderColor: `${story.theme.glow}55` }]}>
+                    <Text style={styles.bubbleWho}>你的分身</Text>
+                    <Text style={styles.bubbleText}>{frame.youLine}</Text>
+                  </View>
+                ) : null}
+                {frame.taLine ? (
+                  <View style={[styles.bubble, styles.bubbleTa, { borderColor: `${story.theme.accent}55` }]}>
+                    <Text style={styles.bubbleWho}>梦中人</Text>
+                    <Text style={styles.bubbleText}>{frame.taLine}</Text>
+                  </View>
+                ) : null}
+              </>
+            )}
+          </View>
+        </Animated.View>
+      </Pressable>
 
-        <Section title="行为预览">
-          <Bullets items={result.behaviorPreview} />
-        </Section>
-
-        <Section title="关系走向">
-          <Bullets items={result.relationshipTrajectory} />
-        </Section>
-
-        <Section title="升温可能">
-          <Text style={styles.body}>{result.romancePossibility}</Text>
-        </Section>
-        <Section title="冲突风险">
-          <Text style={styles.body}>{result.conflictRisk}</Text>
-        </Section>
-        <Section title="可能的坏结局">
-          <Text style={styles.body}>{result.badOutcomeScenario}</Text>
-        </Section>
-
-        <View style={styles.moveCard}>
-          <Text style={styles.moveLabel}>建议动作</Text>
-          <Text style={styles.moveText}>{result.suggestedMove}</Text>
-          <Text style={styles.firstLineLabel}>可能的第一句</Text>
-          <Text style={styles.firstLine}>「{result.possibleFirstLine}」</Text>
-        </View>
-
-        <View style={styles.safety}>
-          <Feather name="shield" size={14} color={colors.muted} />
-          <Text style={styles.safetyText}>{result.safetyHint}</Text>
-        </View>
-
-        <PrimaryButton
-          label="邀请对方入梦"
-          icon="arrow-right"
-          onPress={() => router.push(`/dream-gate?node=${encodeURIComponent(id ?? '')}`)}
-        />
-      </ScrollView>
+      <View style={styles.footer}>
+        {isReading ? (
+          <>
+            <PrimaryButton
+              label="想进入这个梦境"
+              icon="arrow-right"
+              onPress={() => router.push(`/waiting?node=${encodeURIComponent(id ?? '')}`)}
+            />
+            <Text style={styles.safety}>想进入只是告诉对方,不会立刻发消息;双方都愿意,梦境门才会打开。</Text>
+          </>
+        ) : (
+          <Text style={styles.tapHint}>轻点继续 · 向左回看 ›</Text>
+        )}
+      </View>
     </Screen>
   );
 }
 
 const styles = StyleSheet.create({
-  head: {
+  topRow: {
     flexDirection: 'row',
     alignItems: 'center',
-    paddingHorizontal: spacing.sm,
-    paddingVertical: spacing.sm,
+    gap: 10,
+    paddingHorizontal: spacing.md,
+    paddingTop: spacing.xs,
   },
-  back: { width: 40, height: 40, justifyContent: 'center', alignItems: 'center' },
-  headTitle: {
-    flex: 1,
-    textAlign: 'center',
-    fontFamily: fonts.sans,
-    fontSize: 16,
-    fontWeight: '700',
-    color: colors.text,
-  },
-  content: {
-    paddingHorizontal: spacing.lg,
-    paddingBottom: spacing.xxl,
-    gap: spacing.lg,
-  },
-  intro: { gap: 8 },
-  kicker: {
+  segments: { flex: 1, flexDirection: 'row', gap: 4 },
+  segTrack: { flex: 1, height: 3, borderRadius: 2, backgroundColor: 'rgba(255,255,255,0.18)', overflow: 'hidden' },
+  segFill: { height: '100%', borderRadius: 2 },
+  close: { width: 28, height: 28, alignItems: 'center', justifyContent: 'center' },
+  sceneLabel: {
     fontFamily: fonts.sans,
     fontSize: 13,
     letterSpacing: 1,
-    color: colors.secondary,
+    textAlign: 'center',
+    marginTop: spacing.sm,
   },
-  conclusion: {
+  body: { flex: 1 },
+  bodyInner: { flex: 1, justifyContent: 'center', paddingHorizontal: spacing.lg },
+  stage: { minHeight: 230, alignItems: 'center', justifyContent: 'center' },
+  duo: { flexDirection: 'row', alignItems: 'flex-end', gap: 4 },
+  figGlow: { position: 'absolute', top: 6 },
+  figLabel: { fontFamily: fonts.sans, fontSize: 12, fontWeight: '600' },
+  orb: { alignItems: 'center', justifyContent: 'center', borderWidth: 1 },
+  orbCore: { width: '46%', height: '46%', borderRadius: 999, opacity: 0.92 },
+  bigIconWrap: {
+    width: 128,
+    height: 128,
+    borderRadius: 64,
+    borderWidth: 1,
+    alignItems: 'center',
+    justifyContent: 'center',
+  },
+  narration: { minHeight: 132, justifyContent: 'flex-start', gap: 10, marginTop: spacing.lg },
+  narrText: {
     fontFamily: fonts.sans,
-    fontSize: 20,
-    lineHeight: 30,
-    fontWeight: '700',
+    fontSize: 17,
+    lineHeight: 28,
     color: colors.text,
+    textAlign: 'center',
   },
-  metrics: {
-    gap: spacing.md,
+  bubble: {
+    maxWidth: '88%',
+    paddingHorizontal: 14,
+    paddingVertical: 9,
+    borderRadius: radius.lg,
+    borderWidth: StyleSheet.hairlineWidth,
+    backgroundColor: 'rgba(255,255,255,0.05)',
+    gap: 2,
+  },
+  bubbleYou: { alignSelf: 'flex-end' },
+  bubbleTa: { alignSelf: 'flex-start' },
+  bubbleWho: { fontFamily: fonts.sans, fontSize: 11, color: colors.muted },
+  bubbleText: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 22, color: colors.text },
+  readCard: {
+    gap: 10,
     padding: spacing.md,
     borderRadius: radius.lg,
-    backgroundColor: colors.panelSofter,
     borderWidth: StyleSheet.hairlineWidth,
-    borderColor: colors.line,
+    backgroundColor: 'rgba(255,255,255,0.04)',
   },
-  metric: { gap: 8 },
-  metricHead: { flexDirection: 'row', justifyContent: 'space-between' },
-  metricLabel: { fontFamily: fonts.sans, fontSize: 14, color: colors.textSoft },
-  metricValue: { fontFamily: fonts.sans, fontSize: 13, fontWeight: '700' },
-  metricTrack: { height: 6, borderRadius: 3, backgroundColor: colors.panelSoft, overflow: 'hidden' },
-  metricFill: { height: '100%', borderRadius: 3 },
-  section: { gap: 10 },
-  sectionLabel: { fontFamily: fonts.sans, fontSize: 13, fontWeight: '600', color: colors.secondary },
-  body: { fontFamily: fonts.sans, fontSize: 14, lineHeight: 23, color: colors.textSoft },
-  bullets: { gap: 8 },
-  bulletRow: { flexDirection: 'row', gap: 10, alignItems: 'flex-start' },
-  bulletDot: { width: 6, height: 6, borderRadius: 3, backgroundColor: colors.aura, marginTop: 8 },
-  bulletText: { flex: 1, fontFamily: fonts.sans, fontSize: 14, lineHeight: 22, color: colors.textSoft },
-  moveCard: {
-    gap: 6,
-    padding: spacing.md,
-    borderRadius: radius.lg,
-    backgroundColor: `${colors.aura}14`,
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: `${colors.aura}40`,
-  },
-  moveLabel: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted },
-  moveText: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23, color: colors.text },
-  firstLineLabel: { fontFamily: fonts.sans, fontSize: 12, color: colors.muted, marginTop: 6 },
-  firstLine: { fontFamily: fonts.sans, fontSize: 15, lineHeight: 23, color: colors.aura },
-  safety: {
-    flexDirection: 'row',
-    gap: 8,
-    alignItems: 'flex-start',
-  },
-  safetyText: { flex: 1, fontFamily: fonts.sans, fontSize: 12, lineHeight: 19, color: colors.muted },
+  readKicker: { fontFamily: fonts.sans, fontSize: 12, letterSpacing: 1 },
+  readText: { fontFamily: fonts.sans, fontSize: 16, lineHeight: 26, color: colors.text },
+  openerWrap: { flexDirection: 'row', alignItems: 'center', gap: 6, marginTop: 2 },
+  openerText: { flex: 1, fontFamily: fonts.sans, fontSize: 14, lineHeight: 22, color: colors.muted, fontStyle: 'italic' },
+  footer: { paddingHorizontal: spacing.lg, paddingTop: spacing.sm, paddingBottom: spacing.md, gap: 8 },
+  safety: { fontFamily: fonts.sans, fontSize: 12, lineHeight: 18, color: colors.faint, textAlign: 'center' },
+  tapHint: { fontFamily: fonts.sans, fontSize: 13, color: colors.faint, textAlign: 'center', paddingVertical: 6 },
 });
