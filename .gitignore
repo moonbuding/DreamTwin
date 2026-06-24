@@ -1,17 +1,65 @@
 .DS_Store
+
+# Dependencies
 node_modules/
-.env
-.env.local
+.pnpm-store/
+
+# Build artifacts
 dist/
 dist-server/
+build/
+.next/
+.expo/
+.expo-shared/
 output/
+*.tsbuildinfo
+
+# Turbo
+.turbo/
+
+# Environment / secrets
+.env
+.env.local
+.env.*.local
+!.env.example
+
+# Local app artifacts (legacy web)
 .dreamtwin-local/
 .qa-build/
 .playwright-cli/
-*.tsbuildinfo
+
+# Test / coverage
+coverage/
+.nyc_output/
+
+# IDE
+.vscode/
+.idea/
+
+# Logs
 npm-debug.log*
 yarn-debug.log*
 yarn-error.log*
+pnpm-debug.log*
+
+# Native build outputs
+*.ipa
+*.apk
+*.aab
+ios/build/
+android/build/
+android/app/build/
+android/.gradle/
+
+# Prisma local env
+apps/api/prisma/.env
+
+# Docker volumes
+infra/docker/data/
 
 # Local-only large design covers (not pushed)
 design-explorations/assets/
+
+# Misc
+*.log
+.tmp/

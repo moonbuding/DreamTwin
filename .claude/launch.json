@@ -2,9 +2,21 @@
   "version": "0.0.1",
   "configurations": [
     {
-      "name": "dreamtwin-web",
+      "name": "dreamtwin-mobile-web",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@dreamtwin/mobile", "web"],
+      "port": 8081
+    },
+    {
+      "name": "dreamtwin-api",
+      "runtimeExecutable": "pnpm",
+      "runtimeArgs": ["--filter", "@dreamtwin/api", "dev"],
+      "port": 3001
+    },
+    {
+      "name": "dreamtwin-web-legacy",
       "runtimeExecutable": "npm",
-      "runtimeArgs": ["run", "dev"],
+      "runtimeArgs": ["--prefix", "apps/web", "run", "dev"],
       "port": 5173
     }
   ]

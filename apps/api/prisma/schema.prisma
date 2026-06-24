@@ -1,0 +1,66 @@
+// DreamTwin — Prisma schema (batch 1 slice: user / profile / twin / nodes / friends).
+// 关系预演相关的大表(simulations / scenes)留待后续批次。
+
+generator client {
+  provider = "prisma-client-js"
+}
+
+datasource db {
+  provider = "postgresql"
+  url      = env("DATABASE_URL")
+}
+
+model User {
+  id           String   @id @default(cuid())
+  phone        String   @unique
+  nickname     String
+  passwordHash String?
+  createdAt    DateTime @default(now())
+  updatedAt    DateTime @updatedAt
+
+  profile Profile?
+  twin    Twin?
+  nodes   DreamNode[]
+  friends Friend[]
+}
+
+// UserProfile 整体存为 jsonb,字段结构见 @dreamtwin/api-types#UserProfile。
+model Profile {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data   Json
+}
+
+// TwinProjection 整体存为 jsonb,字段结构见 @dreamtwin/api-types#TwinProjection。
+model Twin {
+  userId String @id
+  user   User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  data   Json
+}
+
+model DreamNode {
+  id           String @id
+  userId       String
+  user         User   @relation(fields: [userId], references: [id], onDelete: Cascade)
+  title        String
+  status       String
+  simulationId String
+  entryMode    String
+  x            Float
+  y            Float
+  intensity    Float
+
+  @@index([userId])
+}
+
+model Friend {
+  id           String   @id
+  userId       String
+  user         User     @relation(fields: [userId], references: [id], onDelete: Cascade)
+  name         String
+  relationLabel String
+  presence     String
+  keywords     String[]
+
+  @@index([userId])
+}

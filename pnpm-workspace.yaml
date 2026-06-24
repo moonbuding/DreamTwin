@@ -1,0 +1,14 @@
+# DreamTwin monorepo — Expo mobile + NestJS api + shared packages.
+# apps/web (legacy Vite app) is intentionally NOT a workspace member: it stays
+# npm-based and untouched as a porting reference until the Expo app reaches parity.
+packages:
+  - "apps/mobile"
+  - "apps/api"
+  - "packages/*"
+
+onlyBuiltDependencies:
+  - "@nestjs/core"
+  - "@prisma/client"
+  - "@prisma/engines"
+  - esbuild
+  - prisma
