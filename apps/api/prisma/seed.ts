@@ -41,11 +41,12 @@ const twin: TwinProjection = {
   },
 };
 
+// 节点带「梦中人」身份链接(阶段3b):overnight_discovery → 广场人物(主题匹配);friend_invite → 好友。
 const nodes = [
-  { id: 'node-rain-store', title: '雨夜便利店', status: 'unviewed', simulationId: 'simulation-rain-store', entryMode: 'overnight_discovery', x: 0.5, y: 0.28, intensity: 0.84 },
-  { id: 'node-seaside-radio', title: '凌晨海边电台', status: 'unviewed', simulationId: 'simulation-seaside-radio', entryMode: 'overnight_discovery', x: 0.27, y: 0.64, intensity: 0.96 },
-  { id: 'node-moon-platform', title: '月光候车厅', status: 'unviewed', simulationId: 'simulation-moon-platform', entryMode: 'overnight_discovery', x: 0.73, y: 0.62, intensity: 0.88 },
-  { id: 'node-friend-mika', title: '和 Mika 的梦境漫游', status: 'unviewed', simulationId: 'simulation-friend-mika', entryMode: 'friend_invite', x: 0.5, y: 0.48, intensity: 0.92 },
+  { id: 'node-rain-store', title: '雨夜便利店', status: 'unviewed', simulationId: 'simulation-rain-store', entryMode: 'overnight_discovery', x: 0.5, y: 0.28, intensity: 0.84, counterpartKind: 'plaza', counterpartId: 'plaza-yuzi' },
+  { id: 'node-seaside-radio', title: '凌晨海边电台', status: 'unviewed', simulationId: 'simulation-seaside-radio', entryMode: 'overnight_discovery', x: 0.27, y: 0.64, intensity: 0.96, counterpartKind: 'plaza', counterpartId: 'plaza-haichao' },
+  { id: 'node-moon-platform', title: '月光候车厅', status: 'unviewed', simulationId: 'simulation-moon-platform', entryMode: 'overnight_discovery', x: 0.73, y: 0.62, intensity: 0.88, counterpartKind: 'plaza', counterpartId: 'plaza-qingyan' },
+  { id: 'node-friend-mika', title: '和 Mika 的梦境漫游', status: 'unviewed', simulationId: 'simulation-friend-mika', entryMode: 'friend_invite', x: 0.5, y: 0.48, intensity: 0.92, counterpartKind: 'friend', counterpartId: 'friend-mika' },
 ];
 
 const friends = [

@@ -31,6 +31,34 @@ export interface PlazaProfile {
   presence: string;
 }
 
+// 依恋类型:亲密关系情境里预测力最强的维度之一。
+export type AttachmentStyle = "secure" | "anxious" | "avoidant" | "fearful";
+
+// CAPS 情境-行为签名:把性格翻译成"在某情境下的倾向行为",比抽象标签更可预测。
+export interface IfThenSignal {
+  situation: string; // 触发情境,如「对方迟到不解释」
+  tendency: string; // 倾向行为,如「嘴上说没事但变冷淡」
+}
+
+// 心理学派生层:在自由标签之上沉淀的、效度更高的结构化预测维度。全部可选。
+// 整体随 UserProfile 存为 jsonb,无需数据库迁移;缺省即退化为纯标签行为。
+export interface PersonaPsychology {
+  bigFive?: {
+    openness?: number; // 开放性 0–100
+    conscientiousness?: number; // 尽责性 0–100
+    extraversion?: number; // 外向性 0–100
+    agreeableness?: number; // 宜人性 0–100
+    neuroticism?: number; // 神经质 0–100
+  };
+  attachmentStyle?: AttachmentStyle;
+  dealbreakers?: string[]; // 红线:绝不接受的事(同时作为监管安全边界)
+  loveLanguages?: string[]; // 爱的语言,优先级在前
+  conflictStyle?: string; // 竞争/合作/妥协/回避/迁就
+  emotionRegulation?: string; // 重评/抑制/宣泄/回避
+  ifThenSignals?: IfThenSignal[]; // 情境签名
+  voiceSamples?: string[]; // 语气/口头禅样本,作为 few-shot 让分身「说话像本人」
+}
+
 export interface UserProfile {
   id: string;
   nickname: string;
@@ -46,6 +74,7 @@ export interface UserProfile {
   mysticTags?: string[];
   communicationStyle?: string;
   values?: string[];
+  psychology?: PersonaPsychology; // 心理学派生层(可选,见上)
 }
 
 export interface AvatarStyleSpec {
@@ -107,6 +136,7 @@ export interface RelationshipCounterpartProfile {
   optionalSignals?: string[];
   appearanceTags?: string[];
   education?: string;
+  psychology?: PersonaPsychology; // 「梦中人」心理学派生层(可选)
 }
 
 export interface RelationshipScenario {

@@ -49,6 +49,10 @@ model DreamNode {
   x            Float
   y            Float
   intensity    Float
+  // 「梦中人」身份链接(阶段3b):counterpartKind ∈ {friend, plaza};counterpartId 指向 Friend.id 或 plaza 数据 id。
+  // 可空:无对手的节点保持 TA 留白。对手卡片取数由 CounterpartService 按这两字段解析。
+  counterpartKind String?
+  counterpartId   String?
 
   @@index([userId])
 }
