@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import Anthropic from '@anthropic-ai/sdk';
 import type {
   DreamStory,
   RelationshipCounterpartProfile,
@@ -9,11 +8,10 @@ import type {
 import { PrismaService } from '../../prisma/prisma.service';
 import { getFixedStory, getSceneTemplate, type SceneTemplate } from './dream-stories.data';
 import { renderCounterpartCard, renderPersonaCard } from './persona-card';
+import { generateJson, llmEnabled } from './llm';
 
 // 「梦境相遇」生成框架(v0.1)。骨架固定、AI 只填血肉、护栏兜底。
 // 离线 / 无 ANTHROPIC_API_KEY / 生成失败时,透明回退到固定脚本。
-
-const MODEL = process.env.STORY_MODEL ?? 'claude-opus-4-8';
 
 // 阶段2 监管/校验闭环:灰度开关,默认关闭(控成本/延迟)。开启后,生成成功的故事交由
 // 「监管模型」按两张卡片逐条校验 OOC / 触红线 / 理想化失真;不过则带理由重生成一次(最多 1 次),
@@ -118,11 +116,8 @@ interface CritiqueResult {
 @Injectable()
 export class StoryService {
   private readonly logger = new Logger(StoryService.name);
-  private readonly client: Anthropic | null;
 
-  constructor(private readonly prisma: PrismaService) {
-    this.client = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getStory(
     nodeId: string,
@@ -131,11 +126,33 @@ export class StoryService {
     // 暂未打通时为 undefined,TA 按铁律保持留白、不虚构。
     counterpart?: RelationshipCounterpartProfile | null,
   ): Promise<DreamStory> {
+    // 持久化:一个节点的梦境生成一次即固定。命中缓存直接返回,重进不再重算/变化。
+    const key = `${userId ?? '_anon'}:${nodeId}:story`;
+    const hit = await this.prisma.rehearsal.findUnique({ where: { key } }).catch(() => null);
+    if (hit) return hit.data as unknown as DreamStory;
+
     const scene = getSceneTemplate(nodeId);
     const youPersona = await this.loadPersona(userId);
     const taPersona = counterpart ? renderCounterpartCard(counterpart) : '';
     const ai = await this.generate(scene, youPersona, taPersona);
-    return ai ?? getFixedStory(nodeId);
+    // 只缓存成功的 AI 生成;失败回落固定脚本但不落库,下次仍会重试 AI。
+    if (ai) return this.persist(key, nodeId, ai);
+    return getFixedStory(nodeId);
+  }
+
+  // 落库并回读「权威首版」:upsert(update:{}) 让先写者胜出,回读保证并发请求都收敛到同一篇。
+  private async persist(key: string, nodeId: string, data: DreamStory): Promise<DreamStory> {
+    try {
+      const row = await this.prisma.rehearsal.upsert({
+        where: { key },
+        create: { key, nodeId, kind: 'story', data: data as object },
+        update: {},
+      });
+      return row.data as unknown as DreamStory;
+    } catch (error) {
+      this.logger.warn(`Persist story failed: ${(error as Error).message}`);
+      return data;
+    }
   }
 
   private async loadPersona(userId: string | null): Promise<string> {
@@ -154,7 +171,7 @@ export class StoryService {
     youPersona: string,
     taPersona: string,
   ): Promise<DreamStory | null> {
-    if (!this.client) return null;
+    if (!llmEnabled()) return null;
 
     const first = await this.generateOnce(scene, youPersona, taPersona);
     if (!first || !CRITIC_ENABLED) return first;
@@ -181,7 +198,7 @@ export class StoryService {
     taPersona: string,
     issues?: CritiqueIssue[],
   ): Promise<DreamStory | null> {
-    if (!this.client) return null;
+    if (!llmEnabled()) return null;
     try {
       const fewShot = JSON.stringify({ frames: getFixedStory(scene.sceneId).frames });
       const userPrompt = [
@@ -195,26 +212,15 @@ export class StoryService {
         ...(issues?.length ? [this.renderCritiqueFeedback(issues)] : []),
       ].join('\n\n');
 
-      // 用 adaptive 思考 + 结构化输出。output_config / adaptive 是较新的 API 字段,
-      // 这里的 SDK 版本类型未覆盖,故以非流式参数形态传入(运行时字段有效)。
-      const params = {
-        model: MODEL,
-        max_tokens: 2000,
-        thinking: { type: 'adaptive' },
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: STORY_SCHEMA } },
+      const raw = await generateJson({
         system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      } as unknown as Anthropic.MessageCreateParamsNonStreaming;
-
-      const response = await this.client.messages.create(params);
-
-      if ((response.stop_reason as string) === 'refusal') {
-        this.logger.warn('Story generation refused; falling back to fixed.');
-        return null;
-      }
-      const textBlock = response.content.find((b) => b.type === 'text');
-      if (!textBlock || textBlock.type !== 'text') return null;
-      const parsed = JSON.parse(textBlock.text) as { frames?: StoryFrame[] };
+        user: userPrompt,
+        schema: STORY_SCHEMA,
+        maxTokens: 2000,
+        temperature: 0.85,
+      });
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as { frames?: StoryFrame[] };
       const frames = this.sanitizeFrames(parsed.frames);
       if (!frames) return null;
       return { sceneId: scene.sceneId, title: scene.title, theme: scene.theme, frames, source: 'ai' };
@@ -244,7 +250,7 @@ export class StoryService {
     youPersona: string,
     taPersona: string,
   ): Promise<CritiqueResult | null> {
-    if (!this.client) return null;
+    if (!llmEnabled()) return null;
     try {
       const numbered = frames.map((f, i) => ({ frame: i + 1, ...f }));
       const userPrompt = [
@@ -253,22 +259,18 @@ export class StoryService {
           ? `「梦中人」卡片:${taPersona}`
           : '「梦中人」卡片:暂无资料 —— TA 的留白是合规的,不要据此报问题。',
         `待审 7 帧(已编号 1–7):\n${JSON.stringify({ frames: numbered })}`,
+        '只输出 JSON:{"ok":boolean,"issues":[{"frame":1-7整数,"type":"ooc"|"violation"|"idealized","who":"you"|"ta","reason":string}]}',
       ].join('\n\n');
 
-      const params = {
-        model: MODEL,
-        max_tokens: 800,
-        thinking: { type: 'adaptive' },
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: CRITIQUE_SCHEMA } },
+      const raw = await generateJson({
         system: CRITIC_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      } as unknown as Anthropic.MessageCreateParamsNonStreaming;
-
-      const response = await this.client.messages.create(params);
-      if ((response.stop_reason as string) === 'refusal') return null;
-      const textBlock = response.content.find((b) => b.type === 'text');
-      if (!textBlock || textBlock.type !== 'text') return null;
-      const parsed = JSON.parse(textBlock.text) as Partial<CritiqueResult>;
+        user: userPrompt,
+        schema: CRITIQUE_SCHEMA,
+        maxTokens: 800,
+        temperature: 0,
+      });
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<CritiqueResult>;
       if (typeof parsed.ok !== 'boolean') return null;
       const issues = Array.isArray(parsed.issues) ? parsed.issues : [];
       return { ok: parsed.ok, issues };

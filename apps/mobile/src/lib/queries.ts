@@ -39,7 +39,8 @@ export function useDreamStory(nodeId: string | undefined) {
     staleTime: 5 * 60_000,
     queryFn: async (): Promise<DreamStory> => {
       try {
-        return (await api.get<DreamStory>(`/story/${nodeId}`)).data;
+        // 故事走大模型生成,可能 10~30s;放宽超时,避免误回退到本地脚本。
+        return (await api.get<DreamStory>(`/story/${nodeId}`, { timeout: 60_000 })).data;
       } catch {
         return getDreamStory(nodeId);
       }
@@ -53,7 +54,8 @@ export function useSimulation(nodeId: string | undefined) {
     enabled: !!nodeId,
     queryFn: async (): Promise<RelationshipSimulationResult> => {
       try {
-        return (await api.get<RelationshipSimulationResult>(`/simulation/${nodeId}`)).data;
+        // 预演分析同样走大模型生成,放宽超时。
+        return (await api.get<RelationshipSimulationResult>(`/simulation/${nodeId}`, { timeout: 60_000 })).data;
       } catch {
         return defaultSimulationResult;
       }

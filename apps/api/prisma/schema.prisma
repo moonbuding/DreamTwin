@@ -57,6 +57,18 @@ model DreamNode {
   @@index([userId])
 }
 
+// 梦境/预演生成结果持久化:一个节点生成一次即固定,重进读同一份,不再重算。
+// key = "{userId|_anon}:{nodeId}:{story|simulation}";data 存 DreamStory 或 RelationshipSimulationResult。
+model Rehearsal {
+  key       String   @id
+  nodeId    String
+  kind      String
+  data      Json
+  createdAt DateTime @default(now())
+
+  @@index([nodeId])
+}
+
 model Friend {
   id           String   @id
   userId       String

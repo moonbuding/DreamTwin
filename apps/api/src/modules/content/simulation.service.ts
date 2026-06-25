@@ -1,5 +1,4 @@
 import { Injectable, Logger } from '@nestjs/common';
-import Anthropic from '@anthropic-ai/sdk';
 import type {
   RelationshipCounterpartProfile,
   RelationshipSimulationResult,
@@ -8,12 +7,11 @@ import type {
 import { PrismaService } from '../../prisma/prisma.service';
 import { getSceneTemplate, type SceneTemplate } from './dream-stories.data';
 import { renderCounterpartCard, renderPersonaCard } from './persona-card';
+import { generateJson, llmEnabled } from './llm';
 
 // 「关系预演分析」生成框架(阶段3a)。沿用「梦境相遇」短故事同一套纪律:
 // 双卡片驱动、反理想化、不编造、结构化输出、护栏兜底。
-// 离线 / 无 ANTHROPIC_API_KEY / 生成失败时,透明回退到固定的保底分析。
-
-const MODEL = process.env.STORY_MODEL ?? 'claude-opus-4-8';
+// 离线 / 无可用 LLM 凭据 / 生成失败时,透明回退到固定的保底分析。
 
 // 阶段2 监管对齐(simulation):与 story 同一个灰度开关,默认关闭。开启后,生成成功的预演分析
 // 交由监管模型按两卡片逐条校验 OOC / 编造 / 理想化;不过则带理由重生成一次,重判仍不过则回落固定保底。
@@ -152,11 +150,8 @@ interface CritiqueResult {
 @Injectable()
 export class SimulationService {
   private readonly logger = new Logger(SimulationService.name);
-  private readonly client: Anthropic | null;
 
-  constructor(private readonly prisma: PrismaService) {
-    this.client = process.env.ANTHROPIC_API_KEY ? new Anthropic() : null;
-  }
+  constructor(private readonly prisma: PrismaService) {}
 
   async getSimulation(
     nodeId: string,
@@ -165,11 +160,33 @@ export class SimulationService {
     // 暂未打通时为 undefined,TA 按基准率与留白处理、不虚构。
     counterpart?: RelationshipCounterpartProfile | null,
   ): Promise<RelationshipSimulationResult> {
+    // 持久化:一个节点的预演分析生成一次即固定。命中缓存直接返回,重进不再重算/变化。
+    const key = `${userId ?? '_anon'}:${nodeId}:simulation`;
+    const hit = await this.prisma.rehearsal.findUnique({ where: { key } }).catch(() => null);
+    if (hit) return hit.data as unknown as RelationshipSimulationResult;
+
     const scene = getSceneTemplate(nodeId);
     const youPersona = await this.loadPersona(userId);
     const taPersona = counterpart ? renderCounterpartCard(counterpart) : '';
     const ai = await this.generate(scene, youPersona, taPersona);
-    return ai ?? FIXED_RESULT;
+    // 只缓存成功的 AI 生成;失败回落固定保底但不落库,下次仍会重试 AI。
+    if (ai) return this.persist(key, nodeId, ai);
+    return FIXED_RESULT;
+  }
+
+  // 落库并回读「权威首版」:upsert(update:{}) 让先写者胜出,回读保证并发请求都收敛到同一份。
+  private async persist(key: string, nodeId: string, data: RelationshipSimulationResult): Promise<RelationshipSimulationResult> {
+    try {
+      const row = await this.prisma.rehearsal.upsert({
+        where: { key },
+        create: { key, nodeId, kind: 'simulation', data: data as object },
+        update: {},
+      });
+      return row.data as unknown as RelationshipSimulationResult;
+    } catch (error) {
+      this.logger.warn(`Persist simulation failed: ${(error as Error).message}`);
+      return data;
+    }
   }
 
   private async loadPersona(userId: string | null): Promise<string> {
@@ -187,7 +204,7 @@ export class SimulationService {
     youPersona: string,
     taPersona: string,
   ): Promise<RelationshipSimulationResult | null> {
-    if (!this.client) return null;
+    if (!llmEnabled()) return null;
 
     const first = await this.generateOnce(scene, youPersona, taPersona);
     if (!first || !CRITIC_ENABLED) return first;
@@ -212,7 +229,7 @@ export class SimulationService {
     taPersona: string,
     issues?: CritiqueIssue[],
   ): Promise<RelationshipSimulationResult | null> {
-    if (!this.client) return null;
+    if (!llmEnabled()) return null;
     try {
       const userPrompt = [
         `场景:${scene.title} —— ${scene.mood}`,
@@ -221,27 +238,18 @@ export class SimulationService {
           ? `「梦中人」人格:${taPersona}`
           : '「梦中人」人格:暂无资料 —— 按基准率与留白处理,给保守评估,不要为 TA 编造既定事实或具体来历。',
         ...(issues?.length ? [this.renderCritiqueFeedback(issues)] : []),
+        '只输出 JSON,字段:{conclusion, attractionScore:0-100整数, paceScore:0-100整数, riskScore:0-100整数, likelyDialogue:string[], behaviorPreview:string[], relationshipTrajectory:string[], romancePossibility, conflictRisk, badOutcomeScenario, suggestedMove, possibleFirstLine}',
       ].join('\n\n');
 
-      // 与 story.service 一致:adaptive 思考 + 结构化输出,字段未被当前 SDK 类型覆盖,故运行时形态传入。
-      const params = {
-        model: MODEL,
-        max_tokens: 1800,
-        thinking: { type: 'adaptive' },
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: SIMULATION_SCHEMA } },
+      const raw = await generateJson({
         system: SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      } as unknown as Anthropic.MessageCreateParamsNonStreaming;
-
-      const response = await this.client.messages.create(params);
-
-      if ((response.stop_reason as string) === 'refusal') {
-        this.logger.warn('Simulation generation refused; falling back to fixed.');
-        return null;
-      }
-      const textBlock = response.content.find((b) => b.type === 'text');
-      if (!textBlock || textBlock.type !== 'text') return null;
-      const parsed = JSON.parse(textBlock.text) as Partial<RelationshipSimulationResult>;
+        user: userPrompt,
+        schema: SIMULATION_SCHEMA,
+        maxTokens: 1800,
+        temperature: 0.6,
+      });
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<RelationshipSimulationResult>;
       return this.sanitize(parsed);
     } catch (error) {
       this.logger.warn(`Simulation generation failed: ${(error as Error).message}; falling back to fixed.`);
@@ -268,7 +276,7 @@ export class SimulationService {
     youPersona: string,
     taPersona: string,
   ): Promise<CritiqueResult | null> {
-    if (!this.client) return null;
+    if (!llmEnabled()) return null;
     try {
       const userPrompt = [
         `「你的分身」卡片:${youPersona}`,
@@ -276,22 +284,18 @@ export class SimulationService {
           ? `「梦中人」卡片:${taPersona}`
           : '「梦中人」卡片:暂无资料 —— TA 的留白是合规的,不要据此报问题。',
         `待审预演分析:\n${JSON.stringify(result)}`,
+        '只输出 JSON:{"ok":boolean,"issues":[{"field":string,"type":"ooc"|"violation"|"idealized","who":"you"|"ta"|"both","reason":string}]}',
       ].join('\n\n');
 
-      const params = {
-        model: MODEL,
-        max_tokens: 800,
-        thinking: { type: 'adaptive' },
-        output_config: { effort: 'low', format: { type: 'json_schema', schema: CRITIQUE_SCHEMA } },
+      const raw = await generateJson({
         system: CRITIC_SYSTEM_PROMPT,
-        messages: [{ role: 'user', content: userPrompt }],
-      } as unknown as Anthropic.MessageCreateParamsNonStreaming;
-
-      const response = await this.client.messages.create(params);
-      if ((response.stop_reason as string) === 'refusal') return null;
-      const textBlock = response.content.find((b) => b.type === 'text');
-      if (!textBlock || textBlock.type !== 'text') return null;
-      const parsed = JSON.parse(textBlock.text) as Partial<CritiqueResult>;
+        user: userPrompt,
+        schema: CRITIQUE_SCHEMA,
+        maxTokens: 800,
+        temperature: 0,
+      });
+      if (!raw) return null;
+      const parsed = JSON.parse(raw) as Partial<CritiqueResult>;
       if (typeof parsed.ok !== 'boolean') return null;
       const issues = Array.isArray(parsed.issues) ? parsed.issues : [];
       return { ok: parsed.ok, issues };
