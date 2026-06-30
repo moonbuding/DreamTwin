@@ -4,7 +4,7 @@ import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { PrimaryButton, GhostButton } from '@/components/forms';
-import { useToday } from '@/lib/queries';
+import { useSimulation, useToday } from '@/lib/queries';
 import { defaultSimulationResult, findDemoNode } from '@/lib/demoContent';
 import { colors, fonts, radius, spacing } from '@/design/tokens';
 
@@ -12,10 +12,12 @@ export default function DreamGate() {
   const router = useRouter();
   const { node: nodeId } = useLocalSearchParams<{ node: string }>();
   const { data } = useToday();
+  const { data: simulation } = useSimulation(nodeId);
   const node = data?.nodes.find((n) => n.id === nodeId) ?? findDemoNode(nodeId);
   const isFriend = node?.entryMode === 'friend_invite';
   const counterpart = isFriend ? '好友' : '对方';
   const title = node?.title ?? '梦境预演';
+  const result = simulation ?? defaultSimulationResult;
 
   return (
     <Screen>
@@ -71,7 +73,7 @@ export default function DreamGate() {
         <View style={styles.nextStep}>
           <Text style={styles.nextLabel}>下一步只做一件事</Text>
           <Text style={styles.nextStrong}>把建议改成你的语气,发出第一句话。</Text>
-          <Text style={styles.nextLine}>「{defaultSimulationResult.possibleFirstLine}」</Text>
+          <Text style={styles.nextLine}>「{result.possibleFirstLine}」</Text>
         </View>
 
         <PrimaryButton label="去写第一句话" icon="message-circle" onPress={() => router.replace(`/chat/${encodeURIComponent(nodeId ?? '')}`)} />

@@ -260,6 +260,17 @@ export interface AuthResponse {
   twin: TwinProjection;
 }
 
+export interface RegisterRequest {
+  phone: string;
+  password: string;
+  nickname?: string;
+}
+
+export interface ProfileTwinRequest {
+  profile: UserProfile;
+  twin: TwinProjection;
+}
+
 export interface MeResponse {
   user: AuthUser;
   profile: UserProfile;

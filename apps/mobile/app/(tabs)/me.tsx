@@ -6,6 +6,7 @@ import { Screen } from '@/components/Screen';
 import { TabBar } from '@/components/TabBar';
 import { KeywordRow, SectionLabel } from '@/components/atoms';
 import { TwinAvatar } from '@/components/TwinAvatar';
+import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/auth';
 import { colors, fonts, spacing } from '@/design/tokens';
 
@@ -19,6 +20,7 @@ export default function Me() {
   const clear = useAuthStore((s) => s.clear);
 
   const logout = () => {
+    queryClient.clear();
     void clear();
     router.replace('/onboarding');
   };

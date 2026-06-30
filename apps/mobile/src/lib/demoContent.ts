@@ -157,7 +157,7 @@ export const defaultSimulationResult: RelationshipSimulationResult = {
 };
 
 export function findDemoNode(id: string | undefined): DreamNode | undefined {
-  return demoNodes.find((node) => node.id === id);
+  return demoNodes.find((node) => id === node.id || id?.startsWith(`${node.id}__`));
 }
 
 export const demoPlazaProfiles: PlazaProfile[] = [

@@ -57,8 +57,14 @@ export const SCENE_TEMPLATES: SceneTemplate[] = [
   },
 ];
 
+export function getBaseSceneId(nodeId: string | undefined): string | undefined {
+  if (!nodeId) return undefined;
+  return SCENE_TEMPLATES.find((scene) => nodeId === scene.sceneId || nodeId.startsWith(`${scene.sceneId}__`))?.sceneId;
+}
+
 export function getSceneTemplate(nodeId: string | undefined): SceneTemplate {
-  return SCENE_TEMPLATES.find((s) => s.sceneId === nodeId) ?? SCENE_TEMPLATES[0]!;
+  const baseSceneId = getBaseSceneId(nodeId);
+  return SCENE_TEMPLATES.find((s) => s.sceneId === baseSceneId) ?? SCENE_TEMPLATES[0]!;
 }
 
 // 固定脚本:① AI 失败时的兜底;② AI 生成的 few-shot 示例。
@@ -123,5 +129,6 @@ const FIXED: Record<string, DreamStory> = {
 };
 
 export function getFixedStory(nodeId: string | undefined): DreamStory {
-  return (nodeId && FIXED[nodeId]) || FIXED['node-rain-store']!;
+  const baseSceneId = getBaseSceneId(nodeId);
+  return (baseSceneId && FIXED[baseSceneId]) || FIXED['node-rain-store']!;
 }

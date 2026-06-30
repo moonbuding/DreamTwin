@@ -1,10 +1,10 @@
-import React, { useState } from 'react';
+import React, { useEffect, useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, TextInput, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useLocalSearchParams, useRouter } from 'expo-router';
 import { Screen } from '@/components/Screen';
 import { PrimaryButton } from '@/components/forms';
-import { useToday } from '@/lib/queries';
+import { useSimulation, useToday } from '@/lib/queries';
 import { COUNTERPART_NAME, defaultSimulationResult, findDemoNode } from '@/lib/demoContent';
 import { colors, fonts, radius, spacing } from '@/design/tokens';
 
@@ -12,9 +12,10 @@ export default function ChatEntry() {
   const router = useRouter();
   const { id } = useLocalSearchParams<{ id: string }>();
   const { data } = useToday();
+  const { data: simulation } = useSimulation(id);
   const node = data?.nodes.find((n) => n.id === id) ?? findDemoNode(id);
   const sceneTitle = node?.title ?? '梦境场景';
-  const result = defaultSimulationResult;
+  const result = simulation ?? defaultSimulationResult;
 
   const starters = [
     { id: 'recommended', label: '用建议第一句', note: '最贴近预演结论', value: result.possibleFirstLine },
@@ -36,6 +37,10 @@ export default function ChatEntry() {
     if (!text) return;
     setSent(text);
   };
+
+  useEffect(() => {
+    if (starter === 'recommended' && !sent) setDraft(result.possibleFirstLine);
+  }, [result.possibleFirstLine, sent, starter]);
 
   return (
     <Screen>

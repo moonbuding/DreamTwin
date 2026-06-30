@@ -29,7 +29,8 @@
     "mobile:dev": "pnpm --filter @dreamtwin/mobile start",
     "mobile:ios": "pnpm --filter @dreamtwin/mobile ios",
     "mobile:android": "pnpm --filter @dreamtwin/mobile android",
-    "mobile:web": "pnpm --filter @dreamtwin/mobile web"
+    "mobile:web": "pnpm --filter @dreamtwin/mobile web",
+    "mobile:web:export": "pnpm --filter @dreamtwin/mobile web:export"
   },
   "devDependencies": {
     "turbo": "^2.3.3",

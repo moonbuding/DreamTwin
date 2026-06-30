@@ -84,6 +84,12 @@ const stories: Record<string, DreamStory> = {
   'node-moon-platform': moonPlatform,
 };
 
+function getBaseStoryId(nodeId: string | undefined): string | undefined {
+  if (!nodeId) return undefined;
+  return Object.keys(stories).find((id) => nodeId === id || nodeId.startsWith(`${id}__`));
+}
+
 export function getDreamStory(nodeId: string | undefined): DreamStory {
-  return (nodeId && stories[nodeId]) || rainStore;
+  const baseId = getBaseStoryId(nodeId);
+  return (baseId && stories[baseId]) || rainStore;
 }

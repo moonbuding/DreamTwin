@@ -2,10 +2,12 @@ import React, { useState } from 'react';
 import { KeyboardAvoidingView, Platform, Pressable, ScrollView, StyleSheet, Text, View } from 'react-native';
 import { Feather } from '@expo/vector-icons';
 import { useRouter } from 'expo-router';
-import type { UserProfile } from '@dreamtwin/api-types';
+import type { MeResponse, ProfileTwinRequest, UserProfile } from '@dreamtwin/api-types';
 import { Screen } from '@/components/Screen';
 import { ChoiceChipRow, PrimaryButton, TextField } from '@/components/forms';
 import { SectionLabel } from '@/components/atoms';
+import { api } from '@/lib/api';
+import { queryClient } from '@/lib/queryClient';
 import { useAuthStore } from '@/stores/auth';
 import { createTwinFromProfile } from '@/lib/twin';
 import { colors, fonts, spacing } from '@/design/tokens';
@@ -22,7 +24,9 @@ function toggle(list: string[], value: string): string[] {
 export default function TwinCreate() {
   const router = useRouter();
   const baseProfile = useAuthStore((s) => s.profile);
+  const token = useAuthStore((s) => s.token);
   const setProfileTwin = useAuthStore((s) => s.setProfileTwin);
+  const setSession = useAuthStore((s) => s.setSession);
 
   const [nickname, setNickname] = useState(baseProfile.nickname);
   const [intention, setIntention] = useState(baseProfile.relationshipIntention);
@@ -33,10 +37,13 @@ export default function TwinCreate() {
   const [communicationStyle, setCommunicationStyle] = useState(baseProfile.communicationStyle ?? '');
   const [values, setValues] = useState<string[]>(baseProfile.values ?? []);
   const [mysticTags, setMysticTags] = useState<string[]>(baseProfile.mysticTags ?? []);
+  const [saving, setSaving] = useState(false);
+  const [error, setError] = useState<string | null>(null);
 
   const canSubmit = nickname.trim().length > 0 && intention.trim().length > 3 && keywords.length > 0;
 
-  const submit = () => {
+  const submit = async () => {
+    if (!canSubmit || saving) return;
     const baseSignals = baseProfile.optionalSignals.filter(
       (signal) => !signal.startsWith('沟通方式:') && !signal.startsWith('重视:'),
     );
@@ -57,8 +64,27 @@ export default function TwinCreate() {
         ...(values.length ? [`重视:${values.join('、')}`] : []),
       ],
     };
-    void setProfileTwin(profile, createTwinFromProfile(profile));
-    router.push('/twin-generating');
+    const twin = createTwinFromProfile(profile);
+    setSaving(true);
+    setError(null);
+    try {
+      if (token) {
+        const body: ProfileTwinRequest = { profile, twin };
+        const { data } = await api.put<MeResponse>('/auth/me/profile', body);
+        await setSession({ token, user: data.user, profile: data.profile, twin: data.twin });
+        queryClient.clear();
+      } else {
+        await setProfileTwin(profile, twin);
+      }
+      router.push('/twin-generating');
+    } catch (err: unknown) {
+      const message =
+        (err as { response?: { data?: { message?: string } } })?.response?.data?.message ??
+        '分身保存失败,请检查网络后重试。';
+      setError(Array.isArray(message) ? message[0] : String(message));
+    } finally {
+      setSaving(false);
+    }
   };
 
   const previewLine =
@@ -131,7 +157,15 @@ export default function TwinCreate() {
             <Text style={styles.previewLine}>{previewLine}</Text>
           </View>
 
-          <PrimaryButton label="生成我的 AI 分身" icon="zap" onPress={submit} disabled={!canSubmit} />
+          {error ? <Text style={styles.error}>{error}</Text> : null}
+
+          <PrimaryButton
+            label={saving ? '正在保存…' : '生成我的 AI 分身'}
+            icon="zap"
+            onPress={submit}
+            disabled={!canSubmit}
+            loading={saving}
+          />
         </ScrollView>
       </KeyboardAvoidingView>
     </Screen>
@@ -201,5 +235,10 @@ const styles = StyleSheet.create({
     fontFamily: fonts.sans,
     fontSize: 13,
     color: colors.aura,
+  },
+  error: {
+    fontFamily: fonts.sans,
+    fontSize: 13,
+    color: colors.danger,
   },
 });

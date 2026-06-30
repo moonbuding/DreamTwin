@@ -5,7 +5,7 @@ import { useRouter } from 'expo-router';
 import Svg, { Circle, Defs, LinearGradient, Stop } from 'react-native-svg';
 import type { PlazaProfile } from '@dreamtwin/api-types';
 import { Screen } from '@/components/Screen';
-import { usePlaza } from '@/lib/queries';
+import { usePlaza, useToday } from '@/lib/queries';
 import { demoPlazaProfiles } from '@/lib/demoContent';
 import { colors, fonts, radius, spacing } from '@/design/tokens';
 
@@ -29,6 +29,7 @@ function Orb({ profile }: { profile: PlazaProfile }) {
 export default function Plaza() {
   const router = useRouter();
   const profiles = usePlaza().data ?? demoPlazaProfiles;
+  const friendNodeId = useToday().data?.nodes.find((node) => node.entryMode === 'friend_invite')?.id ?? 'node-friend-mika';
 
   return (
     <Screen>
@@ -61,7 +62,7 @@ export default function Plaza() {
                 <Text style={styles.presenceText}>{profile.presence}</Text>
               </View>
               <Text style={styles.tagline} numberOfLines={2}>{profile.tagline}</Text>
-              <Pressable style={styles.invite} onPress={() => router.push('/waiting?node=node-friend-mika')}>
+              <Pressable style={styles.invite} onPress={() => router.push(`/waiting?node=${encodeURIComponent(friendNodeId)}`)}>
                 <Feather name="star" size={12} color={colors.aura} />
                 <Text style={styles.inviteText}>邀请共同入梦</Text>
               </Pressable>

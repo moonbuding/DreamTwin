@@ -35,7 +35,7 @@ export default function Onboarding() {
         </View>
 
         <View style={styles.actions}>
-          <PrimaryButton label="首次创建我的 AI 分身" icon="arrow-right" onPress={() => router.push('/twin-create')} />
+          <PrimaryButton label="注册并创建我的 AI 分身" icon="arrow-right" onPress={() => router.push('/login?mode=register')} />
           <GhostButton label="已有账号 · 登录" onPress={() => router.push('/login')} />
           <Text
             style={styles.skip}
